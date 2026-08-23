@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef, createContext, useContext } from 'react';
 import { 
-  Infinity, BookOpen, Users, UserCheck, MessageSquare, 
+  Home, Infinity, BookOpen, Users, UserCheck, MessageSquare, 
   Tv2, Award, ShieldAlert, LogOut, Search, Plus, PlusCircle,
   Check, X, Send, Video, ScreenShare, Sparkles, 
   Flame, CheckCircle, HelpCircle, Heart, MessageCircle, 
   Activity, GraduationCap, ChevronRight, Ban, Trophy, Coins,
   Volume2, VolumeX, Share2, Disc, Music, ChevronUp, ChevronDown,
   Settings, QrCode, Bell, Shield, Key, Globe, Archive, Grid, Bookmark, User,
-  Pencil, Camera, Edit2, Mail, Lock, Eye, EyeOff, Github
+  Pencil, Camera, Edit2, Mail, Lock, Eye, EyeOff, Github, Sun, Moon
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
@@ -61,7 +61,16 @@ export function AuthProvider({ children }) {
       department: 'Computer Science',
       year: 2,
       gender: 'male',
-      avatarUrl: MALE_AVATAR_SVG
+      avatarUrl: MALE_AVATAR_SVG,
+      xp: 650,
+      level: 4,
+      coins: 45,
+      followersCount: 2,
+      followingCount: 2,
+      bio: '🎓 CS Major @ IIT Madras | 💻 Full-Stack & Algorithm Mentor | 🚀 15 Doubts Solved | 📩 DM for 1:1 sessions',
+      skills: ['Java', 'Algorithms', 'React', 'Data Structures'],
+      teachingSkills: ['Java', 'Data Structures', 'Calculus', 'WebRTC'],
+      learningGoals: ['System Design', 'AI/ML']
     },
     { 
       email: 'studentb@student.com', 
@@ -72,7 +81,16 @@ export function AuthProvider({ children }) {
       department: 'Information Tech',
       year: 3,
       gender: 'female',
-      avatarUrl: FEMALE_AVATAR_SVG
+      avatarUrl: FEMALE_AVATAR_SVG,
+      xp: 240,
+      level: 3,
+      coins: 30,
+      followersCount: 2,
+      followingCount: 1,
+      bio: '🎨 Frontend enthusiast | 💻 UI/UX Designer & React Developer | 🚀 10 Doubts Solved | 📩 DM for collab',
+      skills: ['React', 'JavaScript', 'HTML/CSS', 'UI/UX'],
+      teachingSkills: ['React', 'JavaScript', 'UI/UX'],
+      learningGoals: ['Java', 'Spring Boot']
     },
     { 
       email: 'studentc@student.com', 
@@ -83,7 +101,16 @@ export function AuthProvider({ children }) {
       department: 'Electrical Eng',
       year: 4,
       gender: 'male',
-      avatarUrl: MALE_AVATAR_SVG
+      avatarUrl: MALE_AVATAR_SVG,
+      xp: 820,
+      level: 6,
+      coins: 120,
+      followersCount: 1,
+      followingCount: 2,
+      bio: '🚀 Senior Mentor @ BITS | 💻 Systems & WebRTC specialist | 🚀 25 Doubts Solved | 📩 DM for peer mock interviews',
+      skills: ['React', 'WebRTC', 'NodeJS', 'System Design'],
+      teachingSkills: ['WebRTC', 'NodeJS', 'C++'],
+      learningGoals: ['Machine Learning', 'Big Data']
     }
   ];
 
@@ -171,38 +198,59 @@ export function AuthProvider({ children }) {
     }
 
     const cachedProfile = localStorage.getItem(`studyloop_profile_${userId}`);
+    const acc = testAccounts.find(t => t.id === userId) || {};
     if (cachedProfile) {
       try { 
         const p = JSON.parse(cachedProfile);
-        if (!p.avatarUrl || p.avatarUrl.includes('dicebear')) {
-          p.avatarUrl = getDefaultAvatarByGender(p.gender, p.avatarUrl);
+        const merged = { ...acc, ...p };
+        if (!merged.avatarUrl || merged.avatarUrl.includes('dicebear')) {
+          merged.avatarUrl = getDefaultAvatarByGender(merged.gender, merged.avatarUrl);
         }
-        setProfile(p); 
+        setProfile(merged); 
       } catch(err) {
-        const acc = testAccounts.find(t => t.id === userId);
-        if (acc) setProfile(acc);
+        setProfile(acc);
       }
     } else {
-      const acc = testAccounts.find(t => t.id === userId);
-      if (acc) setProfile(acc);
+      setProfile(acc);
     }
     setLoading(false);
   };
 
   const loginSimulated = (email) => {
-    const acc = testAccounts.find(t => t.email.toLowerCase() === email.toLowerCase());
-    if (acc) {
-      const mockUserObj = { id: acc.id, email: acc.email, role: acc.role };
-      localStorage.setItem('studyloop_mock_session', JSON.stringify(mockUserObj));
-      setUser(mockUserObj);
-      const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
-      const payload = btoa(JSON.stringify({ sub: acc.id, email: acc.email, role: acc.role }));
-      const mockJwt = `${header}.${payload}.signature`;
-      setToken(mockJwt);
-      fetchProfile(acc.id, mockJwt);
-    } else {
-      alert("Invalid developer email selected.");
+    let acc = testAccounts.find(t => t.email.toLowerCase() === email.toLowerCase());
+    if (!acc) {
+      const namePart = email.split('@')[0];
+      const capitalizedName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
+      acc = {
+        email: email.toLowerCase(),
+        role: 'authenticated',
+        id: 'mock-user-' + Math.random().toString(36).substr(2, 9),
+        fullName: capitalizedName + ' Learner',
+        college: 'IIT Delhi',
+        department: 'Electrical Engineering',
+        year: 1,
+        gender: 'male',
+        avatarUrl: `https://api.dicebear.com/7.x/adventurer/svg?seed=${namePart}`,
+        xp: 150,
+        level: 1,
+        coins: 20,
+        followersCount: 12,
+        followingCount: 8,
+        bio: `🎓 Student Major | Active learner on StudyLoop | Connect with me for coding sessions!`,
+        skills: ['React', 'JavaScript', 'HTML/CSS'],
+        teachingSkills: ['HTML/CSS'],
+        learningGoals: ['Algorithms', 'Java']
+      };
+      localStorage.setItem(`studyloop_profile_${acc.id}`, JSON.stringify(acc));
     }
+    const mockUserObj = { id: acc.id, email: acc.email, role: acc.role };
+    localStorage.setItem('studyloop_mock_session', JSON.stringify(mockUserObj));
+    setUser(mockUserObj);
+    const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+    const payload = btoa(JSON.stringify({ sub: acc.id, email: acc.email, role: acc.role }));
+    const mockJwt = `${header}.${payload}.signature`;
+    setToken(mockJwt);
+    fetchProfile(acc.id, mockJwt);
   };
 
   const logout = async () => {
@@ -245,7 +293,28 @@ export default function App() {
 
 function MainLayout() {
   const { user, profile, token, loading, logout, loginSimulated, testAccounts, isMockMode } = useAuth();
-  const [activeTab, setActiveTab] = useState('landing');
+  const [theme, setTheme] = useState(() => localStorage.getItem('studyloop_theme') || 'light');
+  
+  useEffect(() => {
+    document.body.className = theme === 'dark' ? 'dark-theme' : 'light-theme';
+    localStorage.setItem('studyloop_theme', theme);
+  }, [theme]);
+  
+  const [activeTab, setActiveTab] = useState(() => {
+    return localStorage.getItem('studyloop_active_tab') || 'landing';
+  });
+  const [postLoginRedirectTab, setPostLoginRedirectTab] = useState(null);
+
+  useEffect(() => {
+    localStorage.setItem('studyloop_active_tab', activeTab);
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (!user) {
+      setActiveTab('landing');
+    }
+  }, [user]);
+
   const [activeRoomId, setActiveRoomId] = useState(null); // active Doubt Room currently joined
   const [activeChatId, setActiveChatId] = useState(null); // active 1:1 chat thread currently joined
   const [chatPeer, setChatPeer] = useState(null); // other user details for active 1:1 chat
@@ -501,8 +570,8 @@ function MainLayout() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fcfbfc' }}>
-        <Infinity size={48} className="live-dot" style={{ color: '#d97706', marginBottom: '1rem' }} />
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc' }}>
+        <Infinity size={48} className="live-dot" style={{ color: '#3b82f6', marginBottom: '1rem' }} />
         <h2 className="font-serif" style={{ fontSize: '1.5rem' }}>Loading StudyLoop...</h2>
       </div>
     );
@@ -511,7 +580,15 @@ function MainLayout() {
   // --- LANDING / FIRST PAGE FOR VISITORS ---
   if (!user) {
     return (
-      <LandingScreen setActiveTab={setActiveTab} loginSimulated={loginSimulated} testAccounts={testAccounts} />
+      <LandingScreen 
+        setActiveTab={setActiveTab} 
+        loginSimulated={loginSimulated} 
+        testAccounts={testAccounts} 
+        theme={theme} 
+        setTheme={setTheme} 
+        postLoginRedirectTab={postLoginRedirectTab}
+        setPostLoginRedirectTab={setPostLoginRedirectTab}
+      />
     );
   }
 
@@ -527,61 +604,162 @@ function MainLayout() {
         borderRight: '1px solid #e2e8f0',
         display: 'flex',
         flexDirection: 'column',
-        padding: isSidebarCollapsed ? '1rem 0.5rem' : '1.5rem',
+        padding: isSidebarCollapsed ? '1rem 0.5rem' : '1.25rem 1rem',
         transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: isSidebarCollapsed ? 'center' : 'space-between', marginBottom: '2rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }} onClick={() => setActiveTab('landing')}>
-            <Infinity size={28} style={{ color: '#d97706' }} />
+        {/* LOGO HEADER */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: isSidebarCollapsed ? 'center' : 'space-between', marginBottom: '1.25rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem', cursor: 'pointer' }} onClick={() => setActiveTab('landing')}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Infinity size={28} style={{ color: '#3b82f6' }} />
+              {!isSidebarCollapsed && (
+                <span style={{ fontSize: '1.35rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em' }}>StudyLoop</span>
+              )}
+            </div>
             {!isSidebarCollapsed && (
-              <span className="font-serif" style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f172a' }}>StudyLoop</span>
+              <span style={{ fontSize: '0.5625rem', fontWeight: 800, color: '#94a3b8', letterSpacing: '0.16em', paddingLeft: '2.25rem', textTransform: 'uppercase' }}>
+                LEARN • BUILD • EVOLVE
+              </span>
             )}
           </div>
+          {!isSidebarCollapsed && (
+            <button 
+              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)} 
+              title="Collapse Sidebar"
+              style={{
+                background: '#f1f5f9',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '0.375rem',
+                color: '#475569',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <Grid size={16} />
+            </button>
+          )}
+        </div>
+
+        {/* STUDENT PORTAL STATUS CARD */}
+        {!isSidebarCollapsed && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '0.5rem 0.75rem',
+            backgroundColor: '#eff6ff',
+            border: '1px solid #bfdbfe',
+            borderRadius: '10px',
+            marginBottom: '1.25rem'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', fontWeight: 700, color: '#2563eb', letterSpacing: '0.05em' }}>
+              <div style={{ width: '8px', height: '8px', backgroundColor: '#10b981', borderRadius: '50%' }}></div>
+              STUDENT PORTAL
+            </div>
+            <span style={{
+              backgroundColor: '#d1fae5',
+              border: '1px solid #81c784',
+              color: '#059669',
+              padding: '0.125rem 0.5rem',
+              borderRadius: '6px',
+              fontSize: '0.625rem',
+              fontWeight: 800,
+              letterSpacing: '0.05em'
+            }}>
+              ACTIVE
+            </span>
+          </div>
+        )}
+
+
+        {/* COLLAPSED EXPAND BUTTON */}
+        {isSidebarCollapsed && (
           <button 
-            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)} 
-            title={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar (Icon View)"}
+            onClick={() => setIsSidebarCollapsed(false)} 
+            title="Expand Sidebar"
             style={{
               background: '#f1f5f9',
               border: 'none',
-              borderRadius: '6px',
-              padding: '0.375rem',
+              borderRadius: '10px',
+              padding: '0.75rem',
               color: '#475569',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              width: '100%',
+              marginBottom: '1rem'
             }}
           >
-            {isSidebarCollapsed ? <ChevronRight size={16} /> : <Grid size={16} />}
+            <ChevronRight size={18} />
           </button>
-        </div>
-
-        {profile && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.625rem', backgroundColor: '#f8fafc', borderRadius: '12px', marginBottom: '1.5rem', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
-            <img 
-              src={getDefaultAvatarByGender(profile.gender, profile.avatarUrl)} 
-              alt="Avatar" 
-              onError={(e) => { e.target.src = getDefaultAvatarByGender(profile?.gender); }}
-              style={{ width: '38px', height: '38px', borderRadius: '50%', objectFit: 'cover' }} 
-            />
-            {!isSidebarCollapsed && (
-              <div style={{ overflow: 'hidden' }}>
-                <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#0f172a', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{profile.fullName}</div>
-                <div style={{ fontSize: '0.75rem', color: '#d97706', display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 600 }}>
-                  <Flame size={12} fill="#d97706" /> {profile.xp} XP • Lvl {profile.level}
-                </div>
-              </div>
-            )}
-          </div>
         )}
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', flex: 1 }}>
-          <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'landing'} icon={<Infinity size={18} />} label="Home Page" onClick={() => { setActiveTab('landing'); setActiveRoomId(null); }} />
+        {/* GROUPED SIDEBAR NAVIGATION LINKS */}
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflowY: 'auto', paddingRight: '0.25rem' }}>
+          
+          {/* SECTION 1: LEARNING */}
+          {!isSidebarCollapsed && (
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              fontSize: '0.6875rem', 
+              fontWeight: 800, 
+              letterSpacing: '0.08em', 
+              color: '#2563eb', 
+              marginTop: '0.75rem', 
+              marginBottom: '0.75rem',
+              textTransform: 'uppercase'
+            }}>
+              LEARNING
+              <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0', marginLeft: '0.5rem' }}></div>
+            </div>
+          )}
+          <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'landing'} icon={<Home size={18} />} label="Home Page" onClick={() => { setActiveTab('landing'); setActiveRoomId(null); }} />
           <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'doubts'} icon={<HelpCircle size={18} />} label="Doubt Rooms Hub" onClick={() => { setActiveTab('doubts'); setActiveRoomId(null); }} />
           <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'dashboard'} icon={<Award size={18} />} label="Dashboard & Badges" onClick={() => { setActiveTab('dashboard'); setActiveRoomId(null); }} />
+
+          {/* SECTION 2: INTELLIGENCE & PRACTICE */}
+          {!isSidebarCollapsed && (
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              fontSize: '0.6875rem', 
+              fontWeight: 800, 
+              letterSpacing: '0.08em', 
+              color: '#0891b2', 
+              marginTop: '1.5rem', 
+              marginBottom: '0.75rem',
+              textTransform: 'uppercase'
+            }}>
+              INTELLIGENCE & PRACTICE
+              <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0', marginLeft: '0.5rem' }}></div>
+            </div>
+          )}
           <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'leaderboard'} icon={<Trophy size={18} />} label="Campus Leaderboard" onClick={() => { setActiveTab('leaderboard'); setActiveRoomId(null); }} />
           <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'discover'} icon={<Users size={18} />} label="Discover Peers" onClick={() => { setActiveTab('discover'); setActiveRoomId(null); }} />
           <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'connections'} icon={<UserCheck size={18} />} label="My Connections" onClick={() => { setActiveTab('connections'); setActiveRoomId(null); }} />
+
+          {/* SECTION 3: CAREER DEVELOPMENT */}
+          {!isSidebarCollapsed && (
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              fontSize: '0.6875rem', 
+              fontWeight: 800, 
+              letterSpacing: '0.08em', 
+              color: '#059669', 
+              marginTop: '1.5rem', 
+              marginBottom: '0.75rem',
+              textTransform: 'uppercase'
+            }}>
+              CAREER DEVELOPMENT
+              <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0', marginLeft: '0.5rem' }}></div>
+            </div>
+          )}
           <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'chat'} icon={<MessageSquare size={18} />} label="Direct Messages" onClick={() => { setActiveTab('chat'); setActiveRoomId(null); }} />
           <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'reels'} icon={<Tv2 size={18} />} label="Educational Reels" onClick={() => { setActiveTab('reels'); setActiveRoomId(null); }} />
         </div>
@@ -603,19 +781,42 @@ function MainLayout() {
             alignItems: 'center',
             justifyContent: 'space-between',
             padding: '0.875rem 2rem',
-            borderBottom: '1px solid #e2e8f0',
-            backgroundColor: '#ffffff',
+            borderBottom: '1px solid var(--border-color)',
+            backgroundColor: 'var(--bg-secondary)',
             marginBottom: '1rem'
           }}>
-            <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <GraduationCap size={16} style={{ color: '#d97706' }} />
+            <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <GraduationCap size={16} style={{ color: 'var(--accent-color)' }} />
               <span>{profile?.college || 'IIT Madras'} • {profile?.department || 'Computer Science'}</span>
             </div>
 
-            {/* FAR RIGHT USER DROPDOWN CHIP */}
-            <div style={{ marginLeft: 'auto', position: 'relative' }}>
-              <button 
-                onClick={() => setShowHeaderDropdown(prev => !prev)}
+            {/* FAR RIGHT USER DROPDOWN CHIP & THEME TOGGLE */}
+            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+              <button
+                onClick={() => setTheme(prev => prev === 'light' ? 'dark' : 'light')}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '0.5rem',
+                  borderRadius: '50%',
+                  backgroundColor: 'var(--bg-tertiary)',
+                  width: '36px',
+                  height: '36px',
+                  transition: 'all 0.2s ease'
+                }}
+                title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+              >
+                {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+              </button>
+
+              <div style={{ position: 'relative' }}>
+                <button 
+                  onClick={() => setShowHeaderDropdown(prev => !prev)}
                 className="card-premium glass-card"
                 style={{
                   display: 'flex',
@@ -624,81 +825,80 @@ function MainLayout() {
                   padding: '0.375rem 0.875rem',
                   borderRadius: '50px',
                   cursor: 'pointer',
-                  border: '1px solid #e2e8f0'
+                  border: '1px solid var(--border-color)',
+                  backgroundColor: 'var(--bg-secondary)'
                 }}
               >
                 <img 
                   src={getDefaultAvatarByGender(profile?.gender, profile?.avatarUrl)} 
                   alt="Avatar" 
                   onError={(e) => { e.target.src = getDefaultAvatarByGender(profile?.gender); }}
-                  style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid #d97706', objectFit: 'cover' }} 
+                  style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid var(--accent-color)', objectFit: 'cover' }} 
                 />
                 <div style={{ textAlign: 'left' }}>
-                  <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#0f172a' }}>
+                  <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                     {profile?.fullName || 'Aarav Sharma'}
                   </div>
-                  <div style={{ fontSize: '0.6875rem', color: '#d97706', fontWeight: 600 }}>
-                    ⚡ {profile?.xp || 650} XP • Lvl {profile?.level || 4}
+                  <div style={{ fontSize: '0.6875rem', color: 'var(--accent-color)', fontWeight: 600 }}>
+                    ⚡ {profile?.xp !== undefined ? profile.xp : 650} XP • Lvl {profile?.level !== undefined ? profile.level : 4}
                   </div>
                 </div>
-                <ChevronDown size={14} style={{ color: '#64748b' }} />
+                <ChevronDown size={14} style={{ color: 'var(--text-secondary)' }} />
               </button>
 
               {showHeaderDropdown && (
-                <div className="card-premium glass-card" style={{
+                <div className="card-premium glass-card dropdown-animate" style={{
                   position: 'absolute',
                   top: 'calc(100% + 0.5rem)',
                   right: 0,
                   width: '240px',
                   borderRadius: '16px',
-                  padding: '0.75rem',
+                  padding: '1rem',
                   boxShadow: '0 10px 30px rgba(0,0,0,0.12)',
                   zIndex: 2000,
-                  backgroundColor: '#ffffff'
+                  backgroundColor: 'var(--bg-secondary)',
+                  border: '1px solid var(--border-color)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.375rem'
                 }}>
-                  <div style={{ padding: '0.5rem 0.75rem', borderBottom: '1px solid #f1f5f9', marginBottom: '0.5rem' }}>
-                    <div style={{ fontWeight: 700, fontSize: '0.875rem', color: '#0f172a' }}>{profile?.fullName}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{profile?.college}</div>
+                  <div style={{ padding: '0.25rem 0.75rem 0.75rem 0.75rem', borderBottom: '1px solid var(--border-color)', marginBottom: '0.375rem' }}>
+                    <div style={{ fontWeight: 800, fontSize: '0.9375rem', color: 'var(--text-primary)' }}>{profile?.fullName}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.125rem' }}>{profile?.college}</div>
                   </div>
 
-                  <button onClick={() => { setShowHeaderDropdown(false); setActiveTab('dashboard'); }} style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '6px', border: 'none', background: 'transparent', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', fontWeight: 600, color: '#0f172a' }}>
-                    <Award size={14} style={{ color: '#d97706' }} /> Dashboard & Badges
+                  <button 
+                    onClick={() => { setShowHeaderDropdown(false); setActiveTab('dashboard'); }} 
+                    className="dropdown-item"
+                  >
+                    <Award size={16} style={{ color: '#3b82f6' }} /> Dashboard & Badges
                   </button>
 
-                  <button onClick={() => { setShowHeaderDropdown(false); setActiveTab('dashboard'); }} style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '6px', border: 'none', background: 'transparent', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', fontWeight: 600, color: '#0f172a' }}>
-                    <GraduationCap size={14} style={{ color: '#0284c7' }} /> Edit Profile / Settings
+                  <button 
+                    onClick={() => { setShowHeaderDropdown(false); setActiveTab('dashboard'); }} 
+                    className="dropdown-item"
+                  >
+                    <GraduationCap size={16} style={{ color: '#0284c7' }} /> Edit Profile / Settings
                   </button>
 
-                  <div style={{ margin: '0.375rem 0', borderTop: '1px solid #f1f5f9', paddingTop: '0.375rem' }}>
-                    <div style={{ fontSize: '0.625rem', fontWeight: 700, color: '#94a3b8', padding: '0.25rem 0.75rem', textTransform: 'uppercase' }}>
-                      Switch Account
-                    </div>
-                    {testAccounts.map(acc => (
-                      <button 
-                        key={acc.id}
-                        onClick={() => { loginSimulated(acc.email); setShowHeaderDropdown(false); setActiveTab('dashboard'); }}
-                        style={{ width: '100%', padding: '0.375rem 0.75rem', borderRadius: '6px', border: 'none', background: 'transparent', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: '#475569' }}
-                      >
-                        <img src={acc.avatarUrl} alt="Avatar" style={{ width: '18px', height: '18px', borderRadius: '50%' }} />
-                        {acc.fullName}
-                      </button>
-                    ))}
-                  </div>
-
-                  <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '0.375rem', marginTop: '0.25rem' }}>
-                    <button onClick={() => { logout(); setShowHeaderDropdown(false); }} style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '6px', border: 'none', background: '#fef2f2', color: '#dc2626', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', fontWeight: 600 }}>
-                      <LogOut size={14} /> Logout
+                  <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '0.625rem', marginTop: '0.375rem' }}>
+                    <button 
+                      onClick={() => { logout(); setShowHeaderDropdown(false); }} 
+                      className="dropdown-item-logout"
+                    >
+                      <LogOut size={16} /> Logout
                     </button>
                   </div>
                 </div>
               )}
             </div>
           </div>
-        )}
+        </div>
+      )}
 
         {showCollegeWarning && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', backgroundColor: '#fef3c7', border: '1px solid #fde68a', borderRadius: '12px', padding: '1rem', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
-            <ShieldAlert style={{ color: '#d97706' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '12px', padding: '1rem', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
+            <ShieldAlert style={{ color: '#3b82f6' }} />
             <div>
               <strong>Complete your profile setup:</strong> Set your college name in the <strong>Dashboard</strong> to view and join live Doubt Rooms from your campus!
             </div>
@@ -743,7 +943,17 @@ function MainLayout() {
           />
         )}
 
-        {activeTab === 'landing' && <LandingScreen setActiveTab={setActiveTab} loginSimulated={loginSimulated} testAccounts={testAccounts} />}
+        {activeTab === 'landing' && (
+          <LandingScreen 
+            setActiveTab={setActiveTab} 
+            loginSimulated={loginSimulated} 
+            testAccounts={testAccounts} 
+            theme={theme} 
+            setTheme={setTheme} 
+            postLoginRedirectTab={postLoginRedirectTab}
+            setPostLoginRedirectTab={setPostLoginRedirectTab}
+          />
+        )}
         {activeTab === 'feed' && <FeedScreen setActiveTab={setActiveTab} setActiveRoomId={setActiveRoomId} token={token} />}
         {activeTab === 'dashboard' && <DashboardScreen token={token} onOpenUserList={(title, userId) => setUserListModalData({ title, userId })} onStartChat={startDirectMessageWithPeer} />}
         {activeTab === 'leaderboard' && <LeaderboardScreen token={token} onOpenPublicProfile={openPublicProfile} />}
@@ -785,6 +995,59 @@ function MainLayout() {
           />
         )}
       </main>
+
+      {profile && (
+        <div className="mobile-bottom-nav" style={{
+          display: 'none',
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: '60px',
+          backgroundColor: '#ffffff',
+          borderTop: '1px solid #e2e8f0',
+          justifyContent: 'space-around',
+          alignItems: 'center',
+          zIndex: 1000,
+          boxShadow: '0 -2px 10px rgba(0,0,0,0.05)'
+        }}>
+          <button 
+            onClick={() => setActiveTab('landing')} 
+            style={{ border: 'none', background: 'transparent', color: activeTab === 'landing' ? '#3b82f6' : '#64748b', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', cursor: 'pointer', transition: 'all 0.15s ease' }}
+          >
+            <Home size={20} />
+            <span style={{ fontSize: '0.625rem', fontWeight: 600 }}>Home</span>
+          </button>
+          <button 
+            onClick={() => setActiveTab('doubts')} 
+            style={{ border: 'none', background: 'transparent', color: activeTab === 'doubts' ? '#3b82f6' : '#64748b', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', cursor: 'pointer', transition: 'all 0.15s ease' }}
+          >
+            <HelpCircle size={20} />
+            <span style={{ fontSize: '0.625rem', fontWeight: 600 }}>Doubts</span>
+          </button>
+          <button 
+            onClick={() => setActiveTab('chat')} 
+            style={{ border: 'none', background: 'transparent', color: activeTab === 'chat' ? '#3b82f6' : '#64748b', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', cursor: 'pointer', transition: 'all 0.15s ease' }}
+          >
+            <MessageSquare size={20} />
+            <span style={{ fontSize: '0.625rem', fontWeight: 600 }}>Chats</span>
+          </button>
+          <button 
+            onClick={() => setActiveTab('reels')} 
+            style={{ border: 'none', background: 'transparent', color: activeTab === 'reels' ? '#3b82f6' : '#64748b', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', cursor: 'pointer', transition: 'all 0.15s ease' }}
+          >
+            <Tv2 size={20} />
+            <span style={{ fontSize: '0.625rem', fontWeight: 600 }}>Reels</span>
+          </button>
+          <button 
+            onClick={() => setActiveTab('dashboard')} 
+            style={{ border: 'none', background: 'transparent', color: activeTab === 'dashboard' ? '#3b82f6' : '#64748b', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', cursor: 'pointer', transition: 'all 0.15s ease' }}
+          >
+            <Award size={20} />
+            <span style={{ fontSize: '0.625rem', fontWeight: 600 }}>Profile</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -805,22 +1068,34 @@ function SidebarLink({ active, icon, label, onClick, isCollapsed }) {
         justifyContent: isCollapsed ? 'center' : 'flex-start',
         gap: '0.75rem',
         width: '100%',
-        padding: '0.75rem 1rem',
-        borderRadius: '10px',
+        padding: '0.625rem 0.875rem',
+        borderRadius: '50px',
         border: 'none',
         cursor: 'pointer',
         fontSize: '0.875rem',
-        fontWeight: active ? 600 : 500,
-        backgroundColor: active ? '#fef3c7' : isHovered ? '#f8fafc' : 'transparent',
-        color: active ? '#b45309' : '#475569',
+        fontWeight: '600',
+        background: active ? 'linear-gradient(135deg, #2563eb 0%, #06b6d4 100%)' : isHovered ? '#eff6ff' : 'transparent',
+        color: active ? '#ffffff' : isHovered ? '#2563eb' : '#334155',
         textAlign: 'left',
-        transition: 'all 0.15s ease',
-        boxShadow: active ? '0 2px 4px rgba(217, 119, 6, 0.1)' : 'none'
+        transition: 'all 0.2s ease',
+        boxShadow: active ? '0 4px 14px rgba(37, 99, 235, 0.25)' : 'none',
+        marginBottom: '0.625rem'
       }}>
-        <span style={{ color: active ? '#b45309' : isHovered ? '#d97706' : '#64748b', display: 'flex', alignItems: 'center' }}>
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          width: '28px', 
+          height: '28px', 
+          borderRadius: '50%', 
+          backgroundColor: active ? 'rgba(255, 255, 255, 0.18)' : isHovered ? '#eff6ff' : '#f1f5f9',
+          color: active ? '#ffffff' : isHovered ? '#2563eb' : '#475569',
+          transition: 'all 0.2s ease',
+          flexShrink: 0
+        }}>
           {icon}
-        </span>
-        {!isCollapsed && <span>{label}</span>}
+        </div>
+        {!isCollapsed && <span style={{ textShadow: 'none', fontWeight: 600 }}>{label}</span>}
       </button>
 
       {/* FLOATING HOVER TOOLTIP (Reveals label on mouse hover) */}
@@ -874,11 +1149,11 @@ function AuthScreen({ loginSimulated, testAccounts, isMockMode }) {
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#fcfbfc' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f8fafc' }}>
       {/* Left panel */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '4rem', maxWidth: '520px', margin: '0 auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '2rem' }}>
-          <Infinity size={32} style={{ color: '#d97706' }} />
+          <Infinity size={32} style={{ color: '#3b82f6' }} />
           <h1 className="font-serif" style={{ fontSize: '1.875rem' }}>StudyLoop</h1>
         </div>
 
@@ -921,7 +1196,7 @@ function AuthScreen({ loginSimulated, testAccounts, isMockMode }) {
         {isMockMode && (
           <div style={{ marginTop: '2.5rem', padding: '1.25rem', backgroundColor: '#f1f5f9', borderRadius: '12px' }}>
             <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#475569', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-              <Sparkles size={14} style={{ color: '#d97706' }} /> Developer Test Accounts (Fast Match Seeded)
+              <Sparkles size={14} style={{ color: '#3b82f6' }} /> Developer Test Accounts (Fast Match Seeded)
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               {testAccounts.map(acc => (
@@ -983,14 +1258,14 @@ function FeedScreen({ setActiveTab, setActiveRoomId, token }) {
       </div>
 
       {/* DEDICATED DOUBT HUB REDIRECT BANNER */}
-      <div className="card-premium glass-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.25rem 1.75rem', marginBottom: '2rem', backgroundColor: '#fffbeb', border: '1px solid #fde68a' }}>
+      <div className="card-premium glass-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.25rem 1.75rem', marginBottom: '2rem', backgroundColor: '#eff6ff', border: '1px solid #bfdbfe' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#d97706' }}>
+          <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3b82f6' }}>
             <HelpCircle size={24} />
           </div>
           <div>
-            <h3 className="font-serif" style={{ fontSize: '1.125rem', color: '#78350f' }}>Need Help with a Doubt or Mid-term Question?</h3>
-            <p style={{ fontSize: '0.8125rem', color: '#92400e', marginTop: '0.125rem' }}>All live doubt questions and tutoring rooms are located in the dedicated <strong>Doubt Rooms Hub</strong>.</p>
+            <h3 className="font-serif" style={{ fontSize: '1.125rem', color: '#1e3a8a' }}>Need Help with a Doubt or Mid-term Question?</h3>
+            <p style={{ fontSize: '0.8125rem', color: '#1e40af', marginTop: '0.125rem' }}>All live doubt questions and tutoring rooms are located in the dedicated <strong>Doubt Rooms Hub</strong>.</p>
           </div>
         </div>
         <button onClick={() => setActiveTab('doubts')} className="btn btn-accent" style={{ whiteSpace: 'nowrap', padding: '0.5rem 1.25rem', fontSize: '0.8125rem' }}>
@@ -1000,7 +1275,7 @@ function FeedScreen({ setActiveTab, setActiveRoomId, token }) {
 
       {loading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}>
-          <div className="live-dot" style={{ backgroundColor: '#d97706' }}></div>
+          <div className="live-dot" style={{ backgroundColor: '#3b82f6' }}></div>
         </div>
       ) : feed.filter(item => item.type === 'REEL').length === 0 ? (
         <div className="empty-state">
@@ -1054,13 +1329,23 @@ function FeedScreen({ setActiveTab, setActiveRoomId, token }) {
 
 // --- INSTAGRAM-STYLE STUDENT PROFILE & MEDIA DASHBOARD ---
 function DashboardScreen({ token, onOpenUserList, onStartChat }) {
-  const { user, profile: authProfile, updateProfileState } = useAuth();
+  const { user, profile: authProfile, updateProfileState, testAccounts } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
 
   const profile = (data && data.profile) ? data.profile : {};
-  const isOwnProfile = Boolean(profile && (user?.id === profile.id || authProfile?.id === profile.id || true));
+
+  const getNextLevel = (lvl) => {
+    if (typeof lvl === 'number') return `Lvl ${lvl + 1}`;
+    if (!lvl) return 'Lvl 5';
+    const lvlStr = String(lvl).toLowerCase();
+    if (lvlStr === 'beginner') return 'Intermediate';
+    if (lvlStr === 'intermediate') return 'Expert';
+    if (lvlStr === 'expert') return 'Master';
+    if (lvlStr === 'master') return 'Legend';
+    return 'Lvl ' + (parseInt(lvl) ? (parseInt(lvl) + 1) : 5);
+  };
 
   const [activeProfileTab, setActiveProfileTab] = useState('posts'); // 'posts', 'reels', 'videos', 'badges'
   const [selectedMedia, setSelectedMedia] = useState(null);
@@ -1238,7 +1523,7 @@ function DashboardScreen({ token, onOpenUserList, onStartChat }) {
 
   const fetchDashboard = async () => {
     setLoading(true);
-    let targetProfileId = '11111111-1111-1111-1111-111111111111';
+    let targetProfileId = authProfile?.id || user?.id || '11111111-1111-1111-1111-111111111111';
     try {
       const response = await fetch('/api/gamification/dashboard', {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -1275,22 +1560,25 @@ function DashboardScreen({ token, onOpenUserList, onStartChat }) {
 
     // Mock Fallback Dataset - Check LocalStorage!
     const cachedMock = localStorage.getItem(`studyloop_profile_${targetProfileId}`);
+    const matchedAccount = testAccounts?.find(acc => acc.id === targetProfileId) || {};
+    
     let activeMockProfile = {
       id: targetProfileId,
-      fullName: 'Aarav Sharma',
-      college: 'IIT Madras',
-      department: 'Computer Science',
-      year: 2,
-      gender: 'male',
-      bio: '🎓 CS Major @ IIT Madras | 💻 Full-Stack & Algorithm Mentor | 🚀 15 Doubts Solved | 📩 DM for 1:1 WebRTC peer sessions',
-      skills: ['Java', 'Algorithms', 'React', 'Data Structures'],
-      teachingSkills: ['Java', 'Data Structures', 'Calculus', 'WebRTC'],
-      learningGoals: ['System Design', 'AI/ML'],
-      xp: 650,
-      level: 4,
-      coins: 45,
-      reputation: 4.9,
-      avatarUrl: MALE_AVATAR_SVG
+      fullName: matchedAccount.fullName || 'Aarav Sharma',
+      college: matchedAccount.college || 'IIT Madras',
+      department: matchedAccount.department || 'Computer Science',
+      year: matchedAccount.year || 2,
+      gender: matchedAccount.gender || 'male',
+      bio: matchedAccount.bio || '🎓 CS Major @ IIT Madras | Tech Mentor',
+      skills: matchedAccount.skills || ['Java', 'Algorithms'],
+      teachingSkills: matchedAccount.teachingSkills || ['Java'],
+      learningGoals: matchedAccount.learningGoals || ['React'],
+      xp: matchedAccount.xp !== undefined ? matchedAccount.xp : 650,
+      level: matchedAccount.level !== undefined ? matchedAccount.level : 4,
+      coins: matchedAccount.coins !== undefined ? matchedAccount.coins : 45,
+      followersCount: matchedAccount.followersCount !== undefined ? matchedAccount.followersCount : 2,
+      followingCount: matchedAccount.followingCount !== undefined ? matchedAccount.followingCount : 2,
+      avatarUrl: matchedAccount.avatarUrl || getDefaultAvatarByGender(matchedAccount.gender)
     };
     if (cachedMock) {
       try {
@@ -1300,18 +1588,26 @@ function DashboardScreen({ token, onOpenUserList, onStartChat }) {
     }
     const mockData = {
       profile: activeMockProfile,
-      doubtsSolved: 15,
-      endorsementsReceived: 28,
-      campusRank: 1,
-      badges: [
+      doubtsSolved: targetProfileId === '22222222-2222-2222-2222-222222222222' ? 10 : (targetProfileId === '33333333-3333-3333-3333-333333333333' ? 25 : 15),
+      endorsementsReceived: targetProfileId === '22222222-2222-2222-2222-222222222222' ? 18 : (targetProfileId === '33333333-3333-3333-3333-333333333333' ? 42 : 28),
+      campusRank: targetProfileId === '22222222-2222-2222-2222-222222222222' ? 3 : (targetProfileId === '33333333-3333-3333-3333-333333333333' ? 1 : 2),
+      badges: targetProfileId === '22222222-2222-2222-2222-222222222222' ? [
+        { id: 'b1', name: 'First Doubt Solved', description: 'Awarded for resolving your 1st academic doubt room.' },
+        { id: 'b4', name: '5-Day Streak', description: 'Active on StudyLoop 5 days in a row.' }
+      ] : (targetProfileId === '33333333-3333-3333-3333-333333333333' ? [
+        { id: 'b1', name: 'First Doubt Solved', description: 'Awarded for resolving your 1st academic doubt room.' },
+        { id: 'b2', name: '20 Sessions Taught', description: 'Taught over 20 live peer study sessions.' },
+        { id: 'b3', name: 'Expert Mentor', description: 'Rated 4.9+ by campus peers across 25+ doubts.' },
+        { id: 'b4', name: '12-Day Streak', description: 'Active on StudyLoop 12 days in a row.' }
+      ] : [
         { id: 'b1', name: 'First Doubt Solved', description: 'Awarded for resolving your 1st academic doubt room.' },
         { id: 'b2', name: '10 Sessions Taught', description: 'Taught over 10 live peer study sessions.' },
         { id: 'b3', name: 'Expert Mentor', description: 'Rated 4.8+ by campus peers across 10+ doubts.' },
         { id: 'b4', name: '7-Day Streak', description: 'Active on StudyLoop 7 days in a row.' }
-      ],
-      prevLevelXpThreshold: 500,
-      nextLevelXpThreshold: 1000,
-      xpProgressPercentage: 30
+      ]),
+      prevLevelXpThreshold: activeMockProfile.xp < 200 ? 0 : (activeMockProfile.xp < 600 ? 200 : 600),
+      nextLevelXpThreshold: activeMockProfile.xp < 200 ? 200 : (activeMockProfile.xp < 600 ? 600 : 1500),
+      xpProgressPercentage: Math.min(100, Math.max(0, Math.round(((activeMockProfile.xp - (activeMockProfile.xp < 200 ? 0 : (activeMockProfile.xp < 600 ? 200 : 600))) / ((activeMockProfile.xp < 200 ? 200 : (activeMockProfile.xp < 600 ? 600 : 1500)) - (activeMockProfile.xp < 200 ? 0 : (activeMockProfile.xp < 600 ? 200 : 600)))) * 100)))
     };
 
     setData(mockData);
@@ -1500,7 +1796,7 @@ function DashboardScreen({ token, onOpenUserList, onStartChat }) {
   if (loading || !data || !data.profile) {
     return (
       <div style={{ textAlign: 'center', padding: '4rem' }}>
-        <div className="live-dot" style={{ backgroundColor: '#d97706', margin: '0 auto 1rem auto' }}></div>
+        <div className="live-dot" style={{ backgroundColor: '#3b82f6', margin: '0 auto 1rem auto' }}></div>
         <p style={{ color: '#64748b', fontSize: '0.875rem' }}>Loading student profile dashboard...</p>
       </div>
     );
@@ -1514,7 +1810,7 @@ function DashboardScreen({ token, onOpenUserList, onStartChat }) {
   const usernameHandle = `@${(profile.fullName || 'student').toLowerCase().replace(/\s+/g, '_')}`;
 
   return (
-    <div style={{ maxWidth: '960px', margin: '0 auto', paddingBottom: '3rem' }}>
+    <div style={{ width: '100%', paddingBottom: '3rem' }}>
       
       {/* INSTAGRAM PROFILE HEADER & BIO */}
       <div className="card-premium glass-card" style={{ padding: '2.5rem 2rem', borderRadius: '24px', marginBottom: '2rem' }}>
@@ -1583,7 +1879,7 @@ function DashboardScreen({ token, onOpenUserList, onStartChat }) {
                   width: '36px',
                   height: '36px',
                   borderRadius: '50%',
-                  backgroundColor: '#d97706',
+                  backgroundColor: '#3b82f6',
                   color: '#ffffff',
                   border: '3px solid #ffffff',
                   display: 'flex',
@@ -1654,7 +1950,7 @@ function DashboardScreen({ token, onOpenUserList, onStartChat }) {
               >
                 <strong>{profile.followingCount !== undefined ? profile.followingCount : 2}</strong> <span style={{ color: '#64748b', textDecoration: 'underline' }}>following</span>
               </div>
-              <div style={{ color: '#d97706', fontWeight: 700 }}>⚡ {profile.xp} XP • Lvl {profile.level}</div>
+              <div style={{ color: '#3b82f6', fontWeight: 700 }}>⚡ {profile.xp} XP • Lvl {profile.level}</div>
             </div>
 
             {/* BIO & COLLEGE DETAILS (EXACT MATCH IMAGE 1 BULLET STYLE) */}
@@ -1669,13 +1965,33 @@ function DashboardScreen({ token, onOpenUserList, onStartChat }) {
                 {profile.bio || `Your journey to better skills starts here!\n📚 Learn new skills: ${profile.teachingSkills ? profile.teachingSkills.join(', ') : 'Java, React, Algorithms'}\n💡 Build practical knowledge\n🚀 Improve every day\n🎯 Prepare for campus placements`}
               </p>
 
-              {/* TEACHING SKILLS PILLS */}
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
-                {(profile.teachingSkills || ['Java', 'Algorithms', 'React', 'Calculus']).map((skill, idx) => (
-                  <span key={idx} className="tag tag-secondary" style={{ fontSize: '0.6875rem' }}>
-                    ⭐ {skill}
+              {/* SKILLS PORTFOLIO SECTION */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem', marginTop: '0.75rem' }}>
+                <div>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '0.25rem' }}>
+                    🎓 Mentoring Expertises
                   </span>
-                ))}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
+                    {(profile.teachingSkills || ['Java', 'Algorithms', 'React', 'Calculus']).map((skill, idx) => (
+                      <span key={idx} className="tag-mentor-badge category-tag-hover" style={{ fontSize: '0.6875rem' }}>
+                        ⭐ {skill}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '0.25rem' }}>
+                    🎯 Learning Goals
+                  </span>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
+                    {(profile.learningGoals || ['System Design', 'AI/ML']).map((skill, idx) => (
+                      <span key={idx} className="tag-learner-badge category-tag-hover" style={{ fontSize: '0.6875rem' }}>
+                        🚀 {skill}
+                      </span>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1760,14 +2076,16 @@ function DashboardScreen({ token, onOpenUserList, onStartChat }) {
         <div style={{ marginTop: '1.5rem', paddingTop: '1.25rem', borderTop: '1px solid #e2e8f0' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', fontWeight: 600, color: '#0f172a', marginBottom: '0.5rem' }}>
             <span>Campus Rank: <strong>#{campusRank || 1}</strong></span>
-            <span>🪙 {profile.coins || 45} Peer Coins Balance</span>
-            <span>Level {profile.level} ({xpProgressPercentage}% to Lvl {profile.level + 1})</span>
+            <span>🪙 {profile.coins !== undefined ? profile.coins : 45} Peer Coins Balance</span>
+            <span>Level {profile.level} ({xpProgressPercentage}% to {getNextLevel(profile.level)})</span>
           </div>
           <div style={{ width: '100%', height: '8px', backgroundColor: '#e2e8f0', borderRadius: '50px', overflow: 'hidden' }}>
-            <div style={{ width: `${xpProgressPercentage}%`, height: '100%', backgroundColor: '#d97706', borderRadius: '50px' }}></div>
+            <div style={{ width: `${xpProgressPercentage}%`, height: '100%', backgroundColor: '#3b82f6', borderRadius: '50px' }}></div>
           </div>
         </div>
       </div>
+
+
 
       {/* EDIT PROFILE DEDICATED MODAL OVERLAY */}
       {editing && (
@@ -2015,7 +2333,7 @@ function DashboardScreen({ token, onOpenUserList, onStartChat }) {
               <button onClick={() => setShowQrModal(false)} className="btn-icon" style={{ padding: '0.25rem' }}><X size={18} /></button>
             </div>
 
-            <div style={{ padding: '1.5rem', backgroundColor: '#fffbeb', borderRadius: '16px', border: '2px solid #fde68a', display: 'inline-block', marginBottom: '1rem' }}>
+            <div style={{ padding: '1.5rem', backgroundColor: '#eff6ff', borderRadius: '16px', border: '2px solid #bfdbfe', display: 'inline-block', marginBottom: '1rem' }}>
               <img src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=http://localhost:5173/user/${profile.id}`} alt="QR Code" style={{ width: '160px', height: '160px' }} />
             </div>
 
@@ -2171,9 +2489,9 @@ function DashboardScreen({ token, onOpenUserList, onStartChat }) {
               <button onClick={() => setShowSupervisionModal(false)} className="btn-icon"><X size={18} /></button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div style={{ padding: '1rem', backgroundColor: '#fffbeb', borderRadius: '12px', border: '1px solid #fde68a' }}>
-                <div style={{ fontWeight: 700, fontSize: '0.875rem', color: '#92400e' }}>Faculty Supervisor Assigned</div>
-                <div style={{ fontSize: '0.8125rem', color: '#b45309', marginTop: '0.25rem' }}>Prof. V. Ramanathan (IIT Madras CSE Dept)</div>
+              <div style={{ padding: '1rem', backgroundColor: '#eff6ff', borderRadius: '12px', border: '1px solid #bfdbfe' }}>
+                <div style={{ fontWeight: 700, fontSize: '0.875rem', color: '#1e40af' }}>Faculty Supervisor Assigned</div>
+                <div style={{ fontSize: '0.8125rem', color: '#2563eb', marginTop: '0.25rem' }}>Prof. V. Ramanathan (IIT Madras CSE Dept)</div>
               </div>
               <p style={{ fontSize: '0.8125rem', color: '#475569', lineHeight: 1.5 }}>
                 Supervision allows academic advisors to verify peer teaching logs, endorse doubt resolutions, and grant official verified mentor credentials.
@@ -2327,12 +2645,12 @@ function DashboardScreen({ token, onOpenUserList, onStartChat }) {
       {activeProfileTab === 'badges' && (
         <div className="card-premium">
           <h3 className="font-serif" style={{ fontSize: '1.5rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Award size={24} style={{ color: '#d97706' }} /> Awarded Campus Badges & Medals
+            <Award size={24} style={{ color: '#3b82f6' }} /> Awarded Campus Badges & Medals
           </h3>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2rem' }}>
             {badges.map(badge => (
               <div key={badge.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '140px', textAlign: 'center' }}>
-                <div style={{ width: '72px', height: '72px', borderRadius: '50%', backgroundColor: '#fffbeb', border: '2px solid #fde68a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.25rem', marginBottom: '0.5rem', boxShadow: '0 8px 16px rgba(217, 119, 6, 0.15)' }}>
+                <div style={{ width: '72px', height: '72px', borderRadius: '50%', backgroundColor: '#eff6ff', border: '2px solid #bfdbfe', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.25rem', marginBottom: '0.5rem', boxShadow: '0 8px 16px rgba(59, 130, 246, 0.15)' }}>
                   🏅
                 </div>
                 <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#0f172a' }}>{badge.name}</div>
@@ -2421,7 +2739,7 @@ function DashboardScreen({ token, onOpenUserList, onStartChat }) {
             </button>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '1.5rem' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: '#fef3c7', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: '#eff6ff', color: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <PlusCircle size={24} />
               </div>
               <div>
@@ -2442,9 +2760,9 @@ function DashboardScreen({ token, onOpenUserList, onStartChat }) {
                     style={{
                       padding: '0.75rem',
                       borderRadius: '12px',
-                      border: uploadType === 'reel' ? '2px solid #d97706' : '1px solid #e2e8f0',
-                      backgroundColor: uploadType === 'reel' ? '#fffbeb' : '#ffffff',
-                      color: uploadType === 'reel' ? '#b45309' : '#475569',
+                      border: uploadType === 'reel' ? '2px solid #3b82f6' : '1px solid #e2e8f0',
+                      backgroundColor: uploadType === 'reel' ? '#eff6ff' : '#ffffff',
+                      color: uploadType === 'reel' ? '#2563eb' : '#475569',
                       fontWeight: 600,
                       cursor: 'pointer',
                       fontSize: '0.8125rem'
@@ -2697,7 +3015,7 @@ function DiscoverScreen({ token, setActiveTab, setActiveChatId, setChatPeer }) {
   };
 
   return (
-    <div style={{ maxWidth: '1000px', margin: '0 auto', paddingBottom: '3rem' }}>
+    <div style={{ width: '100%', paddingBottom: '3rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <div>
           <h1 className="font-serif" style={{ fontSize: '2.25rem', color: '#0f172a' }}>1-to-1 Peer Learning Partners</h1>
@@ -2908,7 +3226,7 @@ function ConnectionsScreen({ token, setActiveTab, setActiveChatId, setChatPeer }
   };
 
   if (loading) {
-    return <div style={{ textAlign: 'center', padding: '4rem' }}><div className="live-dot" style={{ backgroundColor: '#d97706' }}></div></div>;
+    return <div style={{ textAlign: 'center', padding: '4rem' }}><div className="live-dot" style={{ backgroundColor: '#3b82f6' }}></div></div>;
   }
 
   return (
@@ -2919,7 +3237,7 @@ function ConnectionsScreen({ token, setActiveTab, setActiveChatId, setChatPeer }
       {/* Pending requests */}
       {pending.length > 0 && (
         <div style={{ marginBottom: '2.5rem' }}>
-          <h2 className="font-serif" style={{ fontSize: '1.5rem', marginBottom: '1rem', color: '#b45309' }}>Pending Invitations ({pending.length})</h2>
+          <h2 className="font-serif" style={{ fontSize: '1.5rem', marginBottom: '1rem', color: '#2563eb' }}>Pending Invitations ({pending.length})</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             {pending.map(req => (
               <div key={req.connectionId} className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 1.5rem' }}>
@@ -3224,12 +3542,12 @@ function DoubtRoomsScreen({ token, activeRoomId, setActiveRoomId, socket, wsMess
                     flexDirection: 'column',
                     alignSelf: isMe ? 'flex-end' : 'flex-start',
                     maxWidth: '70%',
-                    backgroundColor: isMe ? '#fef3c7' : '#f1f5f9',
+                    backgroundColor: isMe ? '#eff6ff' : '#f1f5f9',
                     color: '#0f172a',
-                    padding: '0.75rem 1rem',
+                    padding: '0.625rem 1rem',
                     borderRadius: isMe ? '12px 12px 0 12px' : '12px 12px 12px 0',
                     border: '1px solid',
-                    borderColor: isMe ? '#fde68a' : '#e2e8f0'
+                    borderColor: isMe ? '#bfdbfe' : '#e2e8f0'
                   }}>
                     <span style={{ fontSize: '0.6875rem', color: '#64748b', marginBottom: '0.125rem', fontWeight: 600 }}>
                       {isMe ? "You" : msg.senderName || "Peer"}
@@ -3275,17 +3593,17 @@ function DoubtRoomsScreen({ token, activeRoomId, setActiveRoomId, socket, wsMess
       {/* CAMPUS EXAM RADAR WIDGET STRIP */}
       <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', padding: '1.25rem', border: '1px solid #e2e8f0', marginBottom: '2rem', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-          <Flame size={18} fill="#d97706" style={{ color: '#d97706' }} />
+          <Flame size={18} fill="#3b82f6" style={{ color: '#3b82f6' }} />
           <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             IIT Madras • Exam Radar & Urgent Doubt Tracker
           </span>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
-          <div style={{ padding: '0.875rem 1rem', borderRadius: '12px', backgroundColor: '#fffbeb', border: '1px solid #fde68a' }}>
-            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#b45309' }}>React & Frontend Lab Test</div>
-            <div style={{ fontSize: '0.71875rem', color: '#78350f', marginTop: '0.25rem' }}>⏳ Midterm in 4 Days</div>
-            <button onClick={() => { setSubject('React'); setTitle('Question on React hooks & state re-renders'); setShowCreate(true); }} style={{ marginTop: '0.5rem', border: 'none', background: 'transparent', color: '#d97706', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', padding: 0 }}>
+          <div style={{ padding: '0.875rem 1rem', borderRadius: '12px', backgroundColor: '#eff6ff', border: '1px solid #bfdbfe' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#2563eb' }}>React & Frontend Lab Test</div>
+            <div style={{ fontSize: '0.71875rem', color: '#1e3a8a', marginTop: '0.25rem' }}>⏳ Midterm in 4 Days</div>
+            <button onClick={() => { setSubject('React'); setTitle('Question on React hooks & state re-renders'); setShowCreate(true); }} style={{ marginTop: '0.5rem', border: 'none', background: 'transparent', color: '#3b82f6', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', padding: 0 }}>
               Raise Doubt →
             </button>
           </div>
@@ -3334,7 +3652,7 @@ function DoubtRoomsScreen({ token, activeRoomId, setActiveRoomId, socket, wsMess
       )}
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '4rem' }}><div className="live-dot" style={{ backgroundColor: '#d97706' }}></div></div>
+        <div style={{ textAlign: 'center', padding: '4rem' }}><div className="live-dot" style={{ backgroundColor: '#3b82f6' }}></div></div>
       ) : rooms.length === 0 ? (
         <div className="empty-state">
           <HelpCircle size={48} />
@@ -3442,7 +3760,7 @@ function ChatScreen({ token, activeChatId, setActiveChatId, chatPeer, setChatPee
   };
 
   if (loading) {
-    return <div style={{ textAlign: 'center', padding: '4rem' }}><div className="live-dot" style={{ backgroundColor: '#d97706' }}></div></div>;
+    return <div style={{ textAlign: 'center', padding: '4rem' }}><div className="live-dot" style={{ backgroundColor: '#3b82f6' }}></div></div>;
   }
 
   return (
@@ -3464,7 +3782,7 @@ function ChatScreen({ token, activeChatId, setActiveChatId, chatPeer, setChatPee
                 borderRadius: '8px',
                 border: 'none',
                 cursor: 'pointer',
-                backgroundColor: activeChatId === t.chatId ? '#fef3c7' : 'transparent',
+                backgroundColor: activeChatId === t.chatId ? '#eff6ff' : 'transparent',
                 textAlign: 'left'
               }}>
                 <img src={t.peer.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${t.peer.fullName}`} alt="Avatar" style={{ width: '32px', height: '32px', borderRadius: '50%' }} />
@@ -3500,20 +3818,20 @@ function ChatScreen({ token, activeChatId, setActiveChatId, chatPeer, setChatPee
                   <div key={i} style={{
                     alignSelf: isMe ? 'flex-end' : 'flex-start',
                     maxWidth: '75%',
-                    backgroundColor: isMe ? '#fef3c7' : '#f1f5f9',
+                    backgroundColor: isMe ? '#eff6ff' : '#f1f5f9',
                     color: '#0f172a',
                     padding: '0.625rem 1rem',
                     borderRadius: isMe ? '12px 12px 0 12px' : '12px 12px 12px 0',
                     border: '1px solid',
-                    borderColor: isMe ? '#fde68a' : '#e2e8f0',
+                    borderColor: isMe ? '#bfdbfe' : '#e2e8f0',
                     fontSize: '0.875rem'
                   }}>
                     {isReelShare ? (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: '#b45309', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: '#2563eb', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase' }}>
                           <Tv2 size={16} /> Shared Educational Reel
                         </div>
-                        <div style={{ backgroundColor: '#09090b', color: '#f8fafc', padding: '0.75rem', borderRadius: '8px', borderLeft: '4px solid #d97706' }}>
+                        <div style={{ backgroundColor: '#09090b', color: '#f8fafc', padding: '0.75rem', borderRadius: '8px', borderLeft: '4px solid #3b82f6' }}>
                           <p style={{ margin: 0, fontSize: '0.8125rem', lineHeight: 1.4 }}>{reelText}</p>
                         </div>
                         {setActiveTab && (
@@ -3944,7 +4262,7 @@ function ReelsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, socket
   );
 
   if (loading) {
-    return <div style={{ textAlign: 'center', padding: '4rem' }}><div className="live-dot" style={{ backgroundColor: '#d97706' }}></div></div>;
+    return <div style={{ textAlign: 'center', padding: '4rem' }}><div className="live-dot" style={{ backgroundColor: '#3b82f6' }}></div></div>;
   }
 
   return (
@@ -3970,7 +4288,7 @@ function ReelsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, socket
           padding: '0.75rem 1.25rem',
           borderRadius: '12px',
           boxShadow: '0 10px 25px rgba(0,0,0,0.3)',
-          borderLeft: '4px solid #d97706',
+          borderLeft: '4px solid #3b82f6',
           zIndex: 100,
           fontSize: '0.8125rem',
           fontWeight: 600,
@@ -4104,7 +4422,7 @@ function ReelsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, socket
               <button 
                 onClick={() => setShowUpload(!showUpload)} 
                 style={{ 
-                  background: '#d97706', 
+                  background: '#3b82f6', 
                   border: 'none', 
                   borderRadius: '20px', 
                   color: '#ffffff', 
@@ -4115,7 +4433,7 @@ function ReelsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, socket
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.25rem',
-                  boxShadow: '0 2px 8px rgba(217, 119, 6, 0.4)'
+                  boxShadow: '0 2px 8px rgba(59, 130, 246, 0.4)'
                 }}
               >
                 <Plus size={14} /> Post Reel
@@ -4148,7 +4466,7 @@ function ReelsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, socket
                 style={{
                   flex: 1,
                   margin: '1px 0',
-                  backgroundColor: idx === currentIndex ? '#d97706' : 'rgba(255,255,255,0.4)',
+                  backgroundColor: idx === currentIndex ? '#3b82f6' : 'rgba(255,255,255,0.4)',
                   borderRadius: '3px',
                   cursor: 'pointer',
                   transition: 'all 0.3s ease'
@@ -4182,7 +4500,7 @@ function ReelsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, socket
           }}>
             {/* Creator handle & Follow button */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <img src={activeReel.creator?.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${activeReel.creator?.fullName}`} alt="Avatar" style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid #d97706' }} />
+              <img src={activeReel.creator?.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${activeReel.creator?.fullName}`} alt="Avatar" style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid #3b82f6' }} />
               <span style={{ fontWeight: 700, fontSize: '0.8125rem', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>
                 @{activeReel.creator?.username || activeReel.creator?.fullName?.toLowerCase().replace(/\s+/g, '_')}
               </span>
@@ -4206,7 +4524,7 @@ function ReelsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, socket
 
             {/* Caption & Subject Tag */}
             <div style={{ fontSize: '0.75rem', color: '#f8fafc', lineHeight: 1.3, textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>
-              <span style={{ fontSize: '0.625rem', fontWeight: 700, backgroundColor: '#d97706', color: '#ffffff', padding: '0.125rem 0.375rem', borderRadius: '50px', marginRight: '0.375rem' }}>
+              <span style={{ fontSize: '0.625rem', fontWeight: 700, backgroundColor: '#3b82f6', color: '#ffffff', padding: '0.125rem 0.375rem', borderRadius: '50px', marginRight: '0.375rem' }}>
                 #{activeReel.subject}
               </span>
               {activeReel.description}
@@ -4266,7 +4584,7 @@ function ReelsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, socket
           {/* Spinning Audio Disc / Creator Avatar */}
           <div style={{ marginTop: '0.25rem' }}>
             <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#18181b', border: '2px solid #ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Disc size={16} style={{ color: '#d97706' }} />
+              <Disc size={16} style={{ color: '#3b82f6' }} />
             </div>
           </div>
         </div>
@@ -4337,7 +4655,7 @@ function ReelsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, socket
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>
               <div>
                 <h3 className="font-serif" style={{ fontSize: '1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Share2 size={18} style={{ color: '#d97706' }} /> Share & Send Reel
+                  <Share2 size={18} style={{ color: '#3b82f6' }} /> Share & Send Reel
                 </h3>
                 <p style={{ fontSize: '0.6875rem', color: '#94a3b8', margin: 0 }}>Send to social media or StudyLoop connections</p>
               </div>
@@ -4355,7 +4673,7 @@ function ReelsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, socket
                   padding: '0.375rem',
                   borderRadius: '6px',
                   border: 'none',
-                  backgroundColor: shareTab === 'social' ? '#d97706' : 'transparent',
+                  backgroundColor: shareTab === 'social' ? '#3b82f6' : 'transparent',
                   color: '#ffffff',
                   fontWeight: shareTab === 'social' ? 700 : 500,
                   fontSize: '0.75rem',
@@ -4371,7 +4689,7 @@ function ReelsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, socket
                   padding: '0.375rem',
                   borderRadius: '6px',
                   border: 'none',
-                  backgroundColor: shareTab === 'connections' ? '#d97706' : 'transparent',
+                  backgroundColor: shareTab === 'connections' ? '#3b82f6' : 'transparent',
                   color: '#ffffff',
                   fontWeight: shareTab === 'connections' ? 700 : 500,
                   fontSize: '0.75rem',
@@ -4574,7 +4892,7 @@ function ReelsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, socket
                               padding: '0.25rem 0.625rem',
                               borderRadius: '6px',
                               border: 'none',
-                              backgroundColor: isSent ? '#16a34a' : '#d97706',
+                              backgroundColor: isSent ? '#16a34a' : '#3b82f6',
                               color: '#ffffff',
                               fontWeight: 600,
                               fontSize: '0.6875rem',
@@ -4783,7 +5101,7 @@ function LeaderboardScreen({ token, onOpenPublicProfile }) {
               key={leader.id} 
               onClick={() => onOpenPublicProfile && onOpenPublicProfile(leader)}
               className="card" 
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 1.5rem', backgroundColor: index === 0 ? '#fffbeb' : '#ffffff', borderColor: index === 0 ? '#fde68a' : '#e2e8f0', cursor: 'pointer' }}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 1.5rem', backgroundColor: index === 0 ? '#eff6ff' : '#ffffff', borderColor: index === 0 ? '#bfdbfe' : '#e2e8f0', cursor: 'pointer' }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
                 <div style={{
@@ -4792,7 +5110,7 @@ function LeaderboardScreen({ token, onOpenPublicProfile }) {
                   width: '36px',
                   height: '36px',
                   borderRadius: '50%',
-                  backgroundColor: index === 0 ? '#d97706' : index === 1 ? '#94a3b8' : index === 2 ? '#b45309' : '#f1f5f9',
+                  backgroundColor: index === 0 ? '#3b82f6' : index === 1 ? '#94a3b8' : index === 2 ? '#2563eb' : '#f1f5f9',
                   color: (index <= 2) ? '#ffffff' : '#475569',
                   display: 'flex',
                   alignItems: 'center',
@@ -4806,7 +5124,7 @@ function LeaderboardScreen({ token, onOpenPublicProfile }) {
                 <div>
                   <div style={{ fontWeight: 700, fontSize: '1rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     {leader.fullName}
-                    {index === 0 && <span style={{ fontSize: '0.75rem', color: '#d97706', fontWeight: 600 }}>👑 Campus #1</span>}
+                    {index === 0 && <span style={{ fontSize: '0.75rem', color: '#3b82f6', fontWeight: 600 }}>👑 Campus #1</span>}
                   </div>
                   <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
                     {leader.college} • {leader.department} • Level: <strong>{leader.level}</strong>
@@ -4815,7 +5133,7 @@ function LeaderboardScreen({ token, onOpenPublicProfile }) {
               </div>
 
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#d97706' }}>{leader.xp} XP</div>
+                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#3b82f6' }}>{leader.xp} XP</div>
                 <div style={{ fontSize: '0.75rem', color: '#64748b' }}>⭐ {leader.reputation || 5.0} Rating</div>
               </div>
             </div>
@@ -4889,9 +5207,9 @@ function AvatarChangeModal({ currentAvatarUrl, onSave, onClose }) {
               width: '100%', 
               padding: '0.875rem', 
               borderRadius: '14px', 
-              border: '2px dashed #d97706', 
-              backgroundColor: '#fffbeb', 
-              color: '#b45309', 
+              border: '2px dashed #3b82f6', 
+              backgroundColor: '#eff6ff', 
+              color: '#2563eb', 
               fontWeight: 700, 
               display: 'flex', 
               alignItems: 'center', 
@@ -4919,7 +5237,7 @@ function AvatarChangeModal({ currentAvatarUrl, onSave, onClose }) {
                   height: '60px',
                   borderRadius: '50%',
                   padding: '2px',
-                  border: selectedUrl === preset.url ? '3px solid #d97706' : '2px solid #e2e8f0',
+                  border: selectedUrl === preset.url ? '3px solid #3b82f6' : '2px solid #e2e8f0',
                   cursor: 'pointer',
                   transition: 'all 0.15s ease'
                 }}
@@ -4958,6 +5276,7 @@ function PhotoPreviewModal({ imageUrl, userName, onClose }) {
 
 // --- USER LIST MODAL (FOLLOWERS / FOLLOWING) ---
 function UserListModal({ title, userId, token, onClose, onSelectUser }) {
+  const { testAccounts } = useAuth();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -4974,15 +5293,43 @@ function UserListModal({ title, userId, token, onClose, onSelectUser }) {
         if (response.ok) {
           const data = await response.json();
           setUsers(data);
+          setLoading(false);
+          return;
         }
       } catch (e) {
-        console.error(e);
-      } finally {
-        setLoading(false);
+        console.error("Failed to fetch profiles from backend, using fallback:", e);
       }
+      
+      const isFollowers = title.toLowerCase().includes('follower');
+      let fallbackUsers = [];
+      
+      if (userId === '11111111-1111-1111-1111-111111111111') {
+        if (isFollowers) {
+          fallbackUsers = testAccounts.filter(acc => acc.id === '22222222-2222-2222-2222-222222222222' || acc.id === '33333333-3333-3333-3333-333333333333');
+        } else {
+          fallbackUsers = testAccounts.filter(acc => acc.id === '22222222-2222-2222-2222-222222222222' || acc.id === '33333333-3333-3333-3333-333333333333');
+        }
+      } else if (userId === '22222222-2222-2222-2222-222222222222') {
+        if (isFollowers) {
+          fallbackUsers = testAccounts.filter(acc => acc.id === '11111111-1111-1111-1111-111111111111' || acc.id === '33333333-3333-3333-3333-333333333333');
+        } else {
+          fallbackUsers = testAccounts.filter(acc => acc.id === '11111111-1111-1111-1111-111111111111');
+        }
+      } else if (userId === '33333333-3333-3333-3333-333333333333') {
+        if (isFollowers) {
+          fallbackUsers = testAccounts.filter(acc => acc.id === '11111111-1111-1111-1111-111111111111');
+        } else {
+          fallbackUsers = testAccounts.filter(acc => acc.id === '11111111-1111-1111-1111-111111111111' || acc.id === '22222222-2222-2222-2222-222222222222');
+        }
+      } else {
+        fallbackUsers = testAccounts.filter(acc => acc.id !== userId).slice(0, 1);
+      }
+      
+      setUsers(fallbackUsers);
+      setLoading(false);
     };
     fetchList();
-  }, [userId, title, token]);
+  }, [userId, title, token, testAccounts]);
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 3000, backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
@@ -5128,7 +5475,7 @@ function PublicProfileModal({ user, currentUserId, token, onClose, onStartChat, 
               >
                 <strong>{followingCount}</strong> <span style={{ color: '#64748b', textDecoration: 'underline' }}>following</span>
               </div>
-              <div style={{ color: '#d97706', fontWeight: 700 }}>⚡ {profile.xp || 0} XP • Lvl {profile.level || 'Beginner'}</div>
+              <div style={{ color: '#3b82f6', fontWeight: 700 }}>⚡ {profile.xp || 0} XP • Lvl {profile.level || 'Beginner'}</div>
             </div>
           </div>
         </div>
@@ -5170,9 +5517,20 @@ function PublicProfileModal({ user, currentUserId, token, onClose, onStartChat, 
 }
 
 // --- DEDICATED FULL-SCREEN STUDENT LOGIN & SIGNUP PAGE (IMAGE 1 EXACT MATCH) ---
-function LandingScreen({ setActiveTab, loginSimulated, testAccounts }) {
+function LandingScreen({ setActiveTab, loginSimulated, testAccounts, theme, setTheme, postLoginRedirectTab, setPostLoginRedirectTab }) {
   const { user, profile, logout } = useAuth();
-  const [authTab, setAuthTab] = useState('signup'); // 'signup' or 'login'
+  const [authTab, setAuthTab] = useState('signup'); // 'signup', 'login' or 'admin'
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  
+  // Admin Form States
+  const [adminEmail, setAdminEmail] = useState('admin@studyloop.app');
+  const [adminPassword, setAdminPassword] = useState('password123');
+
+  const handleAdminSubmit = (e) => {
+    e.preventDefault();
+    window.location.href = 'http://localhost:5174';
+  };
   
   // Login Form States
   const [loginEmail, setLoginEmail] = useState('studenta@student.com');
@@ -5191,8 +5549,17 @@ function LandingScreen({ setActiveTab, loginSimulated, testAccounts }) {
   const handleLoginSubmit = (e) => {
     e.preventDefault();
     if (!loginEmail) return;
+    
+    // Direct admin login redirection
+    if (loginEmail.trim().toLowerCase() === 'admin@studyloop.app') {
+      window.location.href = 'http://localhost:5174';
+      return;
+    }
+    
     loginSimulated(loginEmail);
-    setActiveTab('dashboard');
+    setActiveTab(postLoginRedirectTab || 'dashboard');
+    if (setPostLoginRedirectTab) setPostLoginRedirectTab(null);
+    setShowAuthModal(false);
   };
 
   const handleSignupSubmit = (e) => {
@@ -5207,445 +5574,726 @@ function LandingScreen({ setActiveTab, loginSimulated, testAccounts }) {
       return;
     }
     loginSimulated(signupEmail);
-    setActiveTab('dashboard');
+    setActiveTab(postLoginRedirectTab || 'dashboard');
+    if (setPostLoginRedirectTab) setPostLoginRedirectTab(null);
+    setShowAuthModal(false);
   };
 
   const handleGoogleSSO = () => {
     const defaultTestUser = testAccounts[0]?.email || 'aarav.sharma@iitm.ac.in';
     loginSimulated(defaultTestUser);
-    setActiveTab('dashboard');
+    setActiveTab(postLoginRedirectTab || 'dashboard');
+    if (setPostLoginRedirectTab) setPostLoginRedirectTab(null);
+    setShowAuthModal(false);
   };
 
-  // 1. DEDICATED SPLIT-CARD AUTH PAGE FOR VISITORS (IMAGE 1 EXACT MATCH)
+  // 1. DEDICATED KAIZENQ-INSPIRED VISITOR LANDING PAGE WITH AUTH MODAL
   if (!user) {
     return (
       <div style={{
         minHeight: '100vh',
-        width: '100vw',
-        backgroundColor: '#eef2ff',
-        backgroundImage: 'radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.12) 0px, transparent 50%), radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.1) 0px, transparent 50%)',
+        width: '100%',
+        backgroundColor: 'var(--bg-primary)',
+        backgroundImage: 'linear-gradient(rgba(59, 130, 246, 0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(59, 130, 246, 0.04) 1px, transparent 1px)',
+        backgroundSize: '32px 32px',
+        color: 'var(--text-primary)',
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '2rem 1rem'
+        flexDirection: 'column'
       }}>
-        {/* MAIN SPLIT CARD CONTAINER (IMAGE 1 EXACT MATCH) */}
-        <div style={{
-          width: '100%',
-          maxWidth: '1020px',
-          minHeight: '620px',
-          borderRadius: '24px',
-          backgroundColor: '#ffffff',
-          boxShadow: '0 25px 60px rgba(15, 23, 42, 0.12)',
-          display: 'grid',
-          gridTemplateColumns: '1.05fr 1fr',
-          overflow: 'hidden',
-          border: '1px solid #e0e7ff'
+        {/* KAIZENQ-INSPIRED VISITOR HEADER NAVBAR */}
+        <header style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '1rem 3rem',
+          backgroundColor: 'var(--bg-secondary)',
+          borderBottom: '1px solid var(--border-color)',
+          position: 'sticky',
+          top: 0,
+          zIndex: 100,
+          boxShadow: '0 2px 10px rgba(0,0,0,0.02)'
         }}>
-
-          {/* LEFT COLUMN: BRANDING, SLOGAN & STUDENT COLLABORATION ILLUSTRATION (IMAGE 1 MATCH) */}
-          <div style={{
-            background: 'linear-gradient(135deg, #f0f4ff 0%, #e6eeff 100%)',
-            padding: '3rem 2.5rem 2rem 2.5rem',
-            display: 'flex',
-            flexDirection: 'column',
-            justify: 'space-between',
-            position: 'relative',
-            overflow: 'hidden'
-          }}>
+          {/* Logo Brand */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }} onClick={() => setShowAuthModal(false)}>
+            <div style={{
+              width: '42px',
+              height: '42px',
+              borderRadius: '12px',
+              background: 'linear-gradient(135deg, #2563eb 0%, #06b6d4 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)'
+            }}>
+              <span className="font-serif" style={{ color: '#ffffff', fontWeight: 800, fontSize: '1.25rem' }}>SL</span>
+            </div>
             <div>
-              {/* Brand Header */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2.5rem' }}>
-                <div style={{
-                  width: '38px',
-                  height: '38px',
-                  borderRadius: '50%',
-                  background: 'conic-gradient(from 180deg, #3b82f6, #a855f7, #ec4899, #3b82f6)',
-                  padding: '3px',
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                <span className="font-serif" style={{ fontSize: '1.375rem', fontWeight: 800, color: 'var(--text-primary)' }}>Study</span>
+                <span className="font-serif" style={{ fontSize: '1.375rem', fontWeight: 800, color: '#2563eb' }}>Loop</span>
+              </div>
+              <div style={{ fontSize: '0.625rem', fontWeight: 700, letterSpacing: '0.12em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                LEARN • BUILD • EVOLVE
+              </div>
+            </div>
+          </div>
+
+          {/* Navigation Links */}
+          <nav style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
+            <button onClick={() => { setShowAuthModal(false); if (setPostLoginRedirectTab) setPostLoginRedirectTab(null); }} style={{ background: 'transparent', border: 'none', fontWeight: 700, color: 'var(--accent-dark)', fontSize: '0.875rem', cursor: 'pointer' }}>Home</button>
+            <button onClick={() => { if (setPostLoginRedirectTab) setPostLoginRedirectTab('doubts'); setAuthTab('login'); setShowAuthModal(true); }} style={{ background: 'transparent', border: 'none', fontWeight: 600, color: 'var(--text-secondary)', fontSize: '0.875rem', cursor: 'pointer' }}>Doubt Hub</button>
+            <button onClick={() => { if (setPostLoginRedirectTab) setPostLoginRedirectTab('leaderboard'); setAuthTab('login'); setShowAuthModal(true); }} style={{ background: 'transparent', border: 'none', fontWeight: 600, color: 'var(--text-secondary)', fontSize: '0.875rem', cursor: 'pointer' }}>Leaderboard</button>
+            <button onClick={() => { if (setPostLoginRedirectTab) setPostLoginRedirectTab('discover'); setAuthTab('login'); setShowAuthModal(true); }} style={{ background: 'transparent', border: 'none', fontWeight: 600, color: 'var(--text-secondary)', fontSize: '0.875rem', cursor: 'pointer' }}>Peer Mentors</button>
+          </nav>
+
+          {/* Action Buttons */}
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+            <button
+              onClick={() => setTheme(prev => prev === 'light' ? 'dark' : 'light')}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '0.5rem',
+                borderRadius: '50%',
+                backgroundColor: 'var(--bg-tertiary)',
+                width: '36px',
+                height: '36px',
+                marginRight: '0.25rem',
+                transition: 'all 0.2s ease'
+              }}
+              title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+            >
+              {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+            </button>
+            <button 
+              onClick={() => { setAuthTab('login'); setShowAuthModal(true); }}
+              className="btn btn-secondary" 
+              style={{ borderRadius: '50px', padding: '0.5rem 1.25rem', fontSize: '0.8125rem', fontWeight: 600 }}
+            >
+              Login
+            </button>
+            <button 
+              onClick={() => { setAuthTab('signup'); setShowAuthModal(true); }}
+              className="btn btn-accent glow-amber" 
+              style={{ borderRadius: '50px', padding: '0.5rem 1.25rem', fontSize: '0.8125rem', fontWeight: 700 }}
+            >
+              Sign Up 🚀
+            </button>
+          </div>
+        </header>
+
+        {/* HERO SECTION */}
+        <section style={{ padding: '4rem 3rem 5rem 3rem', maxWidth: '1400px', margin: '0 auto', width: '100%', display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: '3rem', alignItems: 'center' }}>
+          {/* Left Text */}
+          <div>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', padding: '0.375rem 1rem', borderRadius: '50px', fontSize: '0.8125rem', fontWeight: 700, color: '#2563eb', marginBottom: '1.5rem' }}>
+              <Sparkles size={16} /> Enterprise Peer Learning Workspace 3.0
+            </div>
+
+            <h1 className="font-serif" style={{ fontSize: '3.5rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.15, marginBottom: '1.5rem', letterSpacing: '-0.02em' }}>
+              Transform Learning Into <span style={{ background: 'linear-gradient(135deg, #2563eb 0%, #06b6d4 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Real-Time Mastery.</span>
+            </h1>
+
+            <p style={{ fontSize: '1.125rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '2.5rem', maxWidth: '580px' }}>
+              Master high-impact engineering & AI tracks with 24/7 intelligent tutoring, real-time peer doubt resolution, WebRTC code study sessions, and verified campus digital credentials.
+            </p>
+
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center', marginBottom: '2rem' }}>
+              <button 
+                onClick={() => { setAuthTab('signup'); setShowAuthModal(true); }}
+                className="btn animate-float"
+                style={{
+                  padding: '0.875rem 2rem',
+                  borderRadius: '14px',
+                  backgroundColor: '#2563eb',
+                  color: '#ffffff',
+                  fontWeight: 700,
+                  fontSize: '1rem',
+                  border: 'none',
+                  boxShadow: '0 10px 25px rgba(37, 99, 235, 0.35)',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <div style={{ width: '100%', height: '100%', backgroundColor: '#ffffff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <div style={{ width: '16px', height: '16px', borderRadius: '50%', background: 'linear-gradient(135deg, #4f46e5, #9333ea)' }}></div>
-                  </div>
-                </div>
-                <span className="font-serif" style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1e1b4b' }}>
-                  Study Loop
-                </span>
-              </div>
+                  gap: '0.5rem',
+                  cursor: 'pointer'
+                }}
+              >
+                Get Started Free →
+              </button>
 
-              {/* Slogan & Subtitle */}
-              <h1 className="font-serif" style={{ fontSize: '2.125rem', fontWeight: 800, color: '#1e1b4b', lineHeight: 1.25, marginBottom: '0.75rem' }}>
-                Learn. Teach. <span style={{ color: '#6366f1' }}>Connect.</span> Grow.
-              </h1>
-              <p style={{ fontSize: '0.9375rem', color: '#475569', lineHeight: 1.5, marginBottom: '1.5rem', maxWidth: '380px' }}>
-                Join a community where students learn from students.
+              <button 
+                onClick={() => { setAuthTab('login'); setShowAuthModal(true); }}
+                className="btn btn-secondary profile-action-btn-hover"
+                style={{
+                  padding: '0.875rem 1.75rem',
+                  borderRadius: '14px',
+                  fontSize: '0.9375rem',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                Explore Student Portal
+              </button>
+            </div>
+
+            <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <span>✓ Free for Campus Students</span>
+              <span>•</span>
+              <span>✓ Instant Peer Pairing</span>
+              <span>•</span>
+              <span>✓ WebRTC Screen Share</span>
+            </div>
+          </div>
+
+          {/* Right Visual: Animated Node Hub */}
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '420px' }}>
+            {/* Outer Circular Glow */}
+            <div style={{
+              position: 'absolute',
+              width: '360px',
+              height: '360px',
+              borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(37, 99, 235, 0.15) 0%, rgba(6, 182, 212, 0.05) 50%, transparent 70%)',
+              border: '1px dashed #bfdbfe'
+            }}></div>
+
+            {/* Central Node */}
+            <div style={{
+              width: '140px',
+              height: '140px',
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+              border: '4px solid #ffffff',
+              boxShadow: '0 20px 50px rgba(15, 23, 42, 0.25)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 10
+            }}>
+              <Infinity size={42} style={{ color: '#38bdf8' }} />
+              <span className="font-serif" style={{ color: '#ffffff', fontSize: '0.8125rem', fontWeight: 800, marginTop: '0.25rem' }}>Study Loop</span>
+            </div>
+
+            {/* Floating Pills */}
+            <div className="hero-node-pill" style={{ position: 'absolute', top: '15px', right: '40px', backgroundColor: 'var(--bg-secondary)', padding: '0.625rem 1.125rem', borderRadius: '50px', boxShadow: '0 10px 25px rgba(0,0,0,0.08)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-primary)', zIndex: 12 }}>
+              <HelpCircle size={16} style={{ color: '#2563eb' }} /> AI & Peer Tutor
+            </div>
+
+            <div className="hero-node-pill" style={{ position: 'absolute', top: '100px', left: '10px', backgroundColor: 'var(--bg-secondary)', padding: '0.625rem 1.125rem', borderRadius: '50px', boxShadow: '0 10px 25px rgba(0,0,0,0.08)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-primary)', zIndex: 12 }}>
+              <Tv2 size={16} style={{ color: '#0284c7' }} /> Educational Shorts
+            </div>
+
+            <div className="hero-node-pill" style={{ position: 'absolute', bottom: '110px', right: '10px', backgroundColor: 'var(--bg-secondary)', padding: '0.625rem 1.125rem', borderRadius: '50px', boxShadow: '0 10px 25px rgba(0,0,0,0.08)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-primary)', zIndex: 12 }}>
+              <Trophy size={16} style={{ color: '#d97706' }} /> Campus Leaderboard
+            </div>
+
+            <div className="hero-node-pill" style={{ position: 'absolute', bottom: '20px', left: '60px', backgroundColor: 'var(--bg-secondary)', padding: '0.625rem 1.125rem', borderRadius: '50px', boxShadow: '0 10px 25px rgba(0,0,0,0.08)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-primary)', zIndex: 12 }}>
+              <Video size={16} style={{ color: '#059669' }} /> WebRTC Study Call
+            </div>
+          </div>
+        </section>
+
+        {/* PLATFORM STATS STRIP */}
+        <section style={{ backgroundColor: 'var(--bg-secondary)', borderTop: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)', padding: '2.5rem 3rem' }}>
+          <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem', textAlign: 'center' }}>
+            <div style={{ padding: '1rem', borderRight: '1px solid var(--border-color)' }}>
+              <div className="font-serif" style={{ fontSize: '2.25rem', fontWeight: 800, color: 'var(--text-primary)' }}>25,000+</div>
+              <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', marginTop: '0.25rem' }}>Active Campus Learners</div>
+            </div>
+            <div style={{ padding: '1rem', borderRight: '1px solid var(--border-color)' }}>
+              <div className="font-serif" style={{ fontSize: '2.25rem', fontWeight: 800, color: '#2563eb' }}>150+</div>
+              <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', marginTop: '0.25rem' }}>Expert Peer Mentors</div>
+            </div>
+            <div style={{ padding: '1rem', borderRight: '1px solid var(--border-color)' }}>
+              <div className="font-serif" style={{ fontSize: '2.25rem', fontWeight: 800, color: '#059669' }}>98.4%</div>
+              <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', marginTop: '0.25rem' }}>Doubt Resolution Rate</div>
+            </div>
+            <div style={{ padding: '1rem' }}>
+              <div className="font-serif" style={{ fontSize: '2.25rem', fontWeight: 800, color: '#d97706' }}>24/7</div>
+              <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', marginTop: '0.25rem' }}>Live Peer Tutor Access</div>
+            </div>
+          </div>
+        </section>
+
+        {/* CORE LMS FEATURES GRID */}
+        <section style={{ padding: '5rem 3rem', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
+          <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.1em', color: '#2563eb', backgroundColor: '#eff6ff', padding: '0.375rem 0.875rem', borderRadius: '50px', textTransform: 'uppercase' }}>
+              Core LMS Features
+            </span>
+            <h2 className="font-serif" style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '1rem' }}>
+              Built for Modern High-Growth Education
+            </h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', marginTop: '0.5rem', maxWidth: '640px', margin: '0.5rem auto 0 auto' }}>
+              Combining world-class course management with real-time peer assistance for students and faculty.
+            </p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2rem' }}>
+            {/* Feature 1 */}
+            <div className="card-premium glass-card hover-glow-blue" style={{ padding: '2rem', borderRadius: '20px', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}>
+              <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem' }}>
+                <HelpCircle size={24} />
+              </div>
+              <h3 className="font-serif" style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.75rem', color: 'var(--text-primary)' }}>1-to-1 Live Doubt Rooms</h3>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.6 }}>
+                Open a doubt workspace, chat with a helper from your department, and start 1-click video calls with screen sharing.
               </p>
             </div>
 
-            {/* Custom Student Collaboration Illustration (Matching Image 1) */}
-            <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginTop: 'auto' }}>
-              <svg viewBox="0 0 500 320" style={{ width: '100%', maxHeight: '240px' }} fill="none" xmlns="http://www.w3.org/2000/svg">
-                {/* Background decorative circles & waves */}
-                <path d="M0 220 Q120 180 250 220 T500 200 V320 H0 Z" fill="#dbeafe" opacity="0.6"/>
-                <circle cx="420" cy="140" r="50" fill="#e0e7ff" opacity="0.8"/>
-                <circle cx="80" cy="200" r="70" fill="#edd5ff" opacity="0.5"/>
-                
-                {/* Student 1 (Left female student with headphones & laptop) */}
-                <circle cx="120" cy="140" r="32" fill="#1e1b4b"/>
-                <circle cx="120" cy="145" r="24" fill="#fde047"/> {/* face */}
-                <rect x="90" y="130" width="10" height="25" rx="5" fill="#312e81"/> {/* headphone L */}
-                <rect x="140" y="130" width="10" height="25" rx="5" fill="#312e81"/> {/* headphone R */}
-                <path d="M100 125 Q120 110 140 125" stroke="#312e81" strokeWidth="5"/> {/* headphone band */}
-                <path d="M80 220 C80 180 160 180 160 220 V300 H80 Z" fill="#1e1b4b"/> {/* shirt */}
-                {/* Laptop 1 */}
-                <polygon points="70,260 170,260 160,230 80,230" fill="#cbd5e1"/>
-                <rect x="75" y="225" width="90" height="5" rx="2" fill="#94a3b8"/>
-                <circle cx="120" cy="245" r="4" fill="#60a5fa"/>
+            {/* Feature 2 */}
+            <div className="card-premium glass-card hover-glow-blue" style={{ padding: '2rem', borderRadius: '20px', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}>
+              <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#e0f2fe', color: '#0284c7', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem' }}>
+                <Sparkles size={24} />
+              </div>
+              <h3 className="font-serif" style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.75rem', color: 'var(--text-primary)' }}>8-Factor Smart Peer Discovery</h3>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.6 }}>
+                Match algorithm evaluating college, department, skills, learning goals, and mutual connections for exact peer pairings.
+              </p>
+            </div>
 
-                {/* Student 2 (Center male student with blue hoodie & laptop) */}
-                <circle cx="230" cy="160" r="30" fill="#1e293b"/>
-                <circle cx="230" cy="165" r="22" fill="#fed7aa"/> {/* face */}
-                <path d="M200 150 Q230 135 260 150" fill="#1e293b"/> {/* hair */}
-                <rect x="205" y="152" width="8" height="20" rx="4" fill="#ffffff"/> {/* headphone */}
-                <rect x="247" y="152" width="8" height="20" rx="4" fill="#ffffff"/>
-                <path d="M185 240 C185 200 275 200 275 240 V300 H185 Z" fill="#2563eb"/> {/* blue hoodie */}
-                {/* Laptop 2 */}
-                <polygon points="175,280 285,280 275,245 185,245" fill="#475569"/>
-                <rect x="180" y="240" width="100" height="5" rx="2" fill="#64748b"/>
-                <circle cx="230" cy="262" r="5" fill="#ffffff"/>
+            {/* Feature 3 */}
+            <div className="card-premium glass-card hover-glow-blue" style={{ padding: '2rem', borderRadius: '20px', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}>
+              <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#fef3c7', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem' }}>
+                <Video size={24} />
+              </div>
+              <h3 className="font-serif" style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.75rem', color: 'var(--text-primary)' }}>WebRTC Code Study Calls</h3>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.6 }}>
+                In-browser video study calls with zero-latency screen sharing, peer code evaluation, and collaborative doubt solving.
+              </p>
+            </div>
 
-                {/* Student 3 & 4 (Right side students discussing in background) */}
-                <circle cx="340" cy="120" r="26" fill="#0f172a"/>
-                <circle cx="340" cy="124" r="19" fill="#fca5a5"/>
-                <path d="M305 180 C305 150 375 150 375 180 V300 H305 Z" fill="#475569"/>
-                
-                {/* Student 4 (Far right pointing to code window) */}
-                <circle cx="430" cy="110" r="26" fill="#1e1b4b"/>
-                <circle cx="430" cy="114" r="19" fill="#fed7aa"/>
-                <path d="M395 165 C395 140 465 140 465 165 V300 H395 Z" fill="#1d4ed8"/>
-                {/* Code Window floating */}
-                <rect x="340" y="140" width="110" height="70" rx="8" fill="#0f172a"/>
-                <rect x="350" y="152" width="40" height="6" rx="3" fill="#60a5fa"/>
-                <rect x="350" y="165" width="70" height="6" rx="3" fill="#a78bfa"/>
-                <rect x="350" y="178" width="55" height="6" rx="3" fill="#34d399"/>
-              </svg>
+            {/* Feature 4 */}
+            <div className="card-premium glass-card hover-glow-blue" style={{ padding: '2rem', borderRadius: '20px', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}>
+              <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#fce7f3', color: '#db2777', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem' }}>
+                <Tv2 size={24} />
+              </div>
+              <h3 className="font-serif" style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.75rem', color: 'var(--text-primary)' }}>Educational Concept Shorts</h3>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.6 }}>
+                Watch and post 60-second concept shorts with red heart likes, slide-up comments, and subject hashtag pills.
+              </p>
+            </div>
+
+            {/* Feature 5 */}
+            <div className="card-premium glass-card hover-glow-blue" style={{ padding: '2rem', borderRadius: '20px', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}>
+              <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#d1fae5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem' }}>
+                <Trophy size={24} />
+              </div>
+              <h3 className="font-serif" style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.75rem', color: 'var(--text-primary)' }}>Campus Leaderboard & XP</h3>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.6 }}>
+                Earn XP, level badges, and peer coins for helping others, ascending to Rank #1 on your campus leaderboard.
+              </p>
+            </div>
+
+            {/* Feature 6 */}
+            <div className="card-premium glass-card hover-glow-blue" style={{ padding: '2rem', borderRadius: '20px', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}>
+              <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#f3e8ff', color: '#9333ea', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem' }}>
+                <MessageSquare size={24} />
+              </div>
+              <h3 className="font-serif" style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.75rem', color: 'var(--text-primary)' }}>Real-Time Direct Messaging</h3>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.6 }}>
+                Connect directly with mentors, send instant text messages, and schedule 1-on-1 tutoring sessions seamlessly.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* FOOTER SECTION */}
+        <footer style={{ backgroundColor: 'var(--bg-secondary)', borderTop: '1px solid var(--border-color)', padding: '4rem 3rem 2rem 3rem', marginTop: 'auto' }}>
+          <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: '3rem', paddingBottom: '3rem', borderBottom: '1px solid var(--border-color)' }}>
+            {/* Column 1 */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'linear-gradient(135deg, #2563eb 0%, #06b6d4 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff', fontWeight: 800 }}>SL</div>
+                <span className="font-serif" style={{ fontSize: '1.375rem', fontWeight: 800, color: 'var(--text-primary)' }}>Study Loop</span>
+              </div>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.6, maxWidth: '360px', marginBottom: '1.5rem' }}>
+                StudyLoop is the premier peer-to-peer campus learning platform for universities, engineering academies, and student tutors.
+              </p>
+              <form onSubmit={e => { e.preventDefault(); alert(`Subscribed ${newsletterEmail} to product updates!`); setNewsletterEmail(''); }} style={{ display: 'flex', gap: '0.5rem', maxWidth: '360px' }}>
+                <input 
+                  type="email" 
+                  className="input" 
+                  placeholder="Enter work or college email" 
+                  value={newsletterEmail} 
+                  onChange={e => setNewsletterEmail(e.target.value)} 
+                  style={{ padding: '0.5rem 0.875rem', fontSize: '0.8125rem', borderRadius: '10px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}
+                  required 
+                />
+                <button type="submit" className="btn btn-accent" style={{ padding: '0.5rem 1rem', fontSize: '0.8125rem', whiteSpace: 'nowrap', borderRadius: '10px' }}>
+                  Join →
+                </button>
+              </form>
+            </div>
+
+            {/* Column 2 */}
+            <div>
+              <h4 style={{ fontSize: '0.8125rem', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '1rem' }}>PLATFORM</h4>
+              <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.625rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                <li><a href="#" onClick={e => { e.preventDefault(); if (setPostLoginRedirectTab) setPostLoginRedirectTab('doubts'); setAuthTab('login'); setShowAuthModal(true); }} style={{ color: 'inherit', textDecoration: 'none' }}>Doubt Hub</a></li>
+                <li><a href="#" onClick={e => { e.preventDefault(); if (setPostLoginRedirectTab) setPostLoginRedirectTab('discover'); setAuthTab('login'); setShowAuthModal(true); }} style={{ color: 'inherit', textDecoration: 'none' }}>Peer Mentors</a></li>
+                <li><a href="#" onClick={e => { e.preventDefault(); if (setPostLoginRedirectTab) setPostLoginRedirectTab('leaderboard'); setAuthTab('login'); setShowAuthModal(true); }} style={{ color: 'inherit', textDecoration: 'none' }}>Leaderboard</a></li>
+                <li><a href="#" onClick={e => { e.preventDefault(); if (setPostLoginRedirectTab) setPostLoginRedirectTab('reels'); setAuthTab('login'); setShowAuthModal(true); }} style={{ color: 'inherit', textDecoration: 'none' }}>Concept Shorts</a></li>
+              </ul>
+            </div>
+
+            {/* Column 3 */}
+            <div>
+              <h4 style={{ fontSize: '0.8125rem', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '1rem' }}>RESOURCES</h4>
+              <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.625rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                <li><a href="#" onClick={e => e.preventDefault()} style={{ color: 'inherit', textDecoration: 'none' }}>Help Center</a></li>
+                <li><a href="#" onClick={e => e.preventDefault()} style={{ color: 'inherit', textDecoration: 'none' }}>Community Rules</a></li>
+                <li><a href="#" onClick={e => e.preventDefault()} style={{ color: 'inherit', textDecoration: 'none' }}>Digital Badges</a></li>
+                <li><a href="#" onClick={e => e.preventDefault()} style={{ color: 'inherit', textDecoration: 'none' }}>Campus Guide</a></li>
+              </ul>
+            </div>
+
+            {/* Column 4 */}
+            <div>
+              <h4 style={{ fontSize: '0.8125rem', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '1rem' }}>COMPANY</h4>
+              <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.625rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                <li><a href="#" onClick={e => e.preventDefault()} style={{ color: 'inherit', textDecoration: 'none' }}>About Us</a></li>
+                <li><a href="#" onClick={e => e.preventDefault()} style={{ color: 'inherit', textDecoration: 'none' }}>Careers <span style={{ backgroundColor: '#d1fae5', color: '#059669', fontSize: '0.625rem', padding: '0.1rem 0.375rem', borderRadius: '4px', fontWeight: 700 }}>Hiring</span></a></li>
+                <li><a href="#" onClick={e => e.preventDefault()} style={{ color: 'inherit', textDecoration: 'none' }}>Contact Us</a></li>
+                <li><a href="#" onClick={e => e.preventDefault()} style={{ color: 'inherit', textDecoration: 'none' }}>Privacy Policy</a></li>
+              </ul>
             </div>
           </div>
 
-          {/* RIGHT COLUMN: AUTHENTICATION FORM (EXACT MATCH IMAGE 1) */}
-          <div style={{
-            backgroundColor: '#ffffff',
-            padding: '2.5rem 2.25rem',
-            display: 'flex',
-            flexDirection: 'column',
-            justify: 'center',
-            overflowY: 'auto'
-          }}>
+          <div style={{ maxWidth: '1400px', margin: '1.5rem auto 0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+            <div>© 2026 Study Loop Inc. All rights reserved. Campus peer safety audited & certified.</div>
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <a href="#" onClick={e => e.preventDefault()} style={{ color: 'var(--text-secondary)' }}><Github size={18} /></a>
+              <a href="#" onClick={e => e.preventDefault()} style={{ color: 'var(--text-secondary)' }}><Globe size={18} /></a>
+            </div>
+          </div>
+        </footer>
 
-            {/* TAB CONTENT 1: SIGNUP FORM (IMAGE 1 EXACT MATCH) */}
-            {authTab === 'signup' ? (
-              <div>
-                {/* Title + Student Badge Pill */}
-                <div style={{ marginBottom: '1.25rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.375rem' }}>
-                    <h2 className="font-serif" style={{ fontSize: '1.625rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                      Create your Study Loop
-                    </h2>
-                    <span style={{
-                      backgroundColor: '#4338ca',
-                      color: '#ffffff',
-                      fontSize: '0.6875rem',
-                      fontWeight: 700,
-                      padding: '0.2rem 0.625rem',
-                      borderRadius: '8px'
+        {/* SPLIT-CARD AUTH MODAL OVERLAY (IMAGE 1 EXACT MATCH PRESERVED) */}
+        {showAuthModal && (
+          <div 
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(15, 23, 42, 0.75)',
+              backdropFilter: 'blur(4px)',
+              zIndex: 4000,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '1.5rem'
+            }}
+            onClick={() => setShowAuthModal(false)}
+          >
+            <div 
+              style={{
+                width: '100%',
+                maxWidth: '1020px',
+                minHeight: '620px',
+                borderRadius: '24px',
+                backgroundColor: '#ffffff',
+                boxShadow: '0 25px 60px rgba(15, 23, 42, 0.3)',
+                display: 'grid',
+                gridTemplateColumns: '1.05fr 1fr',
+                overflow: 'hidden',
+                border: '1px solid #e0e7ff',
+                position: 'relative'
+              }}
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Close Button X */}
+              <button 
+                onClick={() => setShowAuthModal(false)} 
+                style={{
+                  position: 'absolute',
+                  top: '1rem',
+                  right: '1rem',
+                  backgroundColor: '#f1f5f9',
+                  border: 'none',
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  zIndex: 10,
+                  color: '#64748b'
+                }}
+              >
+                <X size={18} />
+              </button>
+
+              {/* LEFT COLUMN: BRANDING & ILLUSTRATION (IMAGE 1 EXACT MATCH) */}
+              <div style={{
+                background: 'linear-gradient(135deg, #f0f4ff 0%, #e6eeff 100%)',
+                padding: '3rem 2.5rem 2rem 2.5rem',
+                display: 'flex',
+                flexDirection: 'column',
+                justify: 'space-between',
+                position: 'relative',
+                overflow: 'hidden'
+              }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2.5rem' }}>
+                    <div style={{
+                      width: '38px',
+                      height: '38px',
+                      borderRadius: '50%',
+                      background: 'conic-gradient(from 180deg, #3b82f6, #a855f7, #ec4899, #3b82f6)',
+                      padding: '3px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
                     }}>
-                      Student
+                      <div style={{ width: '100%', height: '100%', backgroundColor: '#ffffff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{ width: '16px', height: '16px', borderRadius: '50%', background: 'linear-gradient(135deg, #4f46e5, #9333ea)' }}></div>
+                      </div>
+                    </div>
+                    <span className="font-serif" style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1e1b4b' }}>
+                      Study Loop
                     </span>
                   </div>
-                  <p style={{ fontSize: '0.8125rem', color: '#64748b', margin: 0 }}>
-                    Start learning, teaching and connecting today.
+
+                  <h1 className="font-serif" style={{ fontSize: '2.125rem', fontWeight: 800, color: '#1e1b4b', lineHeight: 1.25, marginBottom: '0.75rem' }}>
+                    Learn. Teach. <span style={{ color: '#6366f1' }}>Connect.</span> Grow.
+                  </h1>
+                  <p style={{ fontSize: '0.9375rem', color: '#475569', lineHeight: 1.5, marginBottom: '1.5rem', maxWidth: '380px' }}>
+                    Join a community where students learn from students.
                   </p>
                 </div>
 
-                {/* Form Fields */}
-                <form onSubmit={handleSignupSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
-                  {/* Full Name */}
-                  <div>
-                    <input 
-                      type="text" 
-                      className="input" 
-                      placeholder="Full Name" 
-                      value={fullName} 
-                      onChange={e => setFullName(e.target.value)} 
-                      style={{ padding: '0.625rem 0.875rem', borderRadius: '10px', fontSize: '0.875rem', border: '1px solid #e2e8f0', backgroundColor: '#fafafa' }}
-                      required 
-                    />
-                  </div>
-
-                  {/* Email Address */}
-                  <div>
-                    <input 
-                      type="email" 
-                      className="input" 
-                      placeholder="Email Address" 
-                      value={signupEmail} 
-                      onChange={e => setSignupEmail(e.target.value)} 
-                      style={{ padding: '0.625rem 0.875rem', borderRadius: '10px', fontSize: '0.875rem', border: '1px solid #e2e8f0', backgroundColor: '#fafafa' }}
-                      required 
-                    />
-                  </div>
-
-                  {/* Password */}
-                  <div style={{ position: 'relative' }}>
-                    <input 
-                      type={showSignupPassword ? "text" : "password"} 
-                      className="input" 
-                      placeholder="Password" 
-                      value={signupPassword} 
-                      onChange={e => setSignupPassword(e.target.value)} 
-                      style={{ padding: '0.625rem 2.5rem 0.625rem 0.875rem', borderRadius: '10px', fontSize: '0.875rem', border: '1px solid #e2e8f0', backgroundColor: '#fafafa' }}
-                      required 
-                    />
-                    <button 
-                      type="button" 
-                      onClick={() => setShowSignupPassword(!showSignupPassword)}
-                      style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
-                    >
-                      {showSignupPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
-                  </div>
-
-                  {/* Confirm Password */}
-                  <div style={{ position: 'relative' }}>
-                    <input 
-                      type={showConfirmPassword ? "text" : "password"} 
-                      className="input" 
-                      placeholder="Confirm Password" 
-                      value={confirmPassword} 
-                      onChange={e => setConfirmPassword(e.target.value)} 
-                      style={{ padding: '0.625rem 2.5rem 0.625rem 0.875rem', borderRadius: '10px', fontSize: '0.875rem', border: '1px solid #e2e8f0', backgroundColor: '#fafafa' }}
-                      required 
-                    />
-                    <button 
-                      type="button" 
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
-                    >
-                      {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
-                  </div>
-
-                  {/* Terms & Privacy Checkbox */}
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: '#475569', cursor: 'pointer', marginTop: '0.125rem' }}>
-                    <input 
-                      type="checkbox" 
-                      checked={agreeTerms} 
-                      onChange={e => setAgreeTerms(e.target.checked)} 
-                      style={{ accentColor: '#4338ca', width: '14px', height: '14px', borderRadius: '4px' }}
-                    />
-                    <span>I agree to the <a href="#" onClick={e => e.preventDefault()} style={{ color: '#4338ca', textDecoration: 'none', fontWeight: 600 }}>Terms & Conditions</a> and <a href="#" onClick={e => e.preventDefault()} style={{ color: '#4338ca', textDecoration: 'none', fontWeight: 600 }}>Privacy Policy</a></span>
-                  </label>
-
-                  {/* Primary Create Account Button */}
-                  <button 
-                    type="submit" 
-                    style={{ 
-                      width: '100%', 
-                      padding: '0.75rem', 
-                      borderRadius: '10px', 
-                      border: 'none', 
-                      backgroundColor: '#4338ca', 
-                      color: '#ffffff', 
-                      fontWeight: 700, 
-                      fontSize: '0.9375rem', 
-                      cursor: 'pointer',
-                      boxShadow: '0 4px 14px rgba(67, 56, 202, 0.35)',
-                      marginTop: '0.375rem',
-                      transition: 'all 0.15s ease'
-                    }}
-                  >
-                    Create Account
-                  </button>
-                </form>
-
-                {/* Divider */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: '1rem 0' }}>
-                  <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
-                  <span style={{ fontSize: '0.6875rem', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase' }}>OR</span>
-                  <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
-                </div>
-
-                {/* Continue with Google */}
-                <button 
-                  type="button" 
-                  onClick={handleGoogleSSO}
-                  style={{ 
-                    width: '100%', 
-                    padding: '0.625rem', 
-                    borderRadius: '10px', 
-                    border: '1px solid #e2e8f0', 
-                    backgroundColor: '#ffffff', 
-                    color: '#334155', 
-                    fontWeight: 600, 
-                    fontSize: '0.8125rem', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center', 
-                    gap: '0.625rem', 
-                    cursor: 'pointer',
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.02)'
-                  }}
-                >
-                  <svg style={{ width: '18px', height: '18px' }} viewBox="0 0 24 24"><path fill="#EA4335" d="M12 5.04c1.62 0 3.08.56 4.22 1.65l3.15-3.15C17.45 1.68 14.93 1 12 1 7.37 1 3.4 3.68 1.48 7.57l3.77 2.92C6.13 7.3 8.83 5.04 12 5.04z"/><path fill="#4285F4" d="M23.49 12.27c0-.81-.07-1.59-.2-2.36H12v4.51h6.46c-.28 1.47-1.11 2.72-2.36 3.56l3.77 2.92c2.2-2.03 3.62-5.02 3.62-8.63z"/><path fill="#FBBC05" d="M5.25 14.85c-.25-.76-.39-1.57-.39-2.42s.14-1.66.39-2.42L1.48 7.1C.53 9.07 0 11.27 0 12.42s.53 3.35 1.48 5.32l3.77-2.89z"/><path fill="#34A853" d="M12 23c3.24 0 5.97-1.07 7.96-2.92l-3.77-2.92c-1.05.7-2.4.12-4.19.12-3.17 0-5.87-2.26-6.83-5.32L1.4 14.8c1.92 3.89 5.89 6.2 10.6 6.2z"/></svg>
-                  Continue with Google
-                </button>
-
-                {/* Footer Switcher */}
-                <div style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '0.8125rem', color: '#64748b' }}>
-                  Already have an account?{' '}
-                  <button 
-                    type="button" 
-                    onClick={() => setAuthTab('login')} 
-                    style={{ background: 'transparent', border: 'none', color: '#4338ca', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}
-                  >
-                    Log in
-                  </button>
+                {/* SVG Illustration */}
+                <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginTop: 'auto' }}>
+                  <svg viewBox="0 0 500 320" style={{ width: '100%', maxHeight: '240px' }} fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M0 220 Q120 180 250 220 T500 200 V320 H0 Z" fill="#dbeafe" opacity="0.6"/>
+                    <circle cx="420" cy="140" r="50" fill="#e0e7ff" opacity="0.8"/>
+                    <circle cx="80" cy="200" r="70" fill="#edd5ff" opacity="0.5"/>
+                    <circle cx="120" cy="140" r="32" fill="#1e1b4b"/>
+                    <circle cx="120" cy="145" r="24" fill="#fde047"/>
+                    <rect x="90" y="130" width="10" height="25" rx="5" fill="#312e81"/>
+                    <rect x="140" y="130" width="10" height="25" rx="5" fill="#312e81"/>
+                    <path d="M100 125 Q120 110 140 125" stroke="#312e81" strokeWidth="5"/>
+                    <path d="M80 220 C80 180 160 180 160 220 V300 H80 Z" fill="#1e1b4b"/>
+                    <polygon points="70,260 170,260 160,230 80,230" fill="#cbd5e1"/>
+                    <rect x="75" y="225" width="90" height="5" rx="2" fill="#94a3b8"/>
+                    <circle cx="120" cy="245" r="4" fill="#60a5fa"/>
+                    <circle cx="230" cy="160" r="30" fill="#1e293b"/>
+                    <circle cx="230" cy="165" r="22" fill="#fed7aa"/>
+                    <path d="M200 150 Q230 135 260 150" fill="#1e293b"/>
+                    <rect x="205" y="152" width="8" height="20" rx="4" fill="#ffffff"/>
+                    <rect x="247" y="152" width="8" height="20" rx="4" fill="#ffffff"/>
+                    <path d="M190 230 C190 195 270 195 270 230 V300 H190 Z" fill="#2563eb"/>
+                    <polygon points="180,270 280,270 270,240 190,240" fill="#0284c7"/>
+                    <circle cx="340" cy="120" r="26" fill="#1e1b4b"/>
+                    <circle cx="340" cy="124" r="19" fill="#fca5a5"/>
+                    <path d="M305 180 C305 150 375 150 375 180 V300 H305 Z" fill="#475569"/>
+                    <circle cx="430" cy="110" r="26" fill="#1e1b4b"/>
+                    <circle cx="430" cy="114" r="19" fill="#fed7aa"/>
+                    <path d="M395 165 C395 140 465 140 465 165 V300 H395 Z" fill="#1d4ed8"/>
+                    <rect x="340" y="140" width="110" height="70" rx="8" fill="#0f172a"/>
+                    <rect x="350" y="152" width="40" height="6" rx="3" fill="#60a5fa"/>
+                    <rect x="350" y="165" width="70" height="6" rx="3" fill="#a78bfa"/>
+                    <rect x="350" y="178" width="55" height="6" rx="3" fill="#34d399"/>
+                  </svg>
                 </div>
               </div>
-            ) : (
-              /* TAB CONTENT 2: LOGIN FORM (IMAGE 1 COMPATIBLE) */
-              <div>
-                <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-                  <h2 className="font-serif" style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.375rem' }}>
-                    Welcome Back!
-                  </h2>
-                  <p style={{ fontSize: '0.8125rem', color: '#64748b' }}>
-                    Login to continue your learning journey 👋
-                  </p>
-                </div>
 
-                <form onSubmit={handleLoginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <div>
-                    <label className="label" style={{ fontWeight: 600, fontSize: '0.75rem', color: '#1e293b', marginBottom: '0.25rem' }}>
-                      Email or Username
-                    </label>
-                    <div style={{ position: 'relative' }}>
-                      <Mail size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                      <input 
-                        type="email" 
-                        className="input" 
-                        placeholder="studenta@student.com" 
-                        value={loginEmail} 
-                        onChange={e => setLoginEmail(e.target.value)} 
-                        style={{ paddingLeft: '2.5rem', borderRadius: '10px', fontSize: '0.875rem', border: '1px solid #e2e8f0' }}
-                        required 
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="label" style={{ fontWeight: 600, fontSize: '0.75rem', color: '#1e293b', marginBottom: '0.25rem' }}>
-                      Password
-                    </label>
-                    <div style={{ position: 'relative' }}>
-                      <Lock size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                      <input 
-                        type={showLoginPassword ? "text" : "password"} 
-                        className="input" 
-                        placeholder="••••••••••••" 
-                        value={loginPassword} 
-                        onChange={e => setLoginPassword(e.target.value)} 
-                        style={{ paddingLeft: '2.5rem', paddingRight: '2.5rem', borderRadius: '10px', fontSize: '0.875rem', border: '1px solid #e2e8f0' }}
-                        required 
-                      />
-                      <button 
-                        type="button" 
-                        onClick={() => setShowLoginPassword(!showLoginPassword)}
-                        style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
-                      >
-                        {showLoginPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                      </button>
-                    </div>
-
-                    <div style={{ textAlign: 'right', marginTop: '0.375rem' }}>
-                      <a href="#" onClick={(e) => { e.preventDefault(); alert("Password reset link sent to your email!"); }} style={{ fontSize: '0.75rem', color: '#4338ca', fontWeight: 600, textDecoration: 'none' }}>
-                        Forgot Password?
-                      </a>
-                    </div>
-                  </div>
-
-                  <button 
-                    type="submit" 
-                    style={{ 
-                      width: '100%', 
-                      padding: '0.75rem', 
-                      borderRadius: '10px', 
-                      border: 'none', 
-                      backgroundColor: '#4338ca', 
-                      color: '#ffffff', 
-                      fontWeight: 700, 
-                      fontSize: '0.9375rem', 
-                      cursor: 'pointer',
-                      boxShadow: '0 4px 14px rgba(67, 56, 202, 0.35)',
-                      marginTop: '0.25rem'
-                    }}
-                  >
-                    Sign In
-                  </button>
-                </form>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: '1rem 0' }}>
-                  <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
-                  <span style={{ fontSize: '0.6875rem', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase' }}>OR</span>
-                  <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
-                </div>
-
-                <button 
-                  type="button" 
-                  onClick={handleGoogleSSO}
-                  style={{ 
-                    width: '100%', 
-                    padding: '0.625rem', 
-                    borderRadius: '10px', 
-                    border: '1px solid #e2e8f0', 
-                    backgroundColor: '#ffffff', 
-                    color: '#334155', 
-                    fontWeight: 600, 
-                    fontSize: '0.8125rem', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center', 
-                    gap: '0.625rem', 
-                    cursor: 'pointer'
-                  }}
-                >
-                  <svg style={{ width: '18px', height: '18px' }} viewBox="0 0 24 24"><path fill="#EA4335" d="M12 5.04c1.62 0 3.08.56 4.22 1.65l3.15-3.15C17.45 1.68 14.93 1 12 1 7.37 1 3.4 3.68 1.48 7.57l3.77 2.92C6.13 7.3 8.83 5.04 12 5.04z"/><path fill="#4285F4" d="M23.49 12.27c0-.81-.07-1.59-.2-2.36H12v4.51h6.46c-.28 1.47-1.11 2.72-2.36 3.56l3.77 2.92c2.2-2.03 3.62-5.02 3.62-8.63z"/><path fill="#FBBC05" d="M5.25 14.85c-.25-.76-.39-1.57-.39-2.42s.14-1.66.39-2.42L1.48 7.1C.53 9.07 0 11.27 0 12.42s.53 3.35 1.48 5.32l3.77-2.89z"/><path fill="#34A853" d="M12 23c3.24 0 5.97-1.07 7.96-2.92l-3.77-2.92c-1.05.7-2.4.12-4.19.12-3.17 0-5.87-2.26-6.83-5.32L1.4 14.8c1.92 3.89 5.89 6.2 10.6 6.2z"/></svg>
-                  Continue with Google
-                </button>
-
-                <div style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '0.8125rem', color: '#64748b' }}>
-                  Don't have an account?{' '}
+              {/* RIGHT COLUMN: AUTH FORM WITH SWITCHER */}
+              <div style={{
+                backgroundColor: '#ffffff',
+                padding: '2.5rem 2.25rem',
+                display: 'flex',
+                flexDirection: 'column',
+                justify: 'center',
+                overflowY: 'auto'
+              }}>
+                {/* Role Switcher Tabs */}
+                <div style={{ 
+                  display: 'flex', 
+                  gap: '0.5rem', 
+                  marginBottom: '1.75rem', 
+                  backgroundColor: '#f1f5f9', 
+                  padding: '0.25rem', 
+                  borderRadius: '12px' 
+                }}>
                   <button 
                     type="button" 
                     onClick={() => setAuthTab('signup')} 
-                    style={{ background: 'transparent', border: 'none', color: '#4338ca', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}
+                    style={{ 
+                      flex: 1, 
+                      padding: '0.5rem', 
+                      fontSize: '0.75rem', 
+                      fontWeight: 700, 
+                      border: 'none', 
+                      borderRadius: '8px', 
+                      cursor: 'pointer',
+                      backgroundColor: authTab === 'signup' ? '#ffffff' : 'transparent',
+                      color: authTab === 'signup' ? '#4338ca' : '#64748b',
+                      boxShadow: authTab === 'signup' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none',
+                      transition: 'all 0.15s ease'
+                    }}
                   >
-                    Sign up
+                    🎓 Signup
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={() => setAuthTab('login')} 
+                    style={{ 
+                      flex: 1, 
+                      padding: '0.5rem', 
+                      fontSize: '0.75rem', 
+                      fontWeight: 700, 
+                      border: 'none', 
+                      borderRadius: '8px', 
+                      cursor: 'pointer',
+                      backgroundColor: authTab === 'login' ? '#ffffff' : 'transparent',
+                      color: authTab === 'login' ? '#4338ca' : '#64748b',
+                      boxShadow: authTab === 'login' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    🔑 Login
                   </button>
                 </div>
+
+                {authTab === 'signup' ? (
+                  <div>
+                    <div style={{ marginBottom: '1.25rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.375rem' }}>
+                        <h2 className="font-serif" style={{ fontSize: '1.625rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                          Create your Study Loop
+                        </h2>
+                        <span style={{ backgroundColor: '#4338ca', color: '#ffffff', fontSize: '0.6875rem', fontWeight: 700, padding: '0.2rem 0.625rem', borderRadius: '8px' }}>
+                          Student
+                        </span>
+                      </div>
+                      <p style={{ fontSize: '0.8125rem', color: '#64748b', margin: 0 }}>
+                        Start learning, teaching and connecting today.
+                      </p>
+                    </div>
+
+                    <form onSubmit={handleSignupSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+                      <input type="text" className="input" placeholder="Full Name" value={fullName} onChange={e => setFullName(e.target.value)} style={{ padding: '0.625rem 0.875rem', borderRadius: '10px', fontSize: '0.875rem', border: '1px solid #e2e8f0', backgroundColor: '#fafafa' }} required />
+                      <input type="email" className="input" placeholder="Email Address" value={signupEmail} onChange={e => setSignupEmail(e.target.value)} style={{ padding: '0.625rem 0.875rem', borderRadius: '10px', fontSize: '0.875rem', border: '1px solid #e2e8f0', backgroundColor: '#fafafa' }} required />
+                      
+                      <div style={{ position: 'relative' }}>
+                        <input type={showSignupPassword ? "text" : "password"} className="input" placeholder="Password" value={signupPassword} onChange={e => setSignupPassword(e.target.value)} style={{ padding: '0.625rem 2.5rem 0.625rem 0.875rem', borderRadius: '10px', fontSize: '0.875rem', border: '1px solid #e2e8f0', backgroundColor: '#fafafa' }} required />
+                        <button type="button" onClick={() => setShowSignupPassword(!showSignupPassword)} style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
+                          {showSignupPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
+                      </div>
+
+                      <div style={{ position: 'relative' }}>
+                        <input type={showConfirmPassword ? "text" : "password"} className="input" placeholder="Confirm Password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} style={{ padding: '0.625rem 2.5rem 0.625rem 0.875rem', borderRadius: '10px', fontSize: '0.875rem', border: '1px solid #e2e8f0', backgroundColor: '#fafafa' }} required />
+                        <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
+                          {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
+                      </div>
+
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: '#475569', cursor: 'pointer' }}>
+                        <input type="checkbox" checked={agreeTerms} onChange={e => setAgreeTerms(e.target.checked)} style={{ accentColor: '#4338ca', width: '14px', height: '14px' }} />
+                        <span>I agree to the <a href="#" onClick={e => e.preventDefault()} style={{ color: '#4338ca', fontWeight: 600 }}>Terms & Conditions</a> and <a href="#" onClick={e => e.preventDefault()} style={{ color: '#4338ca', fontWeight: 600 }}>Privacy Policy</a></span>
+                      </label>
+
+                      <button type="submit" style={{ width: '100%', padding: '0.75rem', borderRadius: '10px', border: 'none', backgroundColor: '#4338ca', color: '#ffffff', fontWeight: 700, fontSize: '0.9375rem', cursor: 'pointer', boxShadow: '0 4px 14px rgba(67, 56, 202, 0.35)' }}>
+                        Create Account
+                      </button>
+                    </form>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: '1rem 0' }}>
+                      <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
+                      <span style={{ fontSize: '0.6875rem', color: '#94a3b8', fontWeight: 600 }}>OR</span>
+                      <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
+                    </div>
+
+                    <button type="button" onClick={handleGoogleSSO} style={{ width: '100%', padding: '0.625rem', borderRadius: '10px', border: '1px solid #e2e8f0', backgroundColor: '#ffffff', color: '#334155', fontWeight: 600, fontSize: '0.8125rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.625rem', cursor: 'pointer' }}>
+                      <svg style={{ width: '18px', height: '18px' }} viewBox="0 0 24 24"><path fill="#EA4335" d="M12 5.04c1.62 0 3.08.56 4.22 1.65l3.15-3.15C17.45 1.68 14.93 1 12 1 7.37 1 3.4 3.68 1.48 7.57l3.77 2.92C6.13 7.3 8.83 5.04 12 5.04z"/><path fill="#4285F4" d="M23.49 12.27c0-.81-.07-1.59-.2-2.36H12v4.51h6.46c-.28 1.47-1.11 2.72-2.36 3.56l3.77 2.92c2.2-2.03 3.62-5.02 3.62-8.63z"/><path fill="#FBBC05" d="M5.25 14.85c-.25-.76-.39-1.57-.39-2.42s.14-1.66.39-2.42L1.48 7.1C.53 9.07 0 11.27 0 12.42s.53 3.35 1.48 5.32l3.77-2.89z"/><path fill="#34A853" d="M12 23c3.24 0 5.97-1.07 7.96-2.92l-3.77-2.92c-1.05.7-2.4.12-4.19.12-3.17 0-5.87-2.26-6.83-5.32L1.4 14.8c1.92 3.89 5.89 6.2 10.6 6.2z"/></svg>
+                      Continue with Google
+                    </button>
+
+                    <div style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '0.8125rem', color: '#64748b' }}>
+                      Already have an account?{' '}
+                      <button type="button" onClick={() => setAuthTab('login')} style={{ background: 'transparent', border: 'none', color: '#4338ca', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}>
+                        Log in
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                      <h2 className="font-serif" style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.375rem' }}>
+                        Welcome Back!
+                      </h2>
+                      <p style={{ fontSize: '0.8125rem', color: '#64748b' }}>
+                        Login to continue your learning journey 👋
+                      </p>
+                    </div>
+
+                    <form onSubmit={handleLoginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                      <div>
+                        <label className="label" style={{ fontWeight: 600, fontSize: '0.75rem', color: '#1e293b', marginBottom: '0.25rem' }}>Email or Username</label>
+                        <div style={{ position: 'relative' }}>
+                          <Mail size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                          <input type="email" className="input" placeholder="studenta@student.com" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} style={{ paddingLeft: '2.5rem', borderRadius: '10px', fontSize: '0.875rem', border: '1px solid #e2e8f0' }} required />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="label" style={{ fontWeight: 600, fontSize: '0.75rem', color: '#1e293b', marginBottom: '0.25rem' }}>Password</label>
+                        <div style={{ position: 'relative' }}>
+                          <Lock size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                          <input type={showLoginPassword ? "text" : "password"} className="input" placeholder="••••••••••••" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} style={{ paddingLeft: '2.5rem', paddingRight: '2.5rem', borderRadius: '10px', fontSize: '0.875rem', border: '1px solid #e2e8f0' }} required />
+                          <button type="button" onClick={() => setShowLoginPassword(!showLoginPassword)} style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
+                            {showLoginPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <button type="submit" style={{ width: '100%', padding: '0.75rem', borderRadius: '10px', border: 'none', backgroundColor: '#4338ca', color: '#ffffff', fontWeight: 700, fontSize: '0.9375rem', cursor: 'pointer', boxShadow: '0 4px 14px rgba(67, 56, 202, 0.35)' }}>
+                        Sign In
+                      </button>
+                    </form>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: '1rem 0' }}>
+                      <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
+                      <span style={{ fontSize: '0.6875rem', color: '#94a3b8', fontWeight: 600 }}>OR</span>
+                      <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
+                    </div>
+
+                    <button type="button" onClick={handleGoogleSSO} style={{ width: '100%', padding: '0.625rem', borderRadius: '10px', border: '1px solid #e2e8f0', backgroundColor: '#ffffff', color: '#334155', fontWeight: 600, fontSize: '0.8125rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.625rem', cursor: 'pointer' }}>
+                      <svg style={{ width: '18px', height: '18px' }} viewBox="0 0 24 24"><path fill="#EA4335" d="M12 5.04c1.62 0 3.08.56 4.22 1.65l3.15-3.15C17.45 1.68 14.93 1 12 1 7.37 1 3.4 3.68 1.48 7.57l3.77 2.92C6.13 7.3 8.83 5.04 12 5.04z"/><path fill="#4285F4" d="M23.49 12.27c0-.81-.07-1.59-.2-2.36H12v4.51h6.46c-.28 1.47-1.11 2.72-2.36 3.56l3.77 2.92c2.2-2.03 3.62-5.02 3.62-8.63z"/><path fill="#FBBC05" d="M5.25 14.85c-.25-.76-.39-1.57-.39-2.42s.14-1.66.39-2.42L1.48 7.1C.53 9.07 0 11.27 0 12.42s.53 3.35 1.48 5.32l3.77-2.89z"/><path fill="#34A853" d="M12 23c3.24 0 5.97-1.07 7.96-2.92l-3.77-2.92c-1.05.7-2.4.12-4.19.12-3.17 0-5.87-2.26-6.83-5.32L1.4 14.8c1.92 3.89 5.89 6.2 10.6 6.2z"/></svg>
+                      Continue with Google
+                    </button>
+
+                    <div style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '0.8125rem', color: '#64748b' }}>
+                      Don't have an account?{' '}
+                      <button type="button" onClick={() => setAuthTab('signup')} style={{ background: 'transparent', border: 'none', color: '#4338ca', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}>
+                        Sign up
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
-        </div>
+        )}
+
       </div>
     );
   }
 
   // 2. HOME SCREEN FOR LOGGED-IN USERS INSIDE DASHBOARD
   return (
-    <div style={{ padding: '1rem 2rem 4rem 2rem', maxWidth: '1000px', margin: '0 auto' }}>
+    <div style={{ padding: '1rem 0 4rem 0', width: '100%' }}>
       {/* HERO BANNER FOR LOGGED-IN USERS */}
       <section className="card-premium glass-card" style={{ padding: '3rem 2.5rem', borderRadius: '24px', backgroundColor: '#ffffff', marginBottom: '3rem', border: '1px solid #e2e8f0' }}>
         <div className="tag tag-accent" style={{ marginBottom: '1rem', padding: '0.375rem 1rem', fontSize: '0.8125rem' }}>
@@ -5687,7 +6335,7 @@ function LandingScreen({ setActiveTab, loginSimulated, testAccounts }) {
         </h2>
         <div className="grid-2">
           <div className="card-premium glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: '#fef3c7', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: '#eff6ff', color: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <HelpCircle size={24} />
             </div>
             <h3 className="font-serif" style={{ fontSize: '1.25rem' }}>1. Live Doubt Rooms & WebRTC Calls</h3>
