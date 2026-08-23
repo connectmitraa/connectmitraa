@@ -13,7 +13,7 @@
   --primary-light: #dbeafe;
   --primary-dark: #1d4ed8;
   
-  --accent-color: #d97706;       /* Amber */
+  --accent-color: #3b82f6;       /* Blue */
   --border-color: #e2e8f0;
   
   --success-color: #059669;      /* Emerald */
@@ -44,7 +44,7 @@ body {
 }
 
 h1, h2, h3, h4, .font-serif {
-  font-family: 'Fraunces', Georgia, serif;
+  font-family: 'Inter', system-ui, sans-serif;
   font-weight: 700;
   color: var(--text-primary);
 }
@@ -67,8 +67,9 @@ h1, h2, h3, h4, .font-serif {
 
 .admin-sidebar {
   width: 250px;
-  background-color: #0f172a;
-  color: #ffffff;
+  background-color: #ffffff;
+  color: #0f172a;
+  border-right: 1px solid #e2e8f0;
   display: flex;
   flex-direction: column;
   padding: 1.5rem;

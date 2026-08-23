@@ -69,13 +69,13 @@ export default function AdminApp() {
           <span className="font-serif" style={{ fontSize: '1.25rem', fontWeight: 800 }}>StudyLoop Admin</span>
         </div>
 
-        <div style={{ padding: '0.75rem', backgroundColor: '#1e293b', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.75rem' }}>
-          <div style={{ color: '#94a3b8', fontWeight: 500 }}>Logged in as:</div>
-          <div style={{ fontWeight: 600, color: '#f8fafc', marginTop: '0.125rem', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{adminUser.email}</div>
-          <div style={{ color: '#3b82f6', fontWeight: 700, textTransform: 'uppercase', fontSize: '0.625rem', marginTop: '0.25rem', letterSpacing: '0.05em' }}>{adminUser.role}</div>
+        <div style={{ padding: '0.75rem', backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '10px', marginBottom: '1.5rem', fontSize: '0.75rem' }}>
+          <div style={{ color: '#64748b', fontWeight: 500 }}>Logged in as:</div>
+          <div style={{ fontWeight: 600, color: '#0f172a', marginTop: '0.125rem', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{adminUser.email}</div>
+          <div style={{ color: '#2563eb', fontWeight: 700, textTransform: 'uppercase', fontSize: '0.625rem', marginTop: '0.25rem', letterSpacing: '0.05em' }}>{adminUser.role}</div>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', flex: 1 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
           <SidebarLink active={activeTab === 'overview'} icon={<BarChart3 size={16} />} label="Overview & Settings" onClick={() => setActiveTab('overview')} />
           <SidebarLink active={activeTab === 'users'} icon={<Users size={16} />} label="User Moderation" onClick={() => setActiveTab('users')} />
           <SidebarLink active={activeTab === 'doubts'} icon={<HelpCircle size={16} />} label="Doubt Room Logs" onClick={() => setActiveTab('doubts')} />
@@ -84,8 +84,8 @@ export default function AdminApp() {
           <SidebarLink active={activeTab === 'audit'} icon={<History size={16} />} label="System Audit Logs" onClick={() => setActiveTab('audit')} />
         </div>
 
-        <div style={{ borderTop: '1px solid #334155', paddingTop: '1rem', marginTop: 'auto' }}>
-          <button onClick={handleLogout} className="btn" style={{ width: '100%', justifyContent: 'flex-start', color: '#94a3b8', background: 'transparent', border: 'none' }}>
+        <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '1rem', marginTop: 'auto' }}>
+          <button onClick={handleLogout} className="btn" style={{ width: '100%', justifyContent: 'flex-start', color: '#64748b', background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <LogOut size={16} /> Logout
           </button>
         </div>
@@ -105,24 +105,34 @@ export default function AdminApp() {
 }
 
 function SidebarLink({ active, icon, label, onClick }) {
+  const [isHovered, setIsHovered] = useState(false);
   return (
-    <button onClick={onClick} style={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: '0.75rem',
-      width: '100%',
-      padding: '0.625rem 0.875rem',
-      borderRadius: '6px',
-      border: 'none',
-      cursor: 'pointer',
-      fontSize: '0.8125rem',
-      fontWeight: 500,
-      backgroundColor: active ? '#1e293b' : 'transparent',
-      color: active ? '#ffffff' : '#94a3b8',
-      textAlign: 'left',
-      transition: 'all 0.15s ease'
-    }}>
-      {icon}
+    <button 
+      onClick={onClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.75rem',
+        width: '100%',
+        padding: '0.625rem 1.125rem',
+        borderRadius: '50px',
+        border: 'none',
+        cursor: 'pointer',
+        fontSize: '0.8125rem',
+        fontWeight: '600',
+        background: active ? 'linear-gradient(135deg, #2563eb 0%, #06b6d4 100%)' : isHovered ? '#eff6ff' : 'transparent',
+        color: active ? '#ffffff' : isHovered ? '#2563eb' : '#475569',
+        textAlign: 'left',
+        transition: 'all 0.15s ease',
+        boxShadow: active ? '0 4px 12px rgba(37, 99, 235, 0.15)' : 'none',
+        marginBottom: '0.375rem'
+      }}
+    >
+      <span style={{ display: 'flex', alignItems: 'center', color: active ? '#ffffff' : isHovered ? '#2563eb' : '#64748b' }}>
+        {icon}
+      </span>
       {label}
     </button>
   );
@@ -228,7 +238,7 @@ function OverviewTab({ token }) {
         </div>
 
         <div className="stat-card">
-          <div style={{ padding: '0.75rem', backgroundColor: '#fef3c7', color: '#b45309', borderRadius: '8px' }}>
+                  <div style={{ padding: '0.75rem', backgroundColor: '#eff6ff', color: '#2563eb', borderRadius: '8px' }}>
             <HelpCircle size={20} />
           </div>
           <div>
@@ -460,8 +470,8 @@ function DoubtOversightTab({ token }) {
                 <td style={{ fontSize: '0.75rem', fontFamily: 'monospace' }}>{r.helperId || "Waiting"}</td>
                 <td>
                   <span className={`badge ${r.status === 'SOLVED' ? 'badge-success' : 'badge-danger'}`} style={{
-                    backgroundColor: r.status === 'SOLVED' ? '#d1fae5' : '#fef3c7',
-                    color: r.status === 'SOLVED' ? '#059669' : '#d97706'
+                    backgroundColor: r.status === 'SOLVED' ? '#d1fae5' : '#eff6ff',
+                    color: r.status === 'SOLVED' ? '#059669' : '#3b82f6'
                   }}>
                     {r.status}
                   </span>
