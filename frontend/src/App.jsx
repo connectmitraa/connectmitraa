@@ -133,9 +133,15 @@ export function AuthProvider({ children }) {
 
   const fetchProfile = async (userId, jwtToken) => {
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 1500);
+
       const response = await fetch(`/api/profiles/me`, {
-        headers: { 'Authorization': `Bearer ${jwtToken}` }
+        headers: { 'Authorization': `Bearer ${jwtToken}` },
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
+
       if (response.ok) {
         const data = await response.json();
         
@@ -244,6 +250,7 @@ function MainLayout() {
   const [activeChatId, setActiveChatId] = useState(null); // active 1:1 chat thread currently joined
   const [chatPeer, setChatPeer] = useState(null); // other user details for active 1:1 chat
   const [showHeaderDropdown, setShowHeaderDropdown] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   
   // Public Profile & Follower/Following Modal States
   const [viewingPublicProfile, setViewingPublicProfile] = useState(null);
@@ -512,156 +519,182 @@ function MainLayout() {
   const showCollegeWarning = profile && !profile.college && activeTab !== 'dashboard';
 
   return (
-    <div className="app-container">
+    <div className="app-container fixed-app-container">
       {/* SIDEBAR NAVIGATION */}
       <nav className="sidebar" style={{
-        width: '260px',
+        width: isSidebarCollapsed ? '76px' : '260px',
         backgroundColor: '#ffffff',
         borderRight: '1px solid #e2e8f0',
         display: 'flex',
         flexDirection: 'column',
-        padding: '1.5rem'
+        padding: isSidebarCollapsed ? '1rem 0.5rem' : '1.5rem',
+        transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '2.5rem', cursor: 'pointer' }} onClick={() => setActiveTab('landing')}>
-          <Infinity size={28} style={{ color: '#d97706' }} />
-          <span className="font-serif" style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a' }}>StudyLoop</span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: isSidebarCollapsed ? 'center' : 'space-between', marginBottom: '2rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }} onClick={() => setActiveTab('landing')}>
+            <Infinity size={28} style={{ color: '#d97706' }} />
+            {!isSidebarCollapsed && (
+              <span className="font-serif" style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f172a' }}>StudyLoop</span>
+            )}
+          </div>
+          <button 
+            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)} 
+            title={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar (Icon View)"}
+            style={{
+              background: '#f1f5f9',
+              border: 'none',
+              borderRadius: '6px',
+              padding: '0.375rem',
+              color: '#475569',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            {isSidebarCollapsed ? <ChevronRight size={16} /> : <Grid size={16} />}
+          </button>
         </div>
 
         {profile && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', backgroundColor: '#f8fafc', borderRadius: '12px', marginBottom: '1.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.625rem', backgroundColor: '#f8fafc', borderRadius: '12px', marginBottom: '1.5rem', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
             <img 
               src={getDefaultAvatarByGender(profile.gender, profile.avatarUrl)} 
               alt="Avatar" 
               onError={(e) => { e.target.src = getDefaultAvatarByGender(profile?.gender); }}
-              style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }} 
+              style={{ width: '38px', height: '38px', borderRadius: '50%', objectFit: 'cover' }} 
             />
-            <div style={{ overflow: 'hidden' }}>
-              <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#0f172a', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{profile.fullName}</div>
-              <div style={{ fontSize: '0.75rem', color: '#d97706', display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 600 }}>
-                <Flame size={12} fill="#d97706" /> {profile.xp} XP • Lvl {profile.level}
+            {!isSidebarCollapsed && (
+              <div style={{ overflow: 'hidden' }}>
+                <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#0f172a', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{profile.fullName}</div>
+                <div style={{ fontSize: '0.75rem', color: '#d97706', display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 600 }}>
+                  <Flame size={12} fill="#d97706" /> {profile.xp} XP • Lvl {profile.level}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', flex: 1 }}>
-          <SidebarLink active={activeTab === 'landing'} icon={<Infinity size={18} />} label="Home Page" onClick={() => { setActiveTab('landing'); setActiveRoomId(null); }} />
-          <SidebarLink active={activeTab === 'doubts'} icon={<HelpCircle size={18} />} label="Doubt Rooms Hub" onClick={() => { setActiveTab('doubts'); setActiveRoomId(null); }} />
-          <SidebarLink active={activeTab === 'dashboard'} icon={<Award size={18} />} label="Dashboard & Badges" onClick={() => { setActiveTab('dashboard'); setActiveRoomId(null); }} />
-          <SidebarLink active={activeTab === 'leaderboard'} icon={<Trophy size={18} />} label="Campus Leaderboard" onClick={() => { setActiveTab('leaderboard'); setActiveRoomId(null); }} />
-          <SidebarLink active={activeTab === 'discover'} icon={<Users size={18} />} label="Discover Peers" onClick={() => { setActiveTab('discover'); setActiveRoomId(null); }} />
-          <SidebarLink active={activeTab === 'connections'} icon={<UserCheck size={18} />} label="My Connections" onClick={() => { setActiveTab('connections'); setActiveRoomId(null); }} />
-          <SidebarLink active={activeTab === 'chat'} icon={<MessageSquare size={18} />} label="Direct Messages" onClick={() => { setActiveTab('chat'); setActiveRoomId(null); }} />
-          <SidebarLink active={activeTab === 'reels'} icon={<Tv2 size={18} />} label="Educational Reels" onClick={() => { setActiveTab('reels'); setActiveRoomId(null); }} />
+          <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'landing'} icon={<Infinity size={18} />} label="Home Page" onClick={() => { setActiveTab('landing'); setActiveRoomId(null); }} />
+          <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'doubts'} icon={<HelpCircle size={18} />} label="Doubt Rooms Hub" onClick={() => { setActiveTab('doubts'); setActiveRoomId(null); }} />
+          <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'dashboard'} icon={<Award size={18} />} label="Dashboard & Badges" onClick={() => { setActiveTab('dashboard'); setActiveRoomId(null); }} />
+          <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'leaderboard'} icon={<Trophy size={18} />} label="Campus Leaderboard" onClick={() => { setActiveTab('leaderboard'); setActiveRoomId(null); }} />
+          <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'discover'} icon={<Users size={18} />} label="Discover Peers" onClick={() => { setActiveTab('discover'); setActiveRoomId(null); }} />
+          <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'connections'} icon={<UserCheck size={18} />} label="My Connections" onClick={() => { setActiveTab('connections'); setActiveRoomId(null); }} />
+          <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'chat'} icon={<MessageSquare size={18} />} label="Direct Messages" onClick={() => { setActiveTab('chat'); setActiveRoomId(null); }} />
+          <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'reels'} icon={<Tv2 size={18} />} label="Educational Reels" onClick={() => { setActiveTab('reels'); setActiveRoomId(null); }} />
         </div>
 
         <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '1rem', marginTop: 'auto' }}>
-          <button onClick={logout} className="btn btn-secondary" style={{ width: '100%', justifyContent: 'flex-start', border: 'none', background: 'transparent', padding: '0.5rem' }}>
-            <LogOut size={18} /> Logout
+          <button onClick={logout} className="btn btn-secondary" style={{ width: '100%', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start', border: 'none', background: 'transparent', padding: '0.5rem' }}>
+            <LogOut size={18} /> {!isSidebarCollapsed && "Logout"}
           </button>
         </div>
       </nav>
 
       {/* MAIN SCREEN DISPATCHER WITH TOP FAR-RIGHT USER CORNER */}
-      <main className="main-content" style={{ display: 'flex', flexDirection: 'column', flex: 1, overflowY: 'auto' }}>
+      <main className="main-content" style={{ display: 'flex', flexDirection: 'column', flex: 1, overflowY: 'auto', padding: activeTab === 'reels' ? 0 : undefined, backgroundColor: activeTab === 'reels' ? '#09090b' : undefined }}>
         
-        {/* TOP FAR-RIGHT USER CORNER BAR */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '0.875rem 2rem',
-          borderBottom: '1px solid #e2e8f0',
-          backgroundColor: '#ffffff',
-          marginBottom: '1rem'
-        }}>
-          <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <GraduationCap size={16} style={{ color: '#d97706' }} />
-            <span>{profile?.college || 'IIT Madras'} • {profile?.department || 'Computer Science'}</span>
-          </div>
+        {/* TOP FAR-RIGHT USER CORNER BAR (HIDDEN IN REELS MODE) */}
+        {activeTab !== 'reels' && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '0.875rem 2rem',
+            borderBottom: '1px solid #e2e8f0',
+            backgroundColor: '#ffffff',
+            marginBottom: '1rem'
+          }}>
+            <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <GraduationCap size={16} style={{ color: '#d97706' }} />
+              <span>{profile?.college || 'IIT Madras'} • {profile?.department || 'Computer Science'}</span>
+            </div>
 
-          {/* FAR RIGHT USER DROPDOWN CHIP */}
-          <div style={{ marginLeft: 'auto', position: 'relative' }}>
-            <button 
-              onClick={() => setShowHeaderDropdown(prev => !prev)}
-              className="card-premium glass-card"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem',
-                padding: '0.375rem 0.875rem',
-                borderRadius: '50px',
-                cursor: 'pointer',
-                border: '1px solid #e2e8f0'
-              }}
-            >
-              <img 
-                src={getDefaultAvatarByGender(profile?.gender, profile?.avatarUrl)} 
-                alt="Avatar" 
-                onError={(e) => { e.target.src = getDefaultAvatarByGender(profile?.gender); }}
-                style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid #d97706', objectFit: 'cover' }} 
-              />
-              <div style={{ textAlign: 'left' }}>
-                <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#0f172a' }}>
-                  {profile?.fullName || 'Aarav Sharma'}
-                </div>
-                <div style={{ fontSize: '0.6875rem', color: '#d97706', fontWeight: 600 }}>
-                  ⚡ {profile?.xp || 650} XP • Lvl {profile?.level || 4}
-                </div>
-              </div>
-              <ChevronDown size={14} style={{ color: '#64748b' }} />
-            </button>
-
-            {showHeaderDropdown && (
-              <div className="card-premium glass-card" style={{
-                position: 'absolute',
-                top: 'calc(100% + 0.5rem)',
-                right: 0,
-                width: '240px',
-                borderRadius: '16px',
-                padding: '0.75rem',
-                boxShadow: '0 10px 30px rgba(0,0,0,0.12)',
-                zIndex: 2000,
-                backgroundColor: '#ffffff'
-              }}>
-                <div style={{ padding: '0.5rem 0.75rem', borderBottom: '1px solid #f1f5f9', marginBottom: '0.5rem' }}>
-                  <div style={{ fontWeight: 700, fontSize: '0.875rem', color: '#0f172a' }}>{profile?.fullName}</div>
-                  <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{profile?.college}</div>
-                </div>
-
-                <button onClick={() => { setShowHeaderDropdown(false); setActiveTab('dashboard'); }} style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '6px', border: 'none', background: 'transparent', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', fontWeight: 600, color: '#0f172a' }}>
-                  <Award size={14} style={{ color: '#d97706' }} /> Dashboard & Badges
-                </button>
-
-                <button onClick={() => { setShowHeaderDropdown(false); setActiveTab('dashboard'); }} style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '6px', border: 'none', background: 'transparent', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', fontWeight: 600, color: '#0f172a' }}>
-                  <GraduationCap size={14} style={{ color: '#0284c7' }} /> Edit Profile / Settings
-                </button>
-
-                <div style={{ margin: '0.375rem 0', borderTop: '1px solid #f1f5f9', paddingTop: '0.375rem' }}>
-                  <div style={{ fontSize: '0.625rem', fontWeight: 700, color: '#94a3b8', padding: '0.25rem 0.75rem', textTransform: 'uppercase' }}>
-                    Switch Account
+            {/* FAR RIGHT USER DROPDOWN CHIP */}
+            <div style={{ marginLeft: 'auto', position: 'relative' }}>
+              <button 
+                onClick={() => setShowHeaderDropdown(prev => !prev)}
+                className="card-premium glass-card"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  padding: '0.375rem 0.875rem',
+                  borderRadius: '50px',
+                  cursor: 'pointer',
+                  border: '1px solid #e2e8f0'
+                }}
+              >
+                <img 
+                  src={getDefaultAvatarByGender(profile?.gender, profile?.avatarUrl)} 
+                  alt="Avatar" 
+                  onError={(e) => { e.target.src = getDefaultAvatarByGender(profile?.gender); }}
+                  style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid #d97706', objectFit: 'cover' }} 
+                />
+                <div style={{ textAlign: 'left' }}>
+                  <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#0f172a' }}>
+                    {profile?.fullName || 'Aarav Sharma'}
                   </div>
-                  {testAccounts.map(acc => (
-                    <button 
-                      key={acc.id}
-                      onClick={() => { loginSimulated(acc.email); setShowHeaderDropdown(false); setActiveTab('dashboard'); }}
-                      style={{ width: '100%', padding: '0.375rem 0.75rem', borderRadius: '6px', border: 'none', background: 'transparent', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: '#475569' }}
-                    >
-                      <img src={acc.avatarUrl} alt="Avatar" style={{ width: '18px', height: '18px', borderRadius: '50%' }} />
-                      {acc.fullName}
-                    </button>
-                  ))}
+                  <div style={{ fontSize: '0.6875rem', color: '#d97706', fontWeight: 600 }}>
+                    ⚡ {profile?.xp || 650} XP • Lvl {profile?.level || 4}
+                  </div>
                 </div>
+                <ChevronDown size={14} style={{ color: '#64748b' }} />
+              </button>
 
-                <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '0.375rem', marginTop: '0.25rem' }}>
-                  <button onClick={() => { logout(); setShowHeaderDropdown(false); }} style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '6px', border: 'none', background: '#fef2f2', color: '#dc2626', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', fontWeight: 600 }}>
-                    <LogOut size={14} /> Logout
+              {showHeaderDropdown && (
+                <div className="card-premium glass-card" style={{
+                  position: 'absolute',
+                  top: 'calc(100% + 0.5rem)',
+                  right: 0,
+                  width: '240px',
+                  borderRadius: '16px',
+                  padding: '0.75rem',
+                  boxShadow: '0 10px 30px rgba(0,0,0,0.12)',
+                  zIndex: 2000,
+                  backgroundColor: '#ffffff'
+                }}>
+                  <div style={{ padding: '0.5rem 0.75rem', borderBottom: '1px solid #f1f5f9', marginBottom: '0.5rem' }}>
+                    <div style={{ fontWeight: 700, fontSize: '0.875rem', color: '#0f172a' }}>{profile?.fullName}</div>
+                    <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{profile?.college}</div>
+                  </div>
+
+                  <button onClick={() => { setShowHeaderDropdown(false); setActiveTab('dashboard'); }} style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '6px', border: 'none', background: 'transparent', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', fontWeight: 600, color: '#0f172a' }}>
+                    <Award size={14} style={{ color: '#d97706' }} /> Dashboard & Badges
                   </button>
+
+                  <button onClick={() => { setShowHeaderDropdown(false); setActiveTab('dashboard'); }} style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '6px', border: 'none', background: 'transparent', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', fontWeight: 600, color: '#0f172a' }}>
+                    <GraduationCap size={14} style={{ color: '#0284c7' }} /> Edit Profile / Settings
+                  </button>
+
+                  <div style={{ margin: '0.375rem 0', borderTop: '1px solid #f1f5f9', paddingTop: '0.375rem' }}>
+                    <div style={{ fontSize: '0.625rem', fontWeight: 700, color: '#94a3b8', padding: '0.25rem 0.75rem', textTransform: 'uppercase' }}>
+                      Switch Account
+                    </div>
+                    {testAccounts.map(acc => (
+                      <button 
+                        key={acc.id}
+                        onClick={() => { loginSimulated(acc.email); setShowHeaderDropdown(false); setActiveTab('dashboard'); }}
+                        style={{ width: '100%', padding: '0.375rem 0.75rem', borderRadius: '6px', border: 'none', background: 'transparent', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: '#475569' }}
+                      >
+                        <img src={acc.avatarUrl} alt="Avatar" style={{ width: '18px', height: '18px', borderRadius: '50%' }} />
+                        {acc.fullName}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '0.375rem', marginTop: '0.25rem' }}>
+                    <button onClick={() => { logout(); setShowHeaderDropdown(false); }} style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '6px', border: 'none', background: '#fef2f2', color: '#dc2626', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', fontWeight: 600 }}>
+                      <LogOut size={14} /> Logout
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {showCollegeWarning && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', backgroundColor: '#fef3c7', border: '1px solid #fde68a', borderRadius: '12px', padding: '1rem', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
@@ -738,35 +771,65 @@ function MainLayout() {
             socket={socket}
             wsMessages={wsMessages}
             setWsMessages={setWsMessages}
+            setActiveTab={setActiveTab}
           />
         )}
-        {activeTab === 'reels' && <ReelsScreen token={token} />}
+        {activeTab === 'reels' && (
+          <ReelsScreen 
+            token={token} 
+            setActiveTab={setActiveTab}
+            setActiveChatId={setActiveChatId}
+            setChatPeer={setChatPeer}
+            socket={socket}
+            setWsMessages={setWsMessages}
+          />
+        )}
       </main>
     </div>
   );
 }
 
-function SidebarLink({ active, icon, label, onClick }) {
+function SidebarLink({ active, icon, label, onClick, isCollapsed }) {
+  const [isHovered, setIsHovered] = useState(false);
+
   return (
-    <button onClick={onClick} style={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: '0.75rem',
-      width: '100%',
-      padding: '0.75rem 1rem',
-      borderRadius: '8px',
-      border: 'none',
-      cursor: 'pointer',
-      fontSize: '0.875rem',
-      fontWeight: active ? 600 : 500,
-      backgroundColor: active ? '#fef3c7' : 'transparent',
-      color: active ? '#b45309' : '#475569',
-      textAlign: 'left',
-      transition: 'all 0.15s ease'
-    }}>
-      <span style={{ color: active ? '#b45309' : '#64748b' }}>{icon}</span>
-      {label}
-    </button>
+    <div 
+      className="tooltip-container"
+      style={{ width: '100%', position: 'relative' }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <button onClick={onClick} style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: isCollapsed ? 'center' : 'flex-start',
+        gap: '0.75rem',
+        width: '100%',
+        padding: '0.75rem 1rem',
+        borderRadius: '10px',
+        border: 'none',
+        cursor: 'pointer',
+        fontSize: '0.875rem',
+        fontWeight: active ? 600 : 500,
+        backgroundColor: active ? '#fef3c7' : isHovered ? '#f8fafc' : 'transparent',
+        color: active ? '#b45309' : '#475569',
+        textAlign: 'left',
+        transition: 'all 0.15s ease',
+        boxShadow: active ? '0 2px 4px rgba(217, 119, 6, 0.1)' : 'none'
+      }}>
+        <span style={{ color: active ? '#b45309' : isHovered ? '#d97706' : '#64748b', display: 'flex', alignItems: 'center' }}>
+          {icon}
+        </span>
+        {!isCollapsed && <span>{label}</span>}
+      </button>
+
+      {/* FLOATING HOVER TOOLTIP (Reveals label on mouse hover) */}
+      {(isHovered || (isCollapsed && isHovered)) && (
+        <div className="tooltip-popup">
+          {label}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -3305,7 +3368,7 @@ function DoubtRoomsScreen({ token, activeRoomId, setActiveRoomId, socket, wsMess
 }
 
 // --- SCREEN: DIRECT CHAT 1:1 MESSAGING ---
-function ChatScreen({ token, activeChatId, setActiveChatId, chatPeer, setChatPeer, socket, wsMessages, setWsMessages }) {
+function ChatScreen({ token, activeChatId, setActiveChatId, chatPeer, setChatPeer, socket, wsMessages, setWsMessages, setActiveTab }) {
   const [threads, setThreads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [text, setText] = useState('');
@@ -3430,10 +3493,13 @@ function ChatScreen({ token, activeChatId, setActiveChatId, chatPeer, setChatPee
             <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1rem' }}>
               {wsMessages.filter(m => m.chatId === activeChatId).map((msg, i) => {
                 const isMe = msg.senderId === profile.id;
+                const isReelShare = msg.message && msg.message.includes('[REEL_SHARE:');
+                const reelText = isReelShare ? msg.message.replace(/\[REEL_SHARE:[^\]]+\]\s*/, '') : msg.message;
+
                 return (
                   <div key={i} style={{
                     alignSelf: isMe ? 'flex-end' : 'flex-start',
-                    maxWidth: '70%',
+                    maxWidth: '75%',
                     backgroundColor: isMe ? '#fef3c7' : '#f1f5f9',
                     color: '#0f172a',
                     padding: '0.625rem 1rem',
@@ -3442,7 +3508,23 @@ function ChatScreen({ token, activeChatId, setActiveChatId, chatPeer, setChatPee
                     borderColor: isMe ? '#fde68a' : '#e2e8f0',
                     fontSize: '0.875rem'
                   }}>
-                    {msg.message}
+                    {isReelShare ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: '#b45309', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase' }}>
+                          <Tv2 size={16} /> Shared Educational Reel
+                        </div>
+                        <div style={{ backgroundColor: '#09090b', color: '#f8fafc', padding: '0.75rem', borderRadius: '8px', borderLeft: '4px solid #d97706' }}>
+                          <p style={{ margin: 0, fontSize: '0.8125rem', lineHeight: 1.4 }}>{reelText}</p>
+                        </div>
+                        {setActiveTab && (
+                          <button onClick={() => setActiveTab('reels')} className="btn btn-accent" style={{ padding: '0.375rem 0.75rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.375rem', width: '100%' }}>
+                            ▶ Watch Reel Now
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      msg.message
+                    )}
                   </div>
                 );
               })}
@@ -3466,7 +3548,7 @@ function ChatScreen({ token, activeChatId, setActiveChatId, chatPeer, setChatPee
 }
 
 // --- SCREEN: EDUCATIONAL REELS (INSTAGRAM REELS FORMAT) ---
-function ReelsScreen({ token }) {
+function ReelsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, socket, setWsMessages }) {
   const [reels, setReels] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -3482,12 +3564,21 @@ function ReelsScreen({ token }) {
   const [commentText, setCommentText] = useState('');
   const [followingMap, setFollowingMap] = useState({});
 
+  // Share & Send states
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareTab, setShareTab] = useState('social'); // 'social' or 'connections'
+  const [shareSearch, setShareSearch] = useState('');
+  const [sentUsersMap, setSentUsersMap] = useState({});
+  const [toastMessage, setToastMessage] = useState('');
+
   // Upload form
   const [videoUrl, setVideoUrl] = useState('');
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
 
   const videoRef = useRef(null);
+  const wheelCooldownRef = useRef(false);
+  const touchStartYRef = useRef(0);
 
   const defaultReels = [
     {
@@ -3540,6 +3631,33 @@ function ReelsScreen({ token }) {
     }
   ];
 
+  const appConnections = [
+    {
+      id: "studenta-uuid",
+      chatId: "chat-studenta",
+      fullName: "Aarav Sharma",
+      college: "IIT Madras",
+      department: "Computer Science",
+      avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"
+    },
+    {
+      id: "studentb-uuid",
+      chatId: "chat-studentb",
+      fullName: "Bhavna Patel",
+      college: "IIT Bombay",
+      department: "Information Tech",
+      avatarUrl: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150"
+    },
+    {
+      id: "studentc-uuid",
+      chatId: "chat-studentc",
+      fullName: "Chaitanya Kumar",
+      college: "BITS Pilani",
+      department: "Electrical Eng",
+      avatarUrl: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150"
+    }
+  ];
+
   const fetchReels = async () => {
     try {
       const response = await fetch('/api/reels', {
@@ -3582,6 +3700,65 @@ function ReelsScreen({ token }) {
       setCurrentIndex(prev => prev - 1);
       setIsPlaying(true);
     }
+  };
+
+  // Keyboard navigation shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
+        e.preventDefault();
+        handleNext();
+      } else if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+        e.preventDefault();
+        handlePrev();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentIndex, reels.length]);
+
+  // Mouse wheel scroll handler with debounced cooldown
+  const handleWheel = (e) => {
+    if (wheelCooldownRef.current) return;
+    if (Math.abs(e.deltaY) < 15) return;
+
+    wheelCooldownRef.current = true;
+    setTimeout(() => {
+      wheelCooldownRef.current = false;
+    }, 350);
+
+    if (e.deltaY > 0) {
+      handleNext();
+    } else {
+      handlePrev();
+    }
+  };
+
+  // Touch swipe gesture handlers
+  const handleTouchStart = (e) => {
+    if (e.touches && e.touches.length > 0) {
+      touchStartYRef.current = e.touches[0].clientY;
+    }
+  };
+
+  const handleTouchEnd = (e) => {
+    if (e.changedTouches && e.changedTouches.length > 0) {
+      const touchEndY = e.changedTouches[0].clientY;
+      const diffY = touchStartYRef.current - touchEndY;
+      if (Math.abs(diffY) > 35) {
+        if (diffY > 0) {
+          handleNext();
+        } else {
+          handlePrev();
+        }
+      }
+    }
+  };
+
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(''), 3500);
   };
 
   const togglePlay = () => {
@@ -3682,193 +3859,414 @@ function ReelsScreen({ token }) {
     }
   };
 
+  // --- SHARE & IN-APP SEND HANDLERS ---
+  const shareReelUrl = window.location.origin + `#reel-${activeReel.id}`;
+  const shareText = `Check out this Educational Reel on StudyLoop: "${activeReel.subject} - ${activeReel.description}" 🚀`;
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(`${shareText}\n${shareReelUrl}`);
+    showToast("✨ Reel link & caption copied to clipboard!");
+  };
+
+  const handleNativeShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `StudyLoop Reel: ${activeReel.subject}`,
+          text: shareText,
+          url: shareReelUrl,
+        });
+      } catch (err) {
+        console.error(err);
+      }
+    } else {
+      handleCopyLink();
+    }
+  };
+
+  const shareToWhatsApp = () => {
+    const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText + "\n" + shareReelUrl)}`;
+    window.open(waUrl, '_blank');
+    showToast("Opening WhatsApp share...");
+  };
+
+  const shareToInstagram = () => {
+    navigator.clipboard.writeText(`${shareText}\n${shareReelUrl}`);
+    showToast("📸 Instagram Reel caption & link copied! Paste into Instagram story/DM.");
+  };
+
+  const shareToTwitter = () => {
+    const twUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareReelUrl)}`;
+    window.open(twUrl, '_blank');
+    showToast("Opening X (Twitter) share...");
+  };
+
+  const shareToTelegram = () => {
+    const tgUrl = `https://t.me/share/url?url=${encodeURIComponent(shareReelUrl)}&text=${encodeURIComponent(shareText)}`;
+    window.open(tgUrl, '_blank');
+    showToast("Opening Telegram share...");
+  };
+
+  const shareToLinkedIn = () => {
+    const liUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareReelUrl)}`;
+    window.open(liUrl, '_blank');
+    showToast("Opening LinkedIn share...");
+  };
+
+  const sendReelToUser = (user) => {
+    const messagePayload = `[REEL_SHARE:${activeReel.id}] 🎬 Watch Reel: #${activeReel.subject} - ${activeReel.description}`;
+
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({
+        type: 'DIRECT_MSG',
+        chatId: user.chatId || `chat-${user.id}`,
+        message: messagePayload
+      }));
+    }
+
+    if (setWsMessages) {
+      setWsMessages(prev => [...prev, {
+        type: 'DIRECT_MSG',
+        chatId: user.chatId || `chat-${user.id}`,
+        senderId: 'me',
+        message: messagePayload,
+        createdAt: new Date().toISOString()
+      }]);
+    }
+
+    setSentUsersMap(prev => ({ ...prev, [user.id]: true }));
+    showToast(`🚀 Shared reel directly with ${user.fullName}!`);
+  };
+
+  const filteredConnections = appConnections.filter(user => 
+    user.fullName.toLowerCase().includes(shareSearch.toLowerCase()) ||
+    user.college.toLowerCase().includes(shareSearch.toLowerCase())
+  );
+
   if (loading) {
     return <div style={{ textAlign: 'center', padding: '4rem' }}><div className="live-dot" style={{ backgroundColor: '#d97706' }}></div></div>;
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', padding: '0.5rem 0' }}>
-      {/* Top Header Controls */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', maxWidth: '420px', marginBottom: '1rem' }}>
-        <div>
-          <h1 className="font-serif" style={{ fontSize: '1.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Tv2 size={24} style={{ color: '#d97706' }} /> Study Reels
-          </h1>
-          <p style={{ color: '#64748b', fontSize: '0.75rem' }}>Instagram-style educational shorts</p>
+    <div style={{ 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center', 
+      height: '100%', 
+      width: '100%', 
+      backgroundColor: '#09090b', 
+      position: 'relative', 
+      overflow: 'hidden',
+      padding: 0
+    }}>
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div style={{
+          position: 'fixed',
+          top: '1.25rem',
+          right: '1.25rem',
+          backgroundColor: '#0f172a',
+          color: '#ffffff',
+          padding: '0.75rem 1.25rem',
+          borderRadius: '12px',
+          boxShadow: '0 10px 25px rgba(0,0,0,0.3)',
+          borderLeft: '4px solid #d97706',
+          zIndex: 100,
+          fontSize: '0.8125rem',
+          fontWeight: 600,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          animation: 'fadeIn 0.3s ease'
+        }}>
+          <Sparkles size={16} style={{ color: '#fbbf24' }} />
+          {toastMessage}
         </div>
+      )}
 
-        <button onClick={() => setShowUpload(!showUpload)} className="btn btn-accent" style={{ padding: '0.5rem 0.75rem', fontSize: '0.75rem' }}>
-          <Plus size={16} /> Post Reel
-        </button>
-      </div>
-
-      {/* Upload Modal */}
+      {/* Upload Modal Overlay */}
       {showUpload && (
-        <form onSubmit={handleUploadReel} className="card-premium" style={{ width: '100%', maxWidth: '420px', marginBottom: '1rem', backgroundColor: '#ffffff' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <h3 className="font-serif" style={{ fontSize: '1.125rem' }}>Upload Concept Short</h3>
+        <form onSubmit={handleUploadReel} className="card-premium" style={{ 
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: '90%', 
+          maxWidth: '420px', 
+          backgroundColor: '#ffffff', 
+          zIndex: 100,
+          boxShadow: '0 20px 50px rgba(0,0,0,0.8)'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+            <h3 className="font-serif" style={{ fontSize: '1rem', margin: 0 }}>Upload Concept Short</h3>
             <button type="button" onClick={() => setShowUpload(false)} className="btn-icon"><X size={16} /></button>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             <div>
-              <label className="label">Video Stream URL (MP4)</label>
-              <input type="text" className="input" placeholder="https://.../video.mp4" value={videoUrl} onChange={e => setVideoUrl(e.target.value)} required />
+              <label className="label" style={{ fontSize: '0.75rem' }}>Video Stream URL (MP4)</label>
+              <input type="text" className="input" placeholder="https://.../video.mp4" value={videoUrl} onChange={e => setVideoUrl(e.target.value)} required style={{ padding: '0.375rem 0.625rem', fontSize: '0.8125rem' }} />
             </div>
             <div>
-              <label className="label">Subject Tag</label>
-              <input type="text" className="input" placeholder="e.g. React, Java, Calculus" value={subject} onChange={e => setSubject(e.target.value)} required />
+              <label className="label" style={{ fontSize: '0.75rem' }}>Subject Tag</label>
+              <input type="text" className="input" placeholder="e.g. React, Java, Calculus" value={subject} onChange={e => setSubject(e.target.value)} required style={{ padding: '0.375rem 0.625rem', fontSize: '0.8125rem' }} />
             </div>
             <div>
-              <label className="label">Caption & Concept Explanation</label>
-              <textarea className="input" style={{ minHeight: '60px' }} placeholder="Explain this academic concept in 60s..." value={description} onChange={e => setDescription(e.target.value)} />
+              <label className="label" style={{ fontSize: '0.75rem' }}>Caption & Concept Explanation</label>
+              <textarea className="input" style={{ minHeight: '50px', padding: '0.375rem 0.625rem', fontSize: '0.8125rem' }} placeholder="Explain this academic concept in 60s..." value={description} onChange={e => setDescription(e.target.value)} />
             </div>
-            <button type="submit" className="btn btn-accent" style={{ width: '100%' }}>Publish to Reels</button>
+            <button type="submit" className="btn btn-accent" style={{ width: '100%', padding: '0.5rem' }}>Publish to Reels</button>
           </div>
         </form>
       )}
 
-      {/* INSTAGRAM REELS PHONE CONTAINER */}
-      <div style={{
-        position: 'relative',
-        width: '100%',
-        maxWidth: '400px',
-        height: '640px',
-        backgroundColor: '#09090b',
-        borderRadius: '24px',
-        overflow: 'hidden',
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1)',
-        display: 'flex',
-        flexDirection: 'column'
-      }}>
-        {/* Video Player */}
-        <video
-          ref={videoRef}
-          src={activeReel.videoUrl}
-          style={{ width: '100%', height: '100%', objectFit: 'cover', cursor: 'pointer' }}
-          autoPlay
-          loop
-          muted={muted}
-          playsInline
-          onClick={togglePlay}
-        />
-
-        {/* Up / Down Navigation Overlays */}
-        <div style={{ position: 'absolute', top: '1rem', left: '1rem', right: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 10 }}>
-          <div style={{ display: 'flex', gap: '0.25rem' }}>
-            <button onClick={handlePrev} disabled={currentIndex === 0} style={{ background: 'rgba(0,0,0,0.5)', border: 'none', borderRadius: '50%', width: '32px', height: '32px', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: currentIndex === 0 ? 0.3 : 1, cursor: 'pointer' }}>
-              <ChevronUp size={18} />
-            </button>
-            <button onClick={handleNext} disabled={currentIndex === reels.length - 1} style={{ background: 'rgba(0,0,0,0.5)', border: 'none', borderRadius: '50%', width: '32px', height: '32px', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: currentIndex === reels.length - 1 ? 0.3 : 1, cursor: 'pointer' }}>
-              <ChevronDown size={18} />
-            </button>
-          </div>
-
-          <button onClick={() => setMuted(!muted)} style={{ background: 'rgba(0,0,0,0.5)', border: 'none', borderRadius: '50%', width: '32px', height: '32px', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-            {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
-          </button>
-        </div>
-
-        {/* Play/Pause indicator overlay */}
-        {!isPlaying && (
-          <div onClick={togglePlay} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.3)', cursor: 'pointer', zIndex: 5 }}>
-            <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff' }}>
-              ▶
-            </div>
-          </div>
-        )}
-
-        {/* BOTTOM METADATA OVERLAY */}
-        <div style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: '70px',
-          padding: '1.25rem',
-          background: 'linear-gradient(transparent, rgba(0,0,0,0.9))',
-          color: '#ffffff',
+      {/* FULL SCREEN 9:16 INSTAGRAM REELS VIEWPORT */}
+      <div 
+        onWheel={handleWheel}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        style={{
+          position: 'relative',
           display: 'flex',
-          flexDirection: 'column',
-          gap: '0.625rem',
-          zIndex: 10
-        }}>
-          {/* Creator handle */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
-            <img src={activeReel.creator?.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${activeReel.creator?.fullName}`} alt="Avatar" style={{ width: '36px', height: '36px', borderRadius: '50%', border: '2px solid #d97706' }} />
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ fontWeight: 700, fontSize: '0.875rem' }}>@{activeReel.creator?.username || activeReel.creator?.fullName?.toLowerCase().replace(/\s+/g, '_')}</span>
-                <button onClick={() => toggleFollow(activeReel.creator?.id)} style={{ background: 'transparent', border: '1px solid #ffffff', borderRadius: '4px', color: '#ffffff', fontSize: '0.6875rem', fontWeight: 600, padding: '0.125rem 0.5rem', cursor: 'pointer' }}>
-                  {followingMap[activeReel.creator?.id] ? "Following" : "Follow"}
-                </button>
-              </div>
-              <div style={{ fontSize: '0.6875rem', color: '#cbd5e1' }}>
-                {activeReel.creator?.college} • {activeReel.creator?.department}
-              </div>
-            </div>
-          </div>
-
-          {/* Caption & Subject Tag */}
-          <div>
-            <span style={{ fontSize: '0.6875rem', fontWeight: 700, backgroundColor: '#d97706', color: '#ffffff', padding: '0.125rem 0.5rem', borderRadius: '50px', marginRight: '0.5rem' }}>
-              #{activeReel.subject}
-            </span>
-            <span style={{ fontSize: '0.8125rem', color: '#f8fafc', lineHeight: 1.4 }}>
-              {activeReel.description}
-            </span>
-          </div>
-
-          {/* Music track ticker */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.6875rem', color: '#94a3b8' }}>
-            <Music size={12} />
-            <span>StudyLoop Academic Shorts • Original Audio</span>
-          </div>
-        </div>
-
-        {/* RIGHT ACTION SIDEBAR */}
-        <div style={{
-          position: 'absolute',
-          right: '0.75rem',
-          bottom: '1.25rem',
-          display: 'flex',
-          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100vh',
+          maxHeight: '100vh',
+          width: '100%',
           gap: '1.25rem',
+          userSelect: 'none'
+        }}
+      >
+        {/* Main 9:16 Center Video Frame */}
+        <div style={{
+          position: 'relative',
+          height: '100vh',
+          maxHeight: '100vh',
+          aspectRatio: '9 / 16',
+          backgroundColor: '#000000',
+          borderRadius: '16px',
+          overflow: 'hidden',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.1)',
+          display: 'flex',
+          flexDirection: 'column',
+          justify: 'center'
+        }}>
+          {/* Video Player */}
+          <video
+            ref={videoRef}
+            src={activeReel.videoUrl}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', cursor: 'pointer' }}
+            autoPlay
+            loop
+            muted={muted}
+            playsInline
+            onClick={togglePlay}
+          />
+
+          {/* Top Floating Control Bar Overlay */}
+          <div style={{ 
+            position: 'absolute', 
+            top: '0.75rem', 
+            left: '0.75rem', 
+            right: '0.75rem', 
+            display: 'flex', 
+            justify: 'space-between', 
+            alignItems: 'center', 
+            zIndex: 20 
+          }}>
+            <div style={{ display: 'flex', gap: '0.375rem', alignItems: 'center' }}>
+              <ReelsActionButton 
+                label="Scroll Up (W / ↑)"
+                disabled={currentIndex === 0}
+                icon={<ChevronUp size={16} />}
+                onClick={handlePrev}
+              />
+              <ReelsActionButton 
+                label="Scroll Down (S / ↓)"
+                disabled={currentIndex === reels.length - 1}
+                icon={<ChevronDown size={16} />}
+                onClick={handleNext}
+              />
+              <span style={{ 
+                fontSize: '0.6875rem', 
+                color: '#ffffff', 
+                backgroundColor: 'rgba(0,0,0,0.6)', 
+                padding: '0.2rem 0.5rem', 
+                borderRadius: '10px', 
+                backdropFilter: 'blur(6px)', 
+                fontWeight: 600 
+              }}>
+                {currentIndex + 1} / {reels.length}
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.375rem', alignItems: 'center' }}>
+              <button 
+                onClick={() => setShowUpload(!showUpload)} 
+                style={{ 
+                  background: '#d97706', 
+                  border: 'none', 
+                  borderRadius: '20px', 
+                  color: '#ffffff', 
+                  padding: '0.25rem 0.625rem', 
+                  fontSize: '0.6875rem', 
+                  fontWeight: 600, 
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.25rem',
+                  boxShadow: '0 2px 8px rgba(217, 119, 6, 0.4)'
+                }}
+              >
+                <Plus size={14} /> Post Reel
+              </button>
+              <ReelsActionButton 
+                label={muted ? "Unmute Audio" : "Mute Audio"}
+                icon={muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+                onClick={() => setMuted(!muted)}
+              />
+            </div>
+          </div>
+
+          {/* VISUAL SCROLL PROGRESS TRACK (RIGHT SIDE OF VIDEO) */}
+          <div style={{
+            position: 'absolute',
+            right: '4px',
+            top: '60px',
+            bottom: '140px',
+            width: '3px',
+            backgroundColor: 'rgba(255, 255, 255, 0.2)',
+            borderRadius: '4px',
+            zIndex: 15,
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
+            {reels.map((_, idx) => (
+              <div 
+                key={idx}
+                onClick={() => setCurrentIndex(idx)}
+                style={{
+                  flex: 1,
+                  margin: '1px 0',
+                  backgroundColor: idx === currentIndex ? '#d97706' : 'rgba(255,255,255,0.4)',
+                  borderRadius: '3px',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease'
+                }}
+              />
+            ))}
+          </div>
+
+          {/* Play/Pause overlay */}
+          {!isPlaying && (
+            <div onClick={togglePlay} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.3)', cursor: 'pointer', zIndex: 5 }}>
+              <div style={{ width: '52px', height: '52px', borderRadius: '50%', backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff', fontSize: '1.25rem' }}>
+                ▶
+              </div>
+            </div>
+          )}
+
+          {/* BOTTOM LEFT METADATA OVERLAY (MATCHING IMAGE 2) */}
+          <div style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: '55px',
+            padding: '0.875rem',
+            background: 'linear-gradient(transparent, rgba(0,0,0,0.92))',
+            color: '#ffffff',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.375rem',
+            zIndex: 10
+          }}>
+            {/* Creator handle & Follow button */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <img src={activeReel.creator?.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${activeReel.creator?.fullName}`} alt="Avatar" style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid #d97706' }} />
+              <span style={{ fontWeight: 700, fontSize: '0.8125rem', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>
+                @{activeReel.creator?.username || activeReel.creator?.fullName?.toLowerCase().replace(/\s+/g, '_')}
+              </span>
+              <button 
+                onClick={() => toggleFollow(activeReel.creator?.id)} 
+                style={{ 
+                  background: 'transparent', 
+                  border: '1px solid rgba(255,255,255,0.8)', 
+                  borderRadius: '6px', 
+                  color: '#ffffff', 
+                  fontSize: '0.6875rem', 
+                  fontWeight: 600, 
+                  padding: '0.125rem 0.5rem', 
+                  cursor: 'pointer',
+                  backdropFilter: 'blur(4px)'
+                }}
+              >
+                {followingMap[activeReel.creator?.id] ? "Following" : "Follow"}
+              </button>
+            </div>
+
+            {/* Caption & Subject Tag */}
+            <div style={{ fontSize: '0.75rem', color: '#f8fafc', lineHeight: 1.3, textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>
+              <span style={{ fontSize: '0.625rem', fontWeight: 700, backgroundColor: '#d97706', color: '#ffffff', padding: '0.125rem 0.375rem', borderRadius: '50px', marginRight: '0.375rem' }}>
+                #{activeReel.subject}
+              </span>
+              {activeReel.description}
+            </div>
+
+            {/* Music track ticker */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.625rem', color: '#cbd5e1' }}>
+              <Music size={12} />
+              <span>StudyLoop Academic Shorts • Scroll for next</span>
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT SIDE ACTION BAR (CLEAN INSTAGRAM STYLE MATCHING IMAGE 2) */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '1.125rem',
           alignItems: 'center',
           color: '#ffffff',
+          padding: '0 0.75rem',
           zIndex: 10
         }}>
           {/* Like button */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
-            <button onClick={() => toggleLike(activeReel.id)} style={{ background: 'rgba(0,0,0,0.4)', border: 'none', width: '44px', height: '44px', borderRadius: '50%', color: likedMap[activeReel.id] ? '#ef4444' : '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: 'blur(4px)' }}>
-              <Heart size={22} fill={likedMap[activeReel.id] ? '#ef4444' : 'none'} />
-            </button>
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>
-              {likesCountMap[activeReel.id] || activeReel.likesCount}
-            </span>
-          </div>
+          <ReelsActionButton 
+            label={likedMap[activeReel.id] ? "Liked Reel" : "Like Reel"}
+            activeColor={likedMap[activeReel.id] ? '#ef4444' : '#ffffff'}
+            icon={<Heart size={22} fill={likedMap[activeReel.id] ? '#ef4444' : 'none'} />}
+            badgeText={likesCountMap[activeReel.id] || activeReel.likesCount}
+            onClick={() => toggleLike(activeReel.id)}
+          />
 
           {/* Comment button */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
-            <button onClick={() => setShowComments(!showComments)} style={{ background: 'rgba(0,0,0,0.4)', border: 'none', width: '44px', height: '44px', borderRadius: '50%', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: 'blur(4px)' }}>
-              <MessageCircle size={22} />
-            </button>
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>
-              {(commentsMap[activeReel.id] || []).length || activeReel.commentsCount}
-            </span>
-          </div>
+          <ReelsActionButton 
+            label="Comments"
+            icon={<MessageCircle size={22} />}
+            badgeText={(commentsMap[activeReel.id] || []).length || activeReel.commentsCount}
+            onClick={() => setShowComments(!showComments)}
+          />
 
           {/* Share button */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
-            <button onClick={() => alert("Reel link copied to clipboard!")} style={{ background: 'rgba(0,0,0,0.4)', border: 'none', width: '44px', height: '44px', borderRadius: '50%', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: 'blur(4px)' }}>
-              <Share2 size={20} />
-            </button>
-            <span style={{ fontSize: '0.6875rem', fontWeight: 600 }}>Share</span>
-          </div>
+          <ReelsActionButton 
+            label="Share & Send Reel"
+            icon={<Share2 size={20} />}
+            badgeText="Share"
+            onClick={() => setShowShareModal(true)}
+          />
 
-          {/* Spinning Audio Disc */}
-          <div style={{ marginTop: '0.5rem' }}>
-            <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: '#18181b', border: '2px solid #ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Disc size={18} style={{ color: '#d97706' }} />
+          {/* Save / Bookmark Button */}
+          <ReelsActionButton 
+            label="Save Reel"
+            icon={<Bookmark size={20} />}
+            badgeText="Save"
+            onClick={() => showToast("Bookmark saved to your profile!")}
+          />
+
+          {/* Spinning Audio Disc / Creator Avatar */}
+          <div style={{ marginTop: '0.25rem' }}>
+            <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#18181b', border: '2px solid #ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Disc size={16} style={{ color: '#d97706' }} />
             </div>
           </div>
         </div>
@@ -3915,7 +4313,336 @@ function ReelsScreen({ token }) {
             </form>
           </div>
         )}
+
+        {/* MULTI-PLATFORM & IN-APP SHARE MODAL SLIDE-UP */}
+        {showShareModal && (
+          <div style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: '80%',
+            backgroundColor: '#0f172a',
+            borderTopLeftRadius: '20px',
+            borderTopRightRadius: '20px',
+            color: '#ffffff',
+            padding: '1rem',
+            display: 'flex',
+            flexDirection: 'column',
+            zIndex: 40,
+            boxShadow: '0 -15px 35px rgba(0,0,0,0.7)',
+            borderTop: '1px solid rgba(255,255,255,0.1)'
+          }}>
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>
+              <div>
+                <h3 className="font-serif" style={{ fontSize: '1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Share2 size={18} style={{ color: '#d97706' }} /> Share & Send Reel
+                </h3>
+                <p style={{ fontSize: '0.6875rem', color: '#94a3b8', margin: 0 }}>Send to social media or StudyLoop connections</p>
+              </div>
+              <button onClick={() => setShowShareModal(false)} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '50%', width: '28px', height: '28px', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Tab Navigation */}
+            <div style={{ display: 'flex', gap: '0.5rem', backgroundColor: 'rgba(255,255,255,0.05)', padding: '0.25rem', borderRadius: '10px', marginBottom: '0.75rem' }}>
+              <button 
+                onClick={() => setShareTab('social')}
+                style={{
+                  flex: 1,
+                  padding: '0.375rem',
+                  borderRadius: '6px',
+                  border: 'none',
+                  backgroundColor: shareTab === 'social' ? '#d97706' : 'transparent',
+                  color: '#ffffff',
+                  fontWeight: shareTab === 'social' ? 700 : 500,
+                  fontSize: '0.75rem',
+                  cursor: 'pointer'
+                }}
+              >
+                🌐 Social Platforms
+              </button>
+              <button 
+                onClick={() => setShareTab('connections')}
+                style={{
+                  flex: 1,
+                  padding: '0.375rem',
+                  borderRadius: '6px',
+                  border: 'none',
+                  backgroundColor: shareTab === 'connections' ? '#d97706' : 'transparent',
+                  color: '#ffffff',
+                  fontWeight: shareTab === 'connections' ? 700 : 500,
+                  fontSize: '0.75rem',
+                  cursor: 'pointer'
+                }}
+              >
+                👥 Send to Followers
+              </button>
+            </div>
+
+            {/* TAB CONTENT 1: SOCIAL MEDIA PLATFORMS */}
+            {shareTab === 'social' && (
+              <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem' }}>
+                  {/* WhatsApp */}
+                  <button 
+                    onClick={shareToWhatsApp}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.625rem',
+                      borderRadius: '10px',
+                      border: 'none',
+                      backgroundColor: '#25D366',
+                      color: '#ffffff',
+                      fontWeight: 700,
+                      fontSize: '0.75rem',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    💬 WhatsApp
+                  </button>
+
+                  {/* Instagram Direct Link */}
+                  <button 
+                    onClick={() => window.open('https://www.instagram.com/', '_blank')}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.625rem',
+                      borderRadius: '10px',
+                      border: 'none',
+                      background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
+                      color: '#ffffff',
+                      fontWeight: 700,
+                      fontSize: '0.75rem',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    📸 Instagram Web
+                  </button>
+
+                  {/* X / Twitter */}
+                  <button 
+                    onClick={shareToTwitter}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.625rem',
+                      borderRadius: '10px',
+                      border: 'none',
+                      backgroundColor: '#000000',
+                      color: '#ffffff',
+                      fontWeight: 700,
+                      fontSize: '0.75rem',
+                      cursor: 'pointer',
+                      boxShadow: '0 0 0 1px rgba(255,255,255,0.2)'
+                    }}
+                  >
+                    𝕏 Twitter / X
+                  </button>
+
+                  {/* Telegram */}
+                  <button 
+                    onClick={shareToTelegram}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.625rem',
+                      borderRadius: '10px',
+                      border: 'none',
+                      backgroundColor: '#229ED9',
+                      color: '#ffffff',
+                      fontWeight: 700,
+                      fontSize: '0.75rem',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    ✈️ Telegram
+                  </button>
+
+                  {/* LinkedIn */}
+                  <button 
+                    onClick={shareToLinkedIn}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.625rem',
+                      borderRadius: '10px',
+                      border: 'none',
+                      backgroundColor: '#0A66C2',
+                      color: '#ffffff',
+                      fontWeight: 700,
+                      fontSize: '0.75rem',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    💼 LinkedIn
+                  </button>
+
+                  {/* Native Device Share */}
+                  <button 
+                    onClick={handleNativeShare}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.625rem',
+                      borderRadius: '10px',
+                      border: 'none',
+                      backgroundColor: '#3b82f6',
+                      color: '#ffffff',
+                      fontWeight: 700,
+                      fontSize: '0.75rem',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <Share2 size={14} /> More Options
+                  </button>
+                </div>
+
+                {/* Copy Link Button Box */}
+                <div style={{ marginTop: '0.5rem', backgroundColor: 'rgba(255,255,255,0.05)', padding: '0.5rem', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+                  <div style={{ fontSize: '0.6875rem', color: '#cbd5e1', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {shareReelUrl}
+                  </div>
+                  <button onClick={handleCopyLink} className="btn btn-accent" style={{ padding: '0.25rem 0.5rem', fontSize: '0.6875rem', whiteSpace: 'nowrap' }}>
+                    Copy Link
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* TAB CONTENT 2: IN-APP DIRECT SEND TO CONNECTIONS */}
+            {shareTab === 'connections' && (
+              <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                {/* Search Bar */}
+                <div style={{ position: 'relative' }}>
+                  <Search size={14} style={{ position: 'absolute', left: '0.625rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                  <input 
+                    type="text"
+                    placeholder="Search followers..."
+                    value={shareSearch}
+                    onChange={e => setShareSearch(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '0.375rem 0.625rem 0.375rem 2rem',
+                      borderRadius: '8px',
+                      border: '1px solid rgba(255,255,255,0.2)',
+                      backgroundColor: 'rgba(255,255,255,0.08)',
+                      color: '#ffffff',
+                      fontSize: '0.75rem',
+                      outline: 'none'
+                    }}
+                  />
+                </div>
+
+                {/* Connections List */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', marginTop: '0.25rem' }}>
+                  {filteredConnections.length === 0 ? (
+                    <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: '0.6875rem', margin: '1rem 0' }}>No matching connections found.</p>
+                  ) : (
+                    filteredConnections.map(user => {
+                      const isSent = sentUsersMap[user.id];
+                      return (
+                        <div key={user.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.375rem 0.5rem', borderRadius: '8px', backgroundColor: 'rgba(255,255,255,0.04)' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <img src={user.avatarUrl} alt="Avatar" style={{ width: '30px', height: '30px', borderRadius: '50%' }} />
+                            <div>
+                              <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#ffffff' }}>{user.fullName}</div>
+                              <div style={{ fontSize: '0.625rem', color: '#94a3b8' }}>{user.college}</div>
+                            </div>
+                          </div>
+
+                          <button 
+                            onClick={() => {
+                              sendReelToUser(user);
+                              if (setActiveChatId && setChatPeer) {
+                                setActiveChatId(user.chatId || `chat-${user.id}`);
+                                setChatPeer(user);
+                              }
+                            }}
+                            disabled={isSent}
+                            style={{
+                              padding: '0.25rem 0.625rem',
+                              borderRadius: '6px',
+                              border: 'none',
+                              backgroundColor: isSent ? '#16a34a' : '#d97706',
+                              color: '#ffffff',
+                              fontWeight: 600,
+                              fontSize: '0.6875rem',
+                              cursor: isSent ? 'default' : 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.25rem'
+                            }}
+                          >
+                            {isSent ? <><Check size={12} /> Sent</> : <><Send size={12} /> Send</>}
+                          </button>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
+    </div>
+  );
+}
+
+// Action Button Helper with Hover Tooltip support for Reels Controls
+function ReelsActionButton({ icon, label, onClick, badgeText, activeColor, disabled }) {
+  const [isHovered, setIsHovered] = useState(false);
+
+  return (
+    <div 
+      className="tooltip-container"
+      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem', position: 'relative' }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <button 
+        onClick={onClick} 
+        disabled={disabled}
+        style={{ 
+          background: 'rgba(0,0,0,0.5)', 
+          border: '1px solid rgba(255,255,255,0.15)', 
+          width: '38px', 
+          height: '38px', 
+          borderRadius: '50%', 
+          color: activeColor || '#ffffff', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          cursor: disabled ? 'default' : 'pointer', 
+          opacity: disabled ? 0.3 : 1,
+          backdropFilter: 'blur(4px)',
+          transition: 'all 0.2s ease',
+          transform: isHovered && !disabled ? 'scale(1.1)' : 'scale(1)'
+        }}
+      >
+        {icon}
+      </button>
+      {badgeText && (
+        <span style={{ fontSize: '0.6875rem', fontWeight: 700, textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>
+          {badgeText}
+        </span>
+      )}
+      {isHovered && label && (
+        <div className="tooltip-popup" style={{ right: '100%', left: 'auto', marginRight: '10px' }}>
+          {label}
+        </div>
+      )}
     </div>
   );
 }
@@ -4442,301 +5169,474 @@ function PublicProfileModal({ user, currentUserId, token, onClose, onStartChat, 
   );
 }
 
-// --- DEDICATED FULL-SCREEN STUDENT LOGIN PAGE & HOME SCREEN (IMAGE 1 MATCH) ---
+// --- DEDICATED FULL-SCREEN STUDENT LOGIN & SIGNUP PAGE (IMAGE 1 EXACT MATCH) ---
 function LandingScreen({ setActiveTab, loginSimulated, testAccounts }) {
   const { user, profile, logout } = useAuth();
-  const [authTab, setAuthTab] = useState('login'); // 'login' or 'signup'
-  const [emailInput, setEmailInput] = useState('studenta@student.com');
-  const [passwordInput, setPasswordInput] = useState('password123');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showQuickFill, setShowQuickFill] = useState(true);
+  const [authTab, setAuthTab] = useState('signup'); // 'signup' or 'login'
+  
+  // Login Form States
+  const [loginEmail, setLoginEmail] = useState('studenta@student.com');
+  const [loginPassword, setLoginPassword] = useState('password123');
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
 
-  const handleManualLogin = (e) => {
+  // Signup Form States
+  const [fullName, setFullName] = useState('');
+  const [signupEmail, setSignupEmail] = useState('');
+  const [signupPassword, setSignupPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [agreeTerms, setAgreeTerms] = useState(true);
+
+  const handleLoginSubmit = (e) => {
     e.preventDefault();
-    if (!emailInput) return;
-    loginSimulated(emailInput);
+    if (!loginEmail) return;
+    loginSimulated(loginEmail);
     setActiveTab('dashboard');
   };
 
-  // 1. DEDICATED SPLIT-CARD LOGIN PAGE FOR VISITORS (EXACT MATCH IMAGE 1)
+  const handleSignupSubmit = (e) => {
+    e.preventDefault();
+    if (!signupEmail) return;
+    if (signupPassword && confirmPassword && signupPassword !== confirmPassword) {
+      alert("Passwords do not match! Please check your password input.");
+      return;
+    }
+    if (!agreeTerms) {
+      alert("Please agree to the Terms & Conditions and Privacy Policy to proceed.");
+      return;
+    }
+    loginSimulated(signupEmail);
+    setActiveTab('dashboard');
+  };
+
+  const handleGoogleSSO = () => {
+    const defaultTestUser = testAccounts[0]?.email || 'aarav.sharma@iitm.ac.in';
+    loginSimulated(defaultTestUser);
+    setActiveTab('dashboard');
+  };
+
+  // 1. DEDICATED SPLIT-CARD AUTH PAGE FOR VISITORS (IMAGE 1 EXACT MATCH)
   if (!user) {
     return (
       <div style={{
         minHeight: '100vh',
         width: '100vw',
         backgroundColor: '#eef2ff',
-        backgroundImage: 'radial-gradient(at 0% 0%, rgba(124, 58, 237, 0.12) 0px, transparent 50%), radial-gradient(at 100% 100%, rgba(219, 39, 119, 0.1) 0px, transparent 50%)',
+        backgroundImage: 'radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.12) 0px, transparent 50%), radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.1) 0px, transparent 50%)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         padding: '2rem 1rem'
       }}>
-        {/* MAIN SPLIT CARD CONTAINER (IMAGE 1 EXACT LAYOUT) */}
+        {/* MAIN SPLIT CARD CONTAINER (IMAGE 1 EXACT MATCH) */}
         <div style={{
           width: '100%',
-          maxWidth: '1040px',
-          minHeight: '660px',
-          borderRadius: '32px',
+          maxWidth: '1020px',
+          minHeight: '620px',
+          borderRadius: '24px',
           backgroundColor: '#ffffff',
-          boxShadow: '0 30px 80px rgba(15, 23, 42, 0.18)',
+          boxShadow: '0 25px 60px rgba(15, 23, 42, 0.12)',
           display: 'grid',
           gridTemplateColumns: '1.05fr 1fr',
           overflow: 'hidden',
           border: '1px solid #e0e7ff'
         }}>
 
-          {/* LEFT SIDE: BRANDING, FEATURES, ILLUSTRATION & TESTIMONIAL (PURPLE THEME MATCHING IMAGE 1) */}
+          {/* LEFT COLUMN: BRANDING, SLOGAN & STUDENT COLLABORATION ILLUSTRATION (IMAGE 1 MATCH) */}
           <div style={{
-            backgroundColor: '#f3e8ff',
-            padding: '3rem 2.5rem',
+            background: 'linear-gradient(135deg, #f0f4ff 0%, #e6eeff 100%)',
+            padding: '3rem 2.5rem 2rem 2.5rem',
             display: 'flex',
             flexDirection: 'column',
-            justifyContent: 'space-between',
+            justify: 'space-between',
             position: 'relative',
-            backgroundImage: 'radial-gradient(circle at 10% 20%, rgba(192, 132, 252, 0.25) 0%, transparent 40%)'
+            overflow: 'hidden'
           }}>
-            {/* Top Logo Header */}
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '2rem' }}>
-                <div style={{ width: '40px', height: '40px', borderRadius: '12px', backgroundColor: '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 16px rgba(124, 58, 237, 0.3)' }}>
-                  <Infinity size={26} style={{ color: '#ffffff' }} />
+              {/* Brand Header */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2.5rem' }}>
+                <div style={{
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '50%',
+                  background: 'conic-gradient(from 180deg, #3b82f6, #a855f7, #ec4899, #3b82f6)',
+                  padding: '3px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <div style={{ width: '100%', height: '100%', backgroundColor: '#ffffff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ width: '16px', height: '16px', borderRadius: '50%', background: 'linear-gradient(135deg, #4f46e5, #9333ea)' }}></div>
+                  </div>
                 </div>
-                <span className="font-serif" style={{ fontSize: '1.625rem', fontWeight: 800, color: '#4c1d95' }}>StudentLoop</span>
+                <span className="font-serif" style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1e1b4b' }}>
+                  Study Loop
+                </span>
               </div>
 
-              {/* Main Headline */}
-              <h1 className="font-serif" style={{ fontSize: '2.5rem', fontWeight: 800, color: '#1e1b4b', lineHeight: 1.15, marginBottom: '1rem' }}>
-                Learn Together.<br />Grow Together.
+              {/* Slogan & Subtitle */}
+              <h1 className="font-serif" style={{ fontSize: '2.125rem', fontWeight: 800, color: '#1e1b4b', lineHeight: 1.25, marginBottom: '0.75rem' }}>
+                Learn. Teach. <span style={{ color: '#6366f1' }}>Connect.</span> Grow.
               </h1>
-              <p style={{ fontSize: '0.9375rem', color: '#4338ca', lineHeight: 1.5, marginBottom: '2rem', maxWidth: '380px' }}>
-                Connect with the right learning partner, share knowledge, and achieve your academic goals together.
+              <p style={{ fontSize: '0.9375rem', color: '#475569', lineHeight: 1.5, marginBottom: '1.5rem', maxWidth: '380px' }}>
+                Join a community where students learn from students.
               </p>
-
-              {/* Feature Bullets with Icons */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
-                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: '#ddd6fe', color: '#6d28d9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Users size={18} />
-                  </div>
-                  <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#312e81' }}>Find the perfect learning partner</span>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
-                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: '#ddd6fe', color: '#6d28d9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <BookOpen size={18} />
-                  </div>
-                  <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#312e81' }}>Learn new skills together</span>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
-                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: '#ddd6fe', color: '#6d28d9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Trophy size={18} />
-                  </div>
-                  <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#312e81' }}>Earn XP and build your reputation</span>
-                </div>
-              </div>
             </div>
 
-            {/* Testimonial Quote Box (Image 1 Match) */}
-            <div style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.85)',
-              backdropFilter: 'blur(12px)',
-              borderRadius: '20px',
-              padding: '1.25rem 1.5rem',
-              boxShadow: '0 10px 30px rgba(124, 58, 237, 0.12)',
-              border: '1px solid rgba(255, 255, 255, 0.8)',
-              display: 'flex',
-              gap: '1rem',
-              alignItems: 'center'
-            }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: '#8b5cf6', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '1.125rem' }}>
-                ❝
-              </div>
-              <div style={{ flex: 1 }}>
-                <p style={{ fontSize: '0.8125rem', color: '#334155', lineHeight: 1.4, fontStyle: 'italic', marginBottom: '0.25rem' }}>
-                  "StudentLoop helped me find amazing mentors and friends. It changed the way I learn and grow!"
-                </p>
-                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#6d28d9' }}>
-                  — Arjun, <span style={{ fontWeight: 500, color: '#64748b' }}>Computer Science Student</span>
-                </div>
-              </div>
+            {/* Custom Student Collaboration Illustration (Matching Image 1) */}
+            <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginTop: 'auto' }}>
+              <svg viewBox="0 0 500 320" style={{ width: '100%', maxHeight: '240px' }} fill="none" xmlns="http://www.w3.org/2000/svg">
+                {/* Background decorative circles & waves */}
+                <path d="M0 220 Q120 180 250 220 T500 200 V320 H0 Z" fill="#dbeafe" opacity="0.6"/>
+                <circle cx="420" cy="140" r="50" fill="#e0e7ff" opacity="0.8"/>
+                <circle cx="80" cy="200" r="70" fill="#edd5ff" opacity="0.5"/>
+                
+                {/* Student 1 (Left female student with headphones & laptop) */}
+                <circle cx="120" cy="140" r="32" fill="#1e1b4b"/>
+                <circle cx="120" cy="145" r="24" fill="#fde047"/> {/* face */}
+                <rect x="90" y="130" width="10" height="25" rx="5" fill="#312e81"/> {/* headphone L */}
+                <rect x="140" y="130" width="10" height="25" rx="5" fill="#312e81"/> {/* headphone R */}
+                <path d="M100 125 Q120 110 140 125" stroke="#312e81" strokeWidth="5"/> {/* headphone band */}
+                <path d="M80 220 C80 180 160 180 160 220 V300 H80 Z" fill="#1e1b4b"/> {/* shirt */}
+                {/* Laptop 1 */}
+                <polygon points="70,260 170,260 160,230 80,230" fill="#cbd5e1"/>
+                <rect x="75" y="225" width="90" height="5" rx="2" fill="#94a3b8"/>
+                <circle cx="120" cy="245" r="4" fill="#60a5fa"/>
+
+                {/* Student 2 (Center male student with blue hoodie & laptop) */}
+                <circle cx="230" cy="160" r="30" fill="#1e293b"/>
+                <circle cx="230" cy="165" r="22" fill="#fed7aa"/> {/* face */}
+                <path d="M200 150 Q230 135 260 150" fill="#1e293b"/> {/* hair */}
+                <rect x="205" y="152" width="8" height="20" rx="4" fill="#ffffff"/> {/* headphone */}
+                <rect x="247" y="152" width="8" height="20" rx="4" fill="#ffffff"/>
+                <path d="M185 240 C185 200 275 200 275 240 V300 H185 Z" fill="#2563eb"/> {/* blue hoodie */}
+                {/* Laptop 2 */}
+                <polygon points="175,280 285,280 275,245 185,245" fill="#475569"/>
+                <rect x="180" y="240" width="100" height="5" rx="2" fill="#64748b"/>
+                <circle cx="230" cy="262" r="5" fill="#ffffff"/>
+
+                {/* Student 3 & 4 (Right side students discussing in background) */}
+                <circle cx="340" cy="120" r="26" fill="#0f172a"/>
+                <circle cx="340" cy="124" r="19" fill="#fca5a5"/>
+                <path d="M305 180 C305 150 375 150 375 180 V300 H305 Z" fill="#475569"/>
+                
+                {/* Student 4 (Far right pointing to code window) */}
+                <circle cx="430" cy="110" r="26" fill="#1e1b4b"/>
+                <circle cx="430" cy="114" r="19" fill="#fed7aa"/>
+                <path d="M395 165 C395 140 465 140 465 165 V300 H395 Z" fill="#1d4ed8"/>
+                {/* Code Window floating */}
+                <rect x="340" y="140" width="110" height="70" rx="8" fill="#0f172a"/>
+                <rect x="350" y="152" width="40" height="6" rx="3" fill="#60a5fa"/>
+                <rect x="350" y="165" width="70" height="6" rx="3" fill="#a78bfa"/>
+                <rect x="350" y="178" width="55" height="6" rx="3" fill="#34d399"/>
+              </svg>
             </div>
           </div>
 
-          {/* RIGHT SIDE: AUTHENTICATION FORM (EXACT MATCH IMAGE 1) */}
+          {/* RIGHT COLUMN: AUTHENTICATION FORM (EXACT MATCH IMAGE 1) */}
           <div style={{
             backgroundColor: '#ffffff',
-            padding: '3rem 2.5rem',
+            padding: '2.5rem 2.25rem',
             display: 'flex',
             flexDirection: 'column',
-            justifyContent: 'center',
+            justify: 'center',
             overflowY: 'auto'
           }}>
 
-            {/* Form Title & Subtitle */}
-            <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
-              <h2 className="font-serif" style={{ fontSize: '1.875rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.375rem' }}>
-                Welcome Back!
-              </h2>
-              <p style={{ fontSize: '0.875rem', color: '#64748b' }}>
-                Login to continue your learning journey 👋
-              </p>
-            </div>
-
-            {/* Login / Sign Up Tab Switcher */}
-            <div style={{ display: 'flex', borderBottom: '2px solid #f1f5f9', marginBottom: '1.75rem' }}>
-              <button 
-                type="button" 
-                onClick={() => setAuthTab('login')}
-                style={{ 
-                  flex: 1, 
-                  padding: '0.75rem', 
-                  border: 'none', 
-                  background: 'transparent', 
-                  fontWeight: 700, 
-                  fontSize: '0.9375rem', 
-                  color: authTab === 'login' ? '#7c3aed' : '#94a3b8', 
-                  borderBottom: authTab === 'login' ? '3px solid #7c3aed' : 'none', 
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease'
-                }}
-              >
-                Login
-              </button>
-              <button 
-                type="button" 
-                onClick={() => setAuthTab('signup')}
-                style={{ 
-                  flex: 1, 
-                  padding: '0.75rem', 
-                  border: 'none', 
-                  background: 'transparent', 
-                  fontWeight: 700, 
-                  fontSize: '0.9375rem', 
-                  color: authTab === 'signup' ? '#7c3aed' : '#94a3b8', 
-                  borderBottom: authTab === 'signup' ? '3px solid #7c3aed' : 'none', 
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease'
-                }}
-              >
-                Sign Up
-              </button>
-            </div>
-
-            {/* Main Auth Form */}
-            <form onSubmit={handleManualLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              {/* Email / Username Field with Mail Icon */}
+            {/* TAB CONTENT 1: SIGNUP FORM (IMAGE 1 EXACT MATCH) */}
+            {authTab === 'signup' ? (
               <div>
-                <label className="label" style={{ fontWeight: 600, fontSize: '0.8125rem', color: '#1e293b', marginBottom: '0.375rem' }}>
-                  Email or Username
-                </label>
-                <div style={{ position: 'relative' }}>
-                  <Mail size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                  <input 
-                    type="email" 
-                    className="input" 
-                    placeholder="Enter your email or username" 
-                    value={emailInput} 
-                    onChange={e => setEmailInput(e.target.value)} 
-                    style={{ paddingLeft: '2.75rem', borderRadius: '12px', fontSize: '0.875rem' }}
-                    required 
-                  />
+                {/* Title + Student Badge Pill */}
+                <div style={{ marginBottom: '1.25rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.375rem' }}>
+                    <h2 className="font-serif" style={{ fontSize: '1.625rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                      Create your Study Loop
+                    </h2>
+                    <span style={{
+                      backgroundColor: '#4338ca',
+                      color: '#ffffff',
+                      fontSize: '0.6875rem',
+                      fontWeight: 700,
+                      padding: '0.2rem 0.625rem',
+                      borderRadius: '8px'
+                    }}>
+                      Student
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '0.8125rem', color: '#64748b', margin: 0 }}>
+                    Start learning, teaching and connecting today.
+                  </p>
                 </div>
-              </div>
 
-              {/* Password Field with Lock Icon & Eye Toggle */}
-              <div>
-                <label className="label" style={{ fontWeight: 600, fontSize: '0.8125rem', color: '#1e293b', marginBottom: '0.375rem' }}>
-                  Password
-                </label>
-                <div style={{ position: 'relative' }}>
-                  <Lock size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                  <input 
-                    type={showPassword ? "text" : "password"} 
-                    className="input" 
-                    placeholder="Enter your password" 
-                    value={passwordInput} 
-                    onChange={e => setPasswordInput(e.target.value)} 
-                    style={{ paddingLeft: '2.75rem', paddingRight: '2.75rem', borderRadius: '12px', fontSize: '0.875rem' }}
-                    required 
-                  />
+                {/* Form Fields */}
+                <form onSubmit={handleSignupSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+                  {/* Full Name */}
+                  <div>
+                    <input 
+                      type="text" 
+                      className="input" 
+                      placeholder="Full Name" 
+                      value={fullName} 
+                      onChange={e => setFullName(e.target.value)} 
+                      style={{ padding: '0.625rem 0.875rem', borderRadius: '10px', fontSize: '0.875rem', border: '1px solid #e2e8f0', backgroundColor: '#fafafa' }}
+                      required 
+                    />
+                  </div>
+
+                  {/* Email Address */}
+                  <div>
+                    <input 
+                      type="email" 
+                      className="input" 
+                      placeholder="Email Address" 
+                      value={signupEmail} 
+                      onChange={e => setSignupEmail(e.target.value)} 
+                      style={{ padding: '0.625rem 0.875rem', borderRadius: '10px', fontSize: '0.875rem', border: '1px solid #e2e8f0', backgroundColor: '#fafafa' }}
+                      required 
+                    />
+                  </div>
+
+                  {/* Password */}
+                  <div style={{ position: 'relative' }}>
+                    <input 
+                      type={showSignupPassword ? "text" : "password"} 
+                      className="input" 
+                      placeholder="Password" 
+                      value={signupPassword} 
+                      onChange={e => setSignupPassword(e.target.value)} 
+                      style={{ padding: '0.625rem 2.5rem 0.625rem 0.875rem', borderRadius: '10px', fontSize: '0.875rem', border: '1px solid #e2e8f0', backgroundColor: '#fafafa' }}
+                      required 
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => setShowSignupPassword(!showSignupPassword)}
+                      style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
+                    >
+                      {showSignupPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+
+                  {/* Confirm Password */}
+                  <div style={{ position: 'relative' }}>
+                    <input 
+                      type={showConfirmPassword ? "text" : "password"} 
+                      className="input" 
+                      placeholder="Confirm Password" 
+                      value={confirmPassword} 
+                      onChange={e => setConfirmPassword(e.target.value)} 
+                      style={{ padding: '0.625rem 2.5rem 0.625rem 0.875rem', borderRadius: '10px', fontSize: '0.875rem', border: '1px solid #e2e8f0', backgroundColor: '#fafafa' }}
+                      required 
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
+                    >
+                      {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+
+                  {/* Terms & Privacy Checkbox */}
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: '#475569', cursor: 'pointer', marginTop: '0.125rem' }}>
+                    <input 
+                      type="checkbox" 
+                      checked={agreeTerms} 
+                      onChange={e => setAgreeTerms(e.target.checked)} 
+                      style={{ accentColor: '#4338ca', width: '14px', height: '14px', borderRadius: '4px' }}
+                    />
+                    <span>I agree to the <a href="#" onClick={e => e.preventDefault()} style={{ color: '#4338ca', textDecoration: 'none', fontWeight: 600 }}>Terms & Conditions</a> and <a href="#" onClick={e => e.preventDefault()} style={{ color: '#4338ca', textDecoration: 'none', fontWeight: 600 }}>Privacy Policy</a></span>
+                  </label>
+
+                  {/* Primary Create Account Button */}
+                  <button 
+                    type="submit" 
+                    style={{ 
+                      width: '100%', 
+                      padding: '0.75rem', 
+                      borderRadius: '10px', 
+                      border: 'none', 
+                      backgroundColor: '#4338ca', 
+                      color: '#ffffff', 
+                      fontWeight: 700, 
+                      fontSize: '0.9375rem', 
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 14px rgba(67, 56, 202, 0.35)',
+                      marginTop: '0.375rem',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    Create Account
+                  </button>
+                </form>
+
+                {/* Divider */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: '1rem 0' }}>
+                  <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
+                  <span style={{ fontSize: '0.6875rem', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase' }}>OR</span>
+                  <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
+                </div>
+
+                {/* Continue with Google */}
+                <button 
+                  type="button" 
+                  onClick={handleGoogleSSO}
+                  style={{ 
+                    width: '100%', 
+                    padding: '0.625rem', 
+                    borderRadius: '10px', 
+                    border: '1px solid #e2e8f0', 
+                    backgroundColor: '#ffffff', 
+                    color: '#334155', 
+                    fontWeight: 600, 
+                    fontSize: '0.8125rem', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    gap: '0.625rem', 
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.02)'
+                  }}
+                >
+                  <svg style={{ width: '18px', height: '18px' }} viewBox="0 0 24 24"><path fill="#EA4335" d="M12 5.04c1.62 0 3.08.56 4.22 1.65l3.15-3.15C17.45 1.68 14.93 1 12 1 7.37 1 3.4 3.68 1.48 7.57l3.77 2.92C6.13 7.3 8.83 5.04 12 5.04z"/><path fill="#4285F4" d="M23.49 12.27c0-.81-.07-1.59-.2-2.36H12v4.51h6.46c-.28 1.47-1.11 2.72-2.36 3.56l3.77 2.92c2.2-2.03 3.62-5.02 3.62-8.63z"/><path fill="#FBBC05" d="M5.25 14.85c-.25-.76-.39-1.57-.39-2.42s.14-1.66.39-2.42L1.48 7.1C.53 9.07 0 11.27 0 12.42s.53 3.35 1.48 5.32l3.77-2.89z"/><path fill="#34A853" d="M12 23c3.24 0 5.97-1.07 7.96-2.92l-3.77-2.92c-1.05.7-2.4.12-4.19.12-3.17 0-5.87-2.26-6.83-5.32L1.4 14.8c1.92 3.89 5.89 6.2 10.6 6.2z"/></svg>
+                  Continue with Google
+                </button>
+
+                {/* Footer Switcher */}
+                <div style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '0.8125rem', color: '#64748b' }}>
+                  Already have an account?{' '}
                   <button 
                     type="button" 
-                    onClick={() => setShowPassword(!showPassword)}
-                    style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
+                    onClick={() => setAuthTab('login')} 
+                    style={{ background: 'transparent', border: 'none', color: '#4338ca', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}
                   >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    Log in
                   </button>
                 </div>
-                
-                <div style={{ textAlign: 'right', marginTop: '0.375rem' }}>
-                  <a href="#" onClick={(e) => { e.preventDefault(); alert("Password reset link sent to your registered email!"); }} style={{ fontSize: '0.75rem', color: '#7c3aed', fontWeight: 600, textDecoration: 'none' }}>
-                    Forgot Password?
-                  </a>
+              </div>
+            ) : (
+              /* TAB CONTENT 2: LOGIN FORM (IMAGE 1 COMPATIBLE) */
+              <div>
+                <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                  <h2 className="font-serif" style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.375rem' }}>
+                    Welcome Back!
+                  </h2>
+                  <p style={{ fontSize: '0.8125rem', color: '#64748b' }}>
+                    Login to continue your learning journey 👋
+                  </p>
+                </div>
+
+                <form onSubmit={handleLoginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div>
+                    <label className="label" style={{ fontWeight: 600, fontSize: '0.75rem', color: '#1e293b', marginBottom: '0.25rem' }}>
+                      Email or Username
+                    </label>
+                    <div style={{ position: 'relative' }}>
+                      <Mail size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                      <input 
+                        type="email" 
+                        className="input" 
+                        placeholder="studenta@student.com" 
+                        value={loginEmail} 
+                        onChange={e => setLoginEmail(e.target.value)} 
+                        style={{ paddingLeft: '2.5rem', borderRadius: '10px', fontSize: '0.875rem', border: '1px solid #e2e8f0' }}
+                        required 
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="label" style={{ fontWeight: 600, fontSize: '0.75rem', color: '#1e293b', marginBottom: '0.25rem' }}>
+                      Password
+                    </label>
+                    <div style={{ position: 'relative' }}>
+                      <Lock size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                      <input 
+                        type={showLoginPassword ? "text" : "password"} 
+                        className="input" 
+                        placeholder="••••••••••••" 
+                        value={loginPassword} 
+                        onChange={e => setLoginPassword(e.target.value)} 
+                        style={{ paddingLeft: '2.5rem', paddingRight: '2.5rem', borderRadius: '10px', fontSize: '0.875rem', border: '1px solid #e2e8f0' }}
+                        required 
+                      />
+                      <button 
+                        type="button" 
+                        onClick={() => setShowLoginPassword(!showLoginPassword)}
+                        style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
+                      >
+                        {showLoginPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+
+                    <div style={{ textAlign: 'right', marginTop: '0.375rem' }}>
+                      <a href="#" onClick={(e) => { e.preventDefault(); alert("Password reset link sent to your email!"); }} style={{ fontSize: '0.75rem', color: '#4338ca', fontWeight: 600, textDecoration: 'none' }}>
+                        Forgot Password?
+                      </a>
+                    </div>
+                  </div>
+
+                  <button 
+                    type="submit" 
+                    style={{ 
+                      width: '100%', 
+                      padding: '0.75rem', 
+                      borderRadius: '10px', 
+                      border: 'none', 
+                      backgroundColor: '#4338ca', 
+                      color: '#ffffff', 
+                      fontWeight: 700, 
+                      fontSize: '0.9375rem', 
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 14px rgba(67, 56, 202, 0.35)',
+                      marginTop: '0.25rem'
+                    }}
+                  >
+                    Sign In
+                  </button>
+                </form>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: '1rem 0' }}>
+                  <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
+                  <span style={{ fontSize: '0.6875rem', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase' }}>OR</span>
+                  <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
+                </div>
+
+                <button 
+                  type="button" 
+                  onClick={handleGoogleSSO}
+                  style={{ 
+                    width: '100%', 
+                    padding: '0.625rem', 
+                    borderRadius: '10px', 
+                    border: '1px solid #e2e8f0', 
+                    backgroundColor: '#ffffff', 
+                    color: '#334155', 
+                    fontWeight: 600, 
+                    fontSize: '0.8125rem', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    gap: '0.625rem', 
+                    cursor: 'pointer'
+                  }}
+                >
+                  <svg style={{ width: '18px', height: '18px' }} viewBox="0 0 24 24"><path fill="#EA4335" d="M12 5.04c1.62 0 3.08.56 4.22 1.65l3.15-3.15C17.45 1.68 14.93 1 12 1 7.37 1 3.4 3.68 1.48 7.57l3.77 2.92C6.13 7.3 8.83 5.04 12 5.04z"/><path fill="#4285F4" d="M23.49 12.27c0-.81-.07-1.59-.2-2.36H12v4.51h6.46c-.28 1.47-1.11 2.72-2.36 3.56l3.77 2.92c2.2-2.03 3.62-5.02 3.62-8.63z"/><path fill="#FBBC05" d="M5.25 14.85c-.25-.76-.39-1.57-.39-2.42s.14-1.66.39-2.42L1.48 7.1C.53 9.07 0 11.27 0 12.42s.53 3.35 1.48 5.32l3.77-2.89z"/><path fill="#34A853" d="M12 23c3.24 0 5.97-1.07 7.96-2.92l-3.77-2.92c-1.05.7-2.4.12-4.19.12-3.17 0-5.87-2.26-6.83-5.32L1.4 14.8c1.92 3.89 5.89 6.2 10.6 6.2z"/></svg>
+                  Continue with Google
+                </button>
+
+                <div style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '0.8125rem', color: '#64748b' }}>
+                  Don't have an account?{' '}
+                  <button 
+                    type="button" 
+                    onClick={() => setAuthTab('signup')} 
+                    style={{ background: 'transparent', border: 'none', color: '#4338ca', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}
+                  >
+                    Sign up
+                  </button>
                 </div>
               </div>
-
-              {/* Submit Button */}
-              <button 
-                type="submit" 
-                style={{ 
-                  width: '100%', 
-                  padding: '0.875rem', 
-                  borderRadius: '12px', 
-                  border: 'none', 
-                  background: 'linear-gradient(135deg, #7c3aed, #db2777)', 
-                  color: '#ffffff', 
-                  fontWeight: 700, 
-                  fontSize: '0.9375rem', 
-                  cursor: 'pointer',
-                  boxShadow: '0 8px 20px rgba(124, 58, 237, 0.3)',
-                  marginTop: '0.5rem',
-                  transition: 'transform 0.15s ease'
-                }}
-              >
-                {authTab === 'login' ? 'Login' : 'Create Account'}
-              </button>
-            </form>
-
-            {/* Social Auth Divider */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: '1.5rem 0' }}>
-              <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
-              <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 500 }}>or continue with</span>
-              <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
-            </div>
-
-            {/* Social Buttons List (Google, Facebook, GitHub) */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem', marginBottom: '1.5rem' }}>
-              <button 
-                type="button" 
-                onClick={() => handleManualLogin({ preventDefault: () => {} })}
-                style={{ width: '100%', padding: '0.625rem', borderRadius: '12px', border: '1px solid #e2e8f0', backgroundColor: '#ffffff', color: '#334155', fontWeight: 600, fontSize: '0.8125rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.625rem', cursor: 'pointer' }}
-              >
-                <span style={{ fontSize: '1rem' }}>🌐</span> Continue with Google
-              </button>
-
-              <button 
-                type="button" 
-                onClick={() => handleManualLogin({ preventDefault: () => {} })}
-                style={{ width: '100%', padding: '0.625rem', borderRadius: '12px', border: '1px solid #e2e8f0', backgroundColor: '#ffffff', color: '#334155', fontWeight: 600, fontSize: '0.8125rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.625rem', cursor: 'pointer' }}
-              >
-                <span style={{ color: '#1877f2', fontSize: '1rem', fontWeight: 800 }}>f</span> Continue with Facebook
-              </button>
-
-              <button 
-                type="button" 
-                onClick={() => handleManualLogin({ preventDefault: () => {} })}
-                style={{ width: '100%', padding: '0.625rem', borderRadius: '12px', border: '1px solid #e2e8f0', backgroundColor: '#ffffff', color: '#334155', fontWeight: 600, fontSize: '0.8125rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.625rem', cursor: 'pointer' }}
-              >
-                <Github size={16} /> Continue with GitHub
-              </button>
-            </div>
-
-
-            {/* Footer Policy Terms */}
-            <div style={{ fontSize: '0.6875rem', color: '#94a3b8', textAlign: 'center', lineHeight: 1.4 }}>
-              By logging in, you agree to our <a href="#" style={{ color: '#7c3aed', textDecoration: 'none' }}>Terms of Service</a>, and <a href="#" style={{ color: '#7c3aed', textDecoration: 'none' }}>Privacy Policy</a>.
-            </div>
+            )}
           </div>
         </div>
       </div>
