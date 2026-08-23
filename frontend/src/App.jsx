@@ -1187,6 +1187,7 @@ function DashboardScreen({ token, onOpenUserList, onStartChat }) {
       id: 'post-2',
       title: '📊 Dynamic Programming 101 - Knapsack Problem visual guide with time complexity analysis',
       image: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&auto=format&fit=crop&q=80',
+      videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-software-developer-working-on-code-42867-large.mp4',
       likes: 89,
       comments: [
         { author: 'Aarav Sharma', text: 'DP tables finally made sense after this post 🔥' }
@@ -1196,6 +1197,7 @@ function DashboardScreen({ token, onOpenUserList, onStartChat }) {
       id: 'post-3',
       title: '⚡ 5 React Hooks Mistakes to avoid in your semester project! Save for later 📌',
       image: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=600&auto=format&fit=crop&q=80',
+      videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-hands-of-a-man-typing-on-a-computer-keyboard-41334-large.mp4',
       likes: 112,
       comments: [
         { author: 'Student Peer', text: 'useEffect dependencies explanation was 10/10!' }
@@ -1211,7 +1213,11 @@ function DashboardScreen({ token, onOpenUserList, onStartChat }) {
       views: '1.2k',
       likes: 154,
       thumbnail: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=600&auto=format&fit=crop&q=80',
-      comments: []
+      videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-software-developer-working-on-code-42867-large.mp4',
+      comments: [
+        { author: 'Aarav Sharma', text: 'Recursion base condition explanation was super clear!' },
+        { author: 'Priya Patel', text: 'Loved the visual stack trace diagram 🚀' }
+      ]
     }
   ]);
 
@@ -1223,7 +1229,10 @@ function DashboardScreen({ token, onOpenUserList, onStartChat }) {
       views: '4.8k',
       likes: 340,
       thumbnail: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=600&auto=format&fit=crop&q=80',
-      comments: []
+      videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-hands-of-a-man-typing-on-a-computer-keyboard-41334-large.mp4',
+      comments: [
+        { author: 'Chaitanya Reddy', text: 'Awesome crash course for beginners!' }
+      ]
     },
     {
       id: 'vid-2',
@@ -1232,6 +1241,7 @@ function DashboardScreen({ token, onOpenUserList, onStartChat }) {
       views: '3.1k',
       likes: 210,
       thumbnail: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=600&auto=format&fit=crop&q=80',
+      videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-student-reading-a-book-in-a-library-41544-large.mp4',
       comments: []
     }
   ]);
@@ -2343,65 +2353,101 @@ function DashboardScreen({ token, onOpenUserList, onStartChat }) {
         </div>
       )}
 
-      {/* INSTAGRAM MEDIA INSPECTOR MODAL */}
+      {/* INSTAGRAM & YOUTUBE THEATER VIDEO PLAYER MODAL */}
       {selectedMedia && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.75)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
-          <div className="card-premium glass-card" style={{ width: '100%', maxWidth: '600px', padding: '1.5rem', borderRadius: '20px', position: 'relative', maxHeight: '85vh', overflowY: 'auto' }}>
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(9, 9, 11, 0.85)', backdropFilter: 'blur(10px)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
+          <div className="card-premium glass-card" style={{ width: '100%', maxWidth: '680px', padding: '1.75rem', borderRadius: '24px', position: 'relative', maxHeight: '90vh', overflowY: 'auto', backgroundColor: '#ffffff', boxShadow: '0 25px 70px rgba(0,0,0,0.5)' }}>
             
             <button 
               onClick={() => setSelectedMedia(null)} 
-              style={{ position: 'absolute', top: '1rem', right: '1rem', border: 'none', background: 'transparent', fontSize: '1.5rem', cursor: 'pointer', color: '#64748b' }}
+              style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', border: 'none', background: '#f1f5f9', width: '32px', height: '32px', borderRadius: '50%', fontSize: '1.125rem', cursor: 'pointer', color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
               ✕
             </button>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-              <img src={profile.avatarUrl} alt="Avatar" style={{ width: '36px', height: '36px', borderRadius: '50%' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
+              <img src={profile.avatarUrl} alt="Avatar" style={{ width: '42px', height: '42px', borderRadius: '50%', border: '2px solid #d97706' }} />
               <div>
-                <div style={{ fontWeight: 700, fontSize: '0.875rem' }}>{usernameHandle}</div>
-                <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{profile.college}</div>
+                <div style={{ fontWeight: 800, fontSize: '0.9375rem', color: '#0f172a' }}>{usernameHandle}</div>
+                <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{profile.college} • {profile.department}</div>
               </div>
             </div>
 
-            {selectedMedia.image && <img src={selectedMedia.image} alt="Media" style={{ width: '100%', borderRadius: '12px', marginBottom: '1rem', maxHeight: '300px', objectFit: 'cover' }} />}
-            {selectedMedia.thumbnail && <img src={selectedMedia.thumbnail} alt="Thumbnail" style={{ width: '100%', borderRadius: '12px', marginBottom: '1rem', maxHeight: '300px', objectFit: 'cover' }} />}
-            {selectedMedia.videoUrl && <video src={selectedMedia.videoUrl} controls style={{ width: '100%', borderRadius: '12px', marginBottom: '1rem', maxHeight: '300px', backgroundColor: '#000000' }} />}
+            {/* WATCHABLE VIDEO PLAYER ELEMENT */}
+            <div style={{ position: 'relative', borderRadius: '16px', overflow: 'hidden', backgroundColor: '#000000', marginBottom: '1.25rem', boxShadow: '0 12px 30px rgba(0,0,0,0.3)' }}>
+              <video 
+                src={selectedMedia.videoUrl || 'https://assets.mixkit.co/videos/preview/mixkit-software-developer-working-on-code-42867-large.mp4'} 
+                controls 
+                autoPlay 
+                loop 
+                playsInline 
+                style={{ width: '100%', maxHeight: '420px', display: 'block', backgroundColor: '#000000', objectFit: 'contain' }} 
+              />
+            </div>
 
-            <h3 style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: '0.75rem', color: '#0f172a' }}>{selectedMedia.title}</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', marginBottom: '1rem' }}>
+              <h3 style={{ fontSize: '1.125rem', fontWeight: 800, color: '#0f172a', margin: 0, lineHeight: 1.3 }}>{selectedMedia.title}</h3>
+              {selectedMedia.type === 'reel' && (
+                <button 
+                  onClick={() => { setSelectedMedia(null); setActiveTab('reels'); }} 
+                  className="btn btn-accent"
+                  style={{ padding: '0.5rem 1rem', fontSize: '0.75rem', fontWeight: 700, borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '0.375rem', whiteSpace: 'nowrap' }}
+                >
+                  <Tv2 size={14} /> Play in Reels (100vh)
+                </button>
+              )}
+            </div>
 
             {/* ACTION BAR: LIKE, COMMENT, SHARE */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', padding: '0.75rem 0', borderTop: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', marginBottom: '1rem' }}>
-              <button onClick={handleLikeMedia} className="btn btn-secondary" style={{ color: '#dc2743', borderColor: '#fecdd3' }}>
-                ❤️ Like ({selectedMedia.likes})
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 0', borderTop: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', marginBottom: '1.25rem' }}>
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                <button onClick={handleLikeMedia} className="btn btn-secondary" style={{ color: '#dc2743', borderColor: '#fecdd3', fontWeight: 700 }}>
+                  ❤️ Like ({selectedMedia.likes})
+                </button>
+                <span style={{ fontSize: '0.875rem', color: '#64748b', fontWeight: 600 }}>💬 {selectedMedia.comments ? selectedMedia.comments.length : 0} Comments</span>
+              </div>
+              
+              <button 
+                onClick={() => {
+                  if (navigator.share) {
+                    navigator.share({ title: selectedMedia.title, url: window.location.href }).catch(() => {});
+                  } else {
+                    navigator.clipboard.writeText(window.location.href);
+                    alert("Reel video link copied to clipboard!");
+                  }
+                }}
+                className="btn btn-secondary"
+                style={{ fontSize: '0.75rem', padding: '0.5rem 0.875rem', borderRadius: '8px' }}
+              >
+                <Share2 size={14} /> Share Video
               </button>
-              <span style={{ fontSize: '0.875rem', color: '#64748b' }}>💬 {selectedMedia.comments ? selectedMedia.comments.length : 0} Comments</span>
             </div>
 
             {/* COMMENTS LIST */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
-              <h4 style={{ fontSize: '0.875rem', fontWeight: 700 }}>Comments</h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem', marginBottom: '1.25rem' }}>
+              <h4 style={{ fontSize: '0.875rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>Community Comments</h4>
               {(!selectedMedia.comments || selectedMedia.comments.length === 0) ? (
-                <div style={{ fontSize: '0.8125rem', color: '#94a3b8' }}>No comments yet. Be the first to comment!</div>
+                <div style={{ fontSize: '0.8125rem', color: '#94a3b8', fontStyle: 'italic' }}>No comments yet. Be the first to comment!</div>
               ) : (
                 selectedMedia.comments.map((c, i) => (
-                  <div key={i} style={{ fontSize: '0.8125rem', backgroundColor: '#f8fafc', padding: '0.5rem 0.75rem', borderRadius: '8px' }}>
-                    <strong>{c.author}:</strong> {c.text}
+                  <div key={i} style={{ fontSize: '0.8125rem', backgroundColor: '#f8fafc', padding: '0.625rem 0.875rem', borderRadius: '10px', border: '1px solid #f1f5f9' }}>
+                    <strong style={{ color: '#0f172a' }}>{c.author}:</strong> <span style={{ color: '#475569' }}>{c.text}</span>
                   </div>
                 ))
               )}
             </div>
 
             {/* COMMENT INPUT FORM */}
-            <form onSubmit={handleAddComment} style={{ display: 'flex', gap: '0.5rem' }}>
+            <form onSubmit={handleAddComment} style={{ display: 'flex', gap: '0.625rem' }}>
               <input 
                 type="text" 
                 className="input" 
-                placeholder="Add a comment..." 
+                placeholder="Add a comment on this video..." 
                 value={commentText} 
                 onChange={e => setCommentText(e.target.value)} 
-                style={{ flex: 1, fontSize: '0.8125rem' }} 
+                style={{ flex: 1, fontSize: '0.8125rem', borderRadius: '10px' }} 
               />
-              <button type="submit" className="btn btn-accent" style={{ fontSize: '0.8125rem' }}>Post</button>
+              <button type="submit" className="btn btn-accent" style={{ fontSize: '0.8125rem', padding: '0.625rem 1.25rem', fontWeight: 700, borderRadius: '10px' }}>Post</button>
             </form>
 
           </div>
