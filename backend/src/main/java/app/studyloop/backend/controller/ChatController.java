@@ -10,6 +10,7 @@ import app.studyloop.backend.repository.DirectMessageRepository;
 import app.studyloop.backend.repository.DoubtMessageRepository;
 import app.studyloop.backend.repository.ProfileRepository;
 import app.studyloop.backend.security.UserPrincipal;
+import app.studyloop.backend.websocket.ChatWebSocketHandler;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -26,15 +27,18 @@ public class ChatController {
     private final DirectChatRepository directChatRepository;
     private final DirectMessageRepository directMessageRepository;
     private final ProfileRepository profileRepository;
+    private final ChatWebSocketHandler chatWebSocketHandler;
 
     public ChatController(DoubtMessageRepository doubtMessageRepository,
                           DirectChatRepository directChatRepository,
                           DirectMessageRepository directMessageRepository,
-                          ProfileRepository profileRepository) {
+                          ProfileRepository profileRepository,
+                          ChatWebSocketHandler chatWebSocketHandler) {
         this.doubtMessageRepository = doubtMessageRepository;
         this.directChatRepository = directChatRepository;
         this.directMessageRepository = directMessageRepository;
         this.profileRepository = profileRepository;
+        this.chatWebSocketHandler = chatWebSocketHandler;
     }
 
     @GetMapping("/doubt/{roomId}")
@@ -54,10 +58,12 @@ public class ChatController {
                 .map(c -> {
                     UUID peerId = c.getUser1Id().equals(principal.getId()) ? c.getUser2Id() : c.getUser1Id();
                     Profile peer = profileRepository.findById(peerId).orElse(null);
+                    boolean isOnline = chatWebSocketHandler.isUserOnline(peerId);
                     return DirectChatThreadDto.builder()
                             .chatId(c.getId())
                             .peer(peer)
                             .createdAt(c.getCreatedAt())
+                            .online(isOnline)
                             .build();
                 })
                 .filter(dto -> dto.getPeer() != null)

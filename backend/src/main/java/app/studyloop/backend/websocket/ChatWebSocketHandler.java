@@ -312,6 +312,19 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         }
     }
 
+    public boolean isUserOnline(UUID userId) {
+        if (redisTemplate != null) {
+            try {
+                String key = "user:" + userId.toString() + ":online";
+                return Boolean.TRUE.equals(redisTemplate.hasKey(key));
+            } catch (Exception e) {
+                // fallback to in-memory check
+            }
+        }
+        Set<WebSocketSession> sessions = userSessions.get(userId);
+        return sessions != null && !sessions.isEmpty();
+    }
+
     private UUID extractUserId(WebSocketSession session) {
         try {
             URI uri = session.getUri();

@@ -7,7 +7,8 @@ import {
   Activity, GraduationCap, ChevronRight, Ban, Trophy, Coins,
   Volume2, VolumeX, Share2, Disc, Music, ChevronUp, ChevronDown,
   Settings, QrCode, Bell, Shield, Key, Globe, Archive, Grid, Bookmark, User,
-  Pencil, Camera, Edit2, Mail, Lock, Eye, EyeOff, Github, Sun, Moon
+  Pencil, Camera, Edit2, Mail, Lock, Eye, EyeOff, Github, Sun, Moon,
+  Headphones, Bug, Lightbulb, Paperclip, Clock, LifeBuoy
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
@@ -643,36 +644,7 @@ function MainLayout() {
           )}
         </div>
 
-        {/* STUDENT PORTAL STATUS CARD */}
-        {!isSidebarCollapsed && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '0.5rem 0.75rem',
-            backgroundColor: '#eff6ff',
-            border: '1px solid #bfdbfe',
-            borderRadius: '10px',
-            marginBottom: '1.25rem'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', fontWeight: 700, color: '#2563eb', letterSpacing: '0.05em' }}>
-              <div style={{ width: '8px', height: '8px', backgroundColor: '#10b981', borderRadius: '50%' }}></div>
-              STUDENT PORTAL
-            </div>
-            <span style={{
-              backgroundColor: '#d1fae5',
-              border: '1px solid #81c784',
-              color: '#059669',
-              padding: '0.125rem 0.5rem',
-              borderRadius: '6px',
-              fontSize: '0.625rem',
-              fontWeight: 800,
-              letterSpacing: '0.05em'
-            }}>
-              ACTIVE
-            </span>
-          </div>
-        )}
+
 
 
         {/* COLLAPSED EXPAND BUTTON */}
@@ -762,6 +734,7 @@ function MainLayout() {
           )}
           <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'chat'} icon={<MessageSquare size={18} />} label="Direct Messages" onClick={() => { setActiveTab('chat'); setActiveRoomId(null); }} />
           <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'reels'} icon={<Tv2 size={18} />} label="Educational Reels" onClick={() => { setActiveTab('reels'); setActiveRoomId(null); }} />
+          <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'contact'} icon={<LifeBuoy size={18} />} label="Contact & Support" onClick={() => { setActiveTab('contact'); setActiveRoomId(null); }} />
         </div>
 
         <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '1rem', marginTop: 'auto' }}>
@@ -992,6 +965,15 @@ function MainLayout() {
             setChatPeer={setChatPeer}
             socket={socket}
             setWsMessages={setWsMessages}
+          />
+        )}
+        {activeTab === 'contact' && (
+          <ContactSupportScreen 
+            token={token} 
+            setActiveTab={setActiveTab}
+            setActiveChatId={setActiveChatId}
+            setChatPeer={setChatPeer}
+            profile={profile}
           />
         )}
       </main>
@@ -3826,6 +3808,8 @@ function ChatScreen({ token, activeChatId, setActiveChatId, chatPeer, setChatPee
 
   useEffect(() => {
     fetchThreads();
+    const interval = setInterval(fetchThreads, 4000);
+    return () => clearInterval(interval);
   }, [token]);
 
   useEffect(() => {
@@ -3860,7 +3844,21 @@ function ChatScreen({ token, activeChatId, setActiveChatId, chatPeer, setChatPee
     <div style={{ display: 'flex', height: 'calc(100vh - 120px)', gap: '1.5rem' }}>
       {/* Threads list */}
       <div className="card" style={{ width: '280px', display: 'flex', flexDirection: 'column', padding: '1rem', overflowY: 'auto' }}>
-        <h3 className="font-serif" style={{ fontSize: '1.25rem', marginBottom: '1rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem' }}>Chats</h3>
+        <div style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '0.625rem', marginBottom: '1rem' }}>
+          <h3 className="font-serif" style={{ fontSize: '1.25rem' }}>Chats</h3>
+          <div style={{ display: 'flex', gap: '0.5rem', fontSize: '0.6875rem', marginTop: '0.25rem', fontWeight: 600 }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#059669' }}>
+              <span style={{ width: '6px', height: '6px', backgroundColor: '#10b981', borderRadius: '50%' }}></span>
+              {threads.filter(t => t.online).length} Online
+            </span>
+            <span style={{ color: '#cbd5e1' }}>•</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#64748b' }}>
+              <span style={{ width: '6px', height: '6px', backgroundColor: '#94a3b8', borderRadius: '50%' }}></span>
+              {threads.filter(t => !t.online).length} Offline
+            </span>
+          </div>
+        </div>
+
         {threads.length === 0 ? (
           <p style={{ fontSize: '0.75rem', color: '#64748b', textAlign: 'center', margin: '2rem 0' }}>No chats active.</p>
         ) : (
@@ -3869,7 +3867,7 @@ function ChatScreen({ token, activeChatId, setActiveChatId, chatPeer, setChatPee
               <button key={t.chatId} onClick={() => { setActiveChatId(t.chatId); setChatPeer(t.peer); }} style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.5rem',
+                gap: '0.625rem',
                 width: '100%',
                 padding: '0.5rem',
                 borderRadius: '8px',
@@ -3878,7 +3876,19 @@ function ChatScreen({ token, activeChatId, setActiveChatId, chatPeer, setChatPee
                 backgroundColor: activeChatId === t.chatId ? '#eff6ff' : 'transparent',
                 textAlign: 'left'
               }}>
-                <img src={t.peer.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${t.peer.fullName}`} alt="Avatar" style={{ width: '32px', height: '32px', borderRadius: '50%' }} />
+                <div style={{ position: 'relative', display: 'inline-block', flexShrink: 0 }}>
+                  <img src={t.peer.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${t.peer.fullName}`} alt="Avatar" style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} />
+                  <span style={{
+                    position: 'absolute',
+                    bottom: '-1px',
+                    right: '-1px',
+                    width: '9px',
+                    height: '9px',
+                    borderRadius: '50%',
+                    backgroundColor: t.online ? '#10b981' : '#94a3b8',
+                    border: '2px solid #ffffff'
+                  }}></span>
+                </div>
                 <div style={{ overflow: 'hidden' }}>
                   <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#0f172a', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{t.peer.fullName}</div>
                   <div style={{ fontSize: '0.6875rem', color: '#64748b', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{t.peer.college}</div>
@@ -3893,11 +3903,29 @@ function ChatScreen({ token, activeChatId, setActiveChatId, chatPeer, setChatPee
       <div className="card" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '1rem', overflow: 'hidden' }}>
         {activeChatId ? (
           <>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem', marginBottom: '1rem' }}>
-              <img src={chatPeer?.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${chatPeer?.fullName}`} alt="Avatar" style={{ width: '36px', height: '36px', borderRadius: '50%' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem', marginBottom: '1rem' }}>
+              <div style={{ position: 'relative', display: 'inline-block', flexShrink: 0 }}>
+                <img src={chatPeer?.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${chatPeer?.fullName}`} alt="Avatar" style={{ width: '38px', height: '38px', borderRadius: '50%', objectFit: 'cover' }} />
+                <span style={{
+                  position: 'absolute',
+                  bottom: '0px',
+                  right: '0px',
+                  width: '10px',
+                  height: '10px',
+                  borderRadius: '50%',
+                  backgroundColor: threads.find(t => t.chatId === activeChatId)?.online ? '#10b981' : '#94a3b8',
+                  border: '2px solid #ffffff'
+                }}></span>
+              </div>
               <div>
-                <h4 style={{ fontSize: '0.875rem', fontWeight: 600 }}>{chatPeer?.fullName}</h4>
-                <div style={{ fontSize: '0.6875rem', color: '#64748b' }}>{chatPeer?.college}</div>
+                <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)' }}>{chatPeer?.fullName}</h4>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', color: '#64748b' }}>
+                  <span style={{ color: threads.find(t => t.chatId === activeChatId)?.online ? '#059669' : '#64748b', fontWeight: 600 }}>
+                    {threads.find(t => t.chatId === activeChatId)?.online ? 'Online' : 'Offline'}
+                  </span>
+                  <span>•</span>
+                  <span>{chatPeer?.college}</span>
+                </div>
               </div>
             </div>
 
@@ -6451,3 +6479,811 @@ function LandingScreen({ setActiveTab, loginSimulated, testAccounts, theme, setT
     </div>
   );
 }
+
+// --- CONTACT & SUPPORT SCREEN ---
+function ContactSupportScreen({ token, setActiveTab, setActiveChatId, setChatPeer, profile }) {
+  const [issueType, setIssueType] = useState('');
+  const [subject, setSubject] = useState('');
+  const [message, setMessage] = useState('');
+  const [attachment, setAttachment] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submittedTicket, setSubmittedTicket] = useState(null);
+  const [showFaqModal, setShowFaqModal] = useState(false);
+  const [showSlaModal, setShowSlaModal] = useState(false);
+  const [toastMessage, setToastMessage] = useState(null);
+  const [activeFaqIndex, setActiveFaqIndex] = useState(null);
+  const fileInputRef = useRef(null);
+  const formRef = useRef(null);
+
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  const handleCardClick = (categoryTitle, defaultIssue) => {
+    setIssueType(defaultIssue);
+    showToast(`Selected category: ${categoryTitle}`);
+    if (formRef.current) {
+      formRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      if (file.size > 5 * 1024 * 1024) {
+        showToast('❌ File size exceeds 5MB limit');
+        return;
+      }
+      setAttachment(file);
+      showToast(`📎 Attached file: ${file.name}`);
+    }
+  };
+
+  const handleRemoveAttachment = () => {
+    setAttachment(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    showToast('Removed attachment');
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!issueType || issueType === 'Select an option') {
+      showToast('⚠️ Please select an Issue Type');
+      return;
+    }
+    if (!subject.trim()) {
+      showToast('⚠️ Please enter a Subject');
+      return;
+    }
+    if (!message.trim()) {
+      showToast('⚠️ Please describe your issue');
+      return;
+    }
+
+    setIsSubmitting(true);
+    const payload = {
+      issueType,
+      subject,
+      message,
+      attachmentName: attachment ? attachment.name : null,
+      email: profile?.email || 'aarav@student.com',
+      fullName: profile?.fullName || 'Aarav Sharma'
+    };
+
+    try {
+      let res = null;
+      if (token) {
+        try {
+          res = await fetch('/api/contact/support', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(payload)
+          });
+        } catch (err) {
+          console.log("Simulating support ticket response");
+        }
+      }
+
+      let ticketData = null;
+      if (res && res.ok) {
+        const json = await res.json();
+        ticketData = json.ticket;
+      } else {
+        const randomId = "SL-" + Math.floor(10000 + Math.random() * 90000);
+        ticketData = {
+          ticketId: randomId,
+          issueType,
+          subject,
+          message,
+          attachmentName: attachment ? attachment.name : null,
+          status: 'Open',
+          createdAt: new Date().toLocaleString(),
+          estimatedResponse: 'Within 24 Hours'
+        };
+      }
+
+      setIsSubmitting(false);
+      setSubmittedTicket(ticketData);
+      showToast('✅ Ticket submitted successfully!');
+    } catch (err) {
+      setIsSubmitting(false);
+      showToast('❌ Failed to submit ticket. Please try again.');
+    }
+  };
+
+  const startSupportChat = () => {
+    const supportPeer = {
+      id: 'support-team-id',
+      fullName: 'StudyLoop Support Team',
+      college: 'StudyLoop Central',
+      department: 'Help & Operations',
+      avatarUrl: NEUTRAL_AVATAR_SVG
+    };
+    if (setChatPeer && setActiveChatId) {
+      setChatPeer(supportPeer);
+      setActiveChatId('support-thread-01');
+      setActiveTab('chat');
+    } else {
+      setActiveTab('chat');
+    }
+  };
+
+  const copyEmail = () => {
+    navigator.clipboard.writeText('support@studyloop.in');
+    showToast('📋 Copied support@studyloop.in to clipboard!');
+  };
+
+  const faqs = [
+    {
+      q: "How does StudyLoop peer matching work?",
+      a: "Our algorithm matches you with students from your campus and other top universities based on shared subjects, complementary skills, availability, and learning goals."
+    },
+    {
+      q: "How do I earn XP and unlock badges?",
+      a: "You earn XP by completing peer sessions, answering doubt room questions, contributing educational reels, and maintaining study streaks. Higher XP unlocks higher levels and mentor badges."
+    },
+    {
+      q: "How can I apply to become a verified Peer Tutor?",
+      a: "Go to your Dashboard, navigate to 'Tutor Verification', upload your academic transcript or test scores, and complete a 5-minute peer teaching review."
+    },
+    {
+      q: "What are Doubt Rooms and how do I join one?",
+      a: "Doubt Rooms are live interactive study hubs equipped with real-time video, screen sharing, and code editor features. Browse open rooms in the Doubt Rooms Hub to join immediately."
+    },
+    {
+      q: "How do tutor session earnings and withdrawals work?",
+      a: "Tutors receive StudyCoins for paid 1-to-1 doubt resolution sessions. Coins can be redeemed directly to your bank account or UPI via the Earnings tab in Dashboard."
+    },
+    {
+      q: "What if someone behaves inappropriately during a session?",
+      a: "You can instantly report any user via their profile or session menu using the 'Report' button. Our moderation team reviews reports within 1 hour."
+    }
+  ];
+
+  return (
+    <div className="support-container">
+      {/* Toast notification overlay */}
+      {toastMessage && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          backgroundColor: '#0f172a',
+          color: '#ffffff',
+          padding: '0.75rem 1.25rem',
+          borderRadius: '12px',
+          boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
+          zIndex: 9999,
+          fontSize: '0.875rem',
+          fontWeight: 600,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem'
+        }}>
+          {toastMessage}
+        </div>
+      )}
+
+      {/* 3. MAIN HEADER */}
+      <div>
+        <h1 className="support-header-title">Contact & Support</h1>
+        <p className="support-header-subtitle">
+          Get support, report a problem, share an idea, or connect with the StudyLoop team.
+        </p>
+      </div>
+
+      {/* 4. SUPPORT CATEGORY CARDS (4 HORIZONTAL CARDS) */}
+      <div className="support-cards-grid">
+        {/* Card 1: Student Support */}
+        <div className="support-card" onClick={() => handleCardClick('Student Support', 'Account & Login')}>
+          <div className="support-card-icon support-card-blue">
+            <Headphones size={22} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <h3 style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--text-primary)' }}>Student Support</h3>
+            <p style={{ fontSize: '0.78125rem', color: 'var(--text-secondary)', marginTop: '0.25rem', lineHeight: 1.4 }}>
+              Account, learning, peer matching, doubt rooms and more.
+            </p>
+          </div>
+          <div className="support-card-arrow">
+            <ChevronRight size={16} />
+          </div>
+        </div>
+
+        {/* Card 2: Peer Tutor Support */}
+        <div className="support-card" onClick={() => handleCardClick('Peer Tutor Support', 'Peer Tutor')}>
+          <div className="support-card-icon support-card-green">
+            <GraduationCap size={22} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <h3 style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--text-primary)' }}>Peer Tutor Support</h3>
+            <p style={{ fontSize: '0.78125rem', color: 'var(--text-secondary)', marginTop: '0.25rem', lineHeight: 1.4 }}>
+              Teaching, sessions, earnings, verification and more.
+            </p>
+          </div>
+          <div className="support-card-arrow">
+            <ChevronRight size={16} />
+          </div>
+        </div>
+
+        {/* Card 3: Report a Problem */}
+        <div className="support-card" onClick={() => handleCardClick('Report a Problem', 'Report a Bug')}>
+          <div className="support-card-icon support-card-orange">
+            <Bug size={22} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <h3 style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--text-primary)' }}>Report a Problem</h3>
+            <p style={{ fontSize: '0.78125rem', color: 'var(--text-secondary)', marginTop: '0.25rem', lineHeight: 1.4 }}>
+              Something isn't working as expected? Let us know.
+            </p>
+          </div>
+          <div className="support-card-arrow">
+            <ChevronRight size={16} />
+          </div>
+        </div>
+
+        {/* Card 4: Suggest an Idea */}
+        <div className="support-card" onClick={() => handleCardClick('Suggest an Idea', 'Feature Request')}>
+          <div className="support-card-icon support-card-purple">
+            <Lightbulb size={22} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <h3 style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--text-primary)' }}>Suggest an Idea</h3>
+            <p style={{ fontSize: '0.78125rem', color: 'var(--text-secondary)', marginTop: '0.25rem', lineHeight: 1.4 }}>
+              Share your ideas and help us make StudyLoop better for everyone.
+            </p>
+          </div>
+          <div className="support-card-arrow">
+            <ChevronRight size={16} />
+          </div>
+        </div>
+      </div>
+
+      {/* 5. MAIN CONTACT SECTION (TWO COLUMN LAYOUT) */}
+      <div className="support-two-column" ref={formRef}>
+        {/* LEFT COLUMN: SEND US A MESSAGE */}
+        <div className="support-form-column">
+          <div className="support-form-card">
+            <div className="support-form-title">
+              <Mail size={20} style={{ color: '#2563eb' }} />
+              <span>Send us a message</span>
+            </div>
+
+            {submittedTicket ? (
+              <div style={{
+                backgroundColor: '#f0fdf4',
+                border: '1px solid #bbf7d0',
+                borderRadius: '16px',
+                padding: '2rem',
+                textAlign: 'center',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '1rem',
+                margin: 'auto 0'
+              }}>
+                <div style={{
+                  width: '56px',
+                  height: '56px',
+                  borderRadius: '50%',
+                  backgroundColor: '#dcfce7',
+                  color: '#16a34a',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <CheckCircle size={32} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#14532d' }}>Ticket Submitted!</h3>
+                  <p style={{ fontSize: '0.875rem', color: '#166534', marginTop: '0.25rem' }}>
+                    Your ticket ID is <strong>{submittedTicket.ticketId}</strong>. We've sent a confirmation email to <strong>{profile?.email || 'aarav@student.com'}</strong>.
+                  </p>
+                </div>
+                <div style={{
+                  backgroundColor: '#ffffff',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '12px',
+                  padding: '1rem 1.5rem',
+                  width: '100%',
+                  maxWidth: '400px',
+                  textAlign: 'left',
+                  fontSize: '0.8125rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.375rem'
+                }}>
+                  <div><strong>Issue Type:</strong> {submittedTicket.issueType}</div>
+                  <div><strong>Subject:</strong> {submittedTicket.subject}</div>
+                  <div><strong>Status:</strong> <span style={{ color: '#16a34a', fontWeight: 700 }}>Open</span></div>
+                  <div><strong>Est. Response:</strong> Within 24 Hours</div>
+                </div>
+                <button
+                  className="btn btn-primary"
+                  onClick={() => {
+                    setSubmittedTicket(null);
+                    setIssueType('');
+                    setSubject('');
+                    setMessage('');
+                    setAttachment(null);
+                  }}
+                  style={{ borderRadius: '10px', padding: '0.625rem 1.25rem', fontSize: '0.875rem' }}
+                >
+                  Send Another Message
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                {/* Form fields: Issue Type & Subject */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div className="support-field-group">
+                    <label className="support-label">Issue Type</label>
+                    <select
+                      className="support-select"
+                      value={issueType}
+                      onChange={(e) => setIssueType(e.target.value)}
+                      required
+                    >
+                      <option value="">Select an option</option>
+                      <option value="Account & Login">Account & Login</option>
+                      <option value="Peer Matching">Peer Matching</option>
+                      <option value="Doubt Rooms">Doubt Rooms</option>
+                      <option value="Peer Tutor">Peer Tutor</option>
+                      <option value="Earnings">Earnings</option>
+                      <option value="Direct Messages">Direct Messages</option>
+                      <option value="Educational Reels">Educational Reels</option>
+                      <option value="Report a Bug">Report a Bug</option>
+                      <option value="Feature Request">Feature Request</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+
+                  <div className="support-field-group">
+                    <label className="support-label">Subject</label>
+                    <input
+                      type="text"
+                      className="support-input"
+                      placeholder="What's the issue?"
+                      value={subject}
+                      onChange={(e) => setSubject(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Message Field with char counter */}
+                <div className="support-field-group" style={{ position: 'relative' }}>
+                  <label className="support-label">Message</label>
+                  <textarea
+                    className="support-textarea"
+                    placeholder="Tell us what happened..."
+                    value={message}
+                    maxLength={1000}
+                    onChange={(e) => setMessage(e.target.value)}
+                    required
+                  />
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '0.625rem',
+                    right: '0.75rem',
+                    fontSize: '0.6875rem',
+                    fontWeight: 600,
+                    color: message.length > 900 ? '#dc2626' : '#94a3b8',
+                    pointerEvents: 'none'
+                  }}>
+                    {message.length}/1000
+                  </div>
+                </div>
+
+                {/* Attachment Dropzone */}
+                <div className="support-field-group">
+                  <label className="support-label">Attachment (optional)</label>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    style={{ display: 'none' }}
+                    onChange={handleFileChange}
+                    accept=".png,.jpg,.jpeg,.pdf"
+                  />
+                  {attachment ? (
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '0.75rem 1rem',
+                      backgroundColor: '#f1f5f9',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: '10px'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                        <Paperclip size={16} style={{ color: '#2563eb' }} />
+                        <span>{attachment.name}</span>
+                        <span style={{ fontSize: '0.75rem', color: '#64748b' }}>({(attachment.size / 1024 / 1024).toFixed(2)} MB)</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleRemoveAttachment}
+                        style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="support-dropzone" onClick={() => fileInputRef.current && fileInputRef.current.click()}>
+                      <div style={{ color: '#2563eb', fontWeight: 700, fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                        <Plus size={16} /> Add screenshot or file
+                      </div>
+                      <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>PNG, JPG, PDF up to 5MB</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Footer Privacy Info & Submit Button */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginTop: 'auto',
+                  paddingTop: '1rem',
+                  borderTop: '1px solid #f1f5f9'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                    <Lock size={14} style={{ color: '#64748b' }} />
+                    <span>Your information is only used to resolve your request.</span>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="btn btn-primary"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.6875rem 1.5rem',
+                      borderRadius: '10px',
+                      fontSize: '0.875rem',
+                      fontWeight: 700,
+                      backgroundColor: '#2563eb',
+                      border: 'none',
+                      color: '#ffffff',
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)'
+                    }}
+                  >
+                    {isSubmitting ? 'Sending...' : 'Send Message →'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN: QUICK HELP & STUDYLOOP SUPPORT CHAT */}
+        <div className="support-side-column">
+          {/* Quick Help Card */}
+          <div className="support-quickhelp-card">
+            <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <HelpCircle size={18} style={{ color: '#3b82f6' }} /> Quick Help
+            </h3>
+            <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '0.125rem', marginBottom: '1rem' }}>
+              Find the fastest way to get help.
+            </p>
+
+            {/* Row 1: FAQ */}
+            <div className="support-row-item" onClick={() => setShowFaqModal(true)}>
+              <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <HelpCircle size={16} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '0.84375rem', fontWeight: 700, color: 'var(--text-primary)' }}>FAQ</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Find answers to common questions.</div>
+              </div>
+              <ChevronRight size={16} style={{ color: '#94a3b8' }} />
+            </div>
+
+            {/* Row 2: Live Support Chat */}
+            <div className="support-row-item" onClick={startSupportChat}>
+              <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#ecfdf5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <MessageSquare size={16} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '0.84375rem', fontWeight: 700, color: 'var(--text-primary)' }}>Live Support Chat</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Chat with our support team.</div>
+              </div>
+              <span style={{
+                backgroundColor: '#d1fae5',
+                color: '#059669',
+                padding: '0.125rem 0.5rem',
+                borderRadius: '6px',
+                fontSize: '0.6875rem',
+                fontWeight: 800,
+                marginRight: '0.375rem'
+              }}>
+                Available
+              </span>
+              <ChevronRight size={16} style={{ color: '#94a3b8' }} />
+            </div>
+
+            {/* Row 3: Email Us */}
+            <div className="support-row-item" onClick={copyEmail}>
+              <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Mail size={16} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '0.84375rem', fontWeight: 700, color: 'var(--text-primary)' }}>Email Us</div>
+                <div style={{ fontSize: '0.75rem', color: '#2563eb', fontWeight: 600 }}>support@studyloop.in</div>
+              </div>
+              <ChevronRight size={16} style={{ color: '#94a3b8' }} />
+            </div>
+
+            {/* Row 4: Response Time */}
+            <div className="support-row-item" onClick={() => setShowSlaModal(true)}>
+              <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#f1f5f9', color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Clock size={16} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '0.84375rem', fontWeight: 700, color: 'var(--text-primary)' }}>Response Time</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>We usually respond within 24 hours.</div>
+              </div>
+              <ChevronRight size={16} style={{ color: '#94a3b8' }} />
+            </div>
+          </div>
+
+          {/* 7. STUDYLOOP SUPPORT CHAT CARD */}
+          <div className="support-chat-box">
+            <div>
+              <h4 style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#0f172a' }}>StudyLoop Support</h4>
+              <p style={{ fontSize: '0.75rem', color: '#475569', marginTop: '0.125rem' }}>
+                Chat with our support team directly in your inbox.
+              </p>
+            </div>
+            <button
+              onClick={startSupportChat}
+              style={{
+                backgroundColor: '#ffffff',
+                border: '1px solid #bfdbfe',
+                borderRadius: '50px',
+                padding: '0.5rem 1rem',
+                fontSize: '0.78125rem',
+                fontWeight: 700,
+                color: '#2563eb',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.375rem',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              <MessageSquare size={14} /> Start Conversation
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* 8. PRODUCT SPECIFIC BOTTOM CONCEPT HELP CARD */}
+      <div className="support-concept-card">
+        {/* Left SVG Vector Illustration of 3 Students Learning Together */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flex: 1 }}>
+          <div style={{ width: '130px', height: '80px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg viewBox="0 0 160 100" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%' }}>
+              <rect x="10" y="70" width="140" height="6" rx="3" fill="#cbd5e1" />
+              {/* Student 1 (Left) */}
+              <circle cx="35" cy="35" r="14" fill="#3b82f6" />
+              <path d="M20 70 C20 52 50 52 50 70 Z" fill="#60a5fa" />
+              {/* Student 2 (Center) */}
+              <circle cx="75" cy="30" r="16" fill="#10b981" />
+              <path d="M58 70 C58 48 92 48 92 70 Z" fill="#34d399" />
+              {/* Laptop in Center */}
+              <rect x="65" y="55" width="22" height="13" rx="2" fill="#0f172a" />
+              <polygon points="60,68 92,68 90,71 62,71" fill="#94a3b8" />
+              {/* Student 3 (Right) */}
+              <circle cx="115" cy="35" r="14" fill="#8b5cf6" />
+              <path d="M100 70 C100 52 130 52 130 70 Z" fill="#a78bfa" />
+              {/* Question bubble overhead */}
+              <circle cx="75" cy="12" r="8" fill="#eff6ff" stroke="#3b82f6" strokeWidth="1.5" />
+              <text x="75" y="16" textAnchor="middle" fill="#2563eb" fontSize="10" fontWeight="bold">?</text>
+            </svg>
+          </div>
+
+          <div>
+            <h3 style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+              Need help with a concept instead?
+            </h3>
+            <p style={{ fontSize: '0.84375rem', color: 'var(--text-secondary)', marginTop: '0.25rem', marginBottom: '0.75rem' }}>
+              Connect with peer learners and mentors to get your doubts solved faster.
+            </p>
+            <button
+              onClick={() => setActiveTab('discover')}
+              className="btn btn-primary"
+              style={{
+                backgroundColor: '#2563eb',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '0.5rem 1.125rem',
+                fontSize: '0.8125rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.375rem',
+                boxShadow: '0 2px 6px rgba(37, 99, 235, 0.25)'
+              }}
+            >
+              Find a Peer →
+            </button>
+          </div>
+        </div>
+
+        {/* Right side benefit checkmark pills */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '0.75rem 1.25rem',
+          fontSize: '0.8125rem',
+          fontWeight: 600,
+          color: 'var(--text-primary)',
+          flexShrink: 0
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+            <CheckCircle size={15} style={{ color: '#059669' }} /> Verified Peers
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+            <CheckCircle size={15} style={{ color: '#059669' }} /> 1-to-1 Help
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+            <CheckCircle size={15} style={{ color: '#059669' }} /> Live Sessions
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+            <CheckCircle size={15} style={{ color: '#059669' }} /> Learn Together
+          </div>
+        </div>
+      </div>
+
+      {/* FAQ MODAL */}
+      {showFaqModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.5)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 3000,
+          padding: '1rem'
+        }}>
+          <div className="card-premium" style={{
+            backgroundColor: '#ffffff',
+            borderRadius: '20px',
+            maxWidth: '650px',
+            width: '100%',
+            maxHeight: '85vh',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
+          }}>
+            <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 800, fontSize: '1.125rem', color: '#0f172a' }}>
+                <HelpCircle style={{ color: '#2563eb' }} size={20} /> Frequently Asked Questions
+              </div>
+              <button onClick={() => setShowFaqModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ padding: '1.5rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {faqs.map((faq, index) => (
+                <div
+                  key={index}
+                  style={{
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '12px',
+                    overflow: 'hidden',
+                    backgroundColor: activeFaqIndex === index ? '#f8fafc' : '#ffffff'
+                  }}
+                >
+                  <button
+                    onClick={() => setActiveFaqIndex(activeFaqIndex === index ? null : index)}
+                    style={{
+                      width: '100%',
+                      padding: '0.875rem 1.125rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      background: 'none',
+                      border: 'none',
+                      textAlign: 'left',
+                      fontWeight: 700,
+                      fontSize: '0.875rem',
+                      color: '#0f172a',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <span>{faq.q}</span>
+                    <ChevronDown size={16} style={{ transform: activeFaqIndex === index ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease' }} />
+                  </button>
+                  {activeFaqIndex === index && (
+                    <div style={{ padding: '0 1.125rem 0.875rem 1.125rem', fontSize: '0.8125rem', color: '#475569', lineHeight: 1.5, borderTop: '1px solid #f1f5f9', paddingTop: '0.625rem' }}>
+                      {faq.a}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid #e2e8f0', backgroundColor: '#f8fafc', textAlign: 'right' }}>
+              <button className="btn btn-secondary" onClick={() => setShowFaqModal(false)} style={{ borderRadius: '8px', padding: '0.5rem 1rem', fontSize: '0.8125rem' }}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SLA / RESPONSE TIME MODAL */}
+      {showSlaModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.5)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 3000,
+          padding: '1rem'
+        }}>
+          <div className="card-premium" style={{
+            backgroundColor: '#ffffff',
+            borderRadius: '20px',
+            maxWidth: '480px',
+            width: '100%',
+            padding: '1.5rem',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 800, fontSize: '1.125rem', color: '#0f172a' }}>
+                <Clock style={{ color: '#2563eb' }} size={20} /> Support Response SLAs
+              </div>
+              <button onClick={() => setShowSlaModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}>
+                <X size={20} />
+              </button>
+            </div>
+            <div style={{ fontSize: '0.875rem', color: '#475569', display: 'flex', flexDirection: 'column', gap: '0.75rem', lineHeight: 1.5 }}>
+              <div style={{ backgroundColor: '#eff6ff', padding: '0.75rem 1rem', borderRadius: '10px', border: '1px solid #bfdbfe' }}>
+                <strong style={{ color: '#1e40af' }}>⚡ Urgent Issues (Bug/Security):</strong>
+                <p style={{ fontSize: '0.8125rem', color: '#1e3a8a', marginTop: '0.125rem' }}>Reviewed within 2 hours during business hours (9 AM - 9 PM IST).</p>
+              </div>
+              <div style={{ backgroundColor: '#f8fafc', padding: '0.75rem 1rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                <strong style={{ color: '#0f172a' }}>📬 General Support & Inquiries:</strong>
+                <p style={{ fontSize: '0.8125rem', color: '#475569', marginTop: '0.125rem' }}>Responded to within 24 hours maximum.</p>
+              </div>
+              <div style={{ backgroundColor: '#f8fafc', padding: '0.75rem 1rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                <strong style={{ color: '#0f172a' }}>💡 Feature Suggestions:</strong>
+                <p style={{ fontSize: '0.8125rem', color: '#475569', marginTop: '0.125rem' }}>Reviewed weekly by our product team.</p>
+              </div>
+            </div>
+            <button className="btn btn-primary" onClick={() => setShowSlaModal(false)} style={{ width: '100%', marginTop: '1.25rem', borderRadius: '10px' }}>
+              Got It
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
