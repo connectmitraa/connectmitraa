@@ -9,13 +9,15 @@ public class DirectChatThreadDto {
     private UUID chatId;
     private Profile peer;
     private Instant createdAt;
+    private boolean online;
 
     public DirectChatThreadDto() {}
 
-    public DirectChatThreadDto(UUID chatId, Profile peer, Instant createdAt) {
+    public DirectChatThreadDto(UUID chatId, Profile peer, Instant createdAt, boolean online) {
         this.chatId = chatId;
         this.peer = peer;
         this.createdAt = createdAt;
+        this.online = online;
     }
 
     public UUID getChatId() {
@@ -42,6 +44,14 @@ public class DirectChatThreadDto {
         this.createdAt = createdAt;
     }
 
+    public boolean isOnline() {
+        return online;
+    }
+
+    public void setOnline(boolean online) {
+        this.online = online;
+    }
+
     public static Builder builder() {
         return new Builder();
     }
@@ -50,6 +60,7 @@ public class DirectChatThreadDto {
         private UUID chatId;
         private Profile peer;
         private Instant createdAt;
+        private boolean online;
 
         public Builder chatId(UUID chatId) {
             this.chatId = chatId;
@@ -66,8 +77,13 @@ public class DirectChatThreadDto {
             return this;
         }
 
+        public Builder online(boolean online) {
+            this.online = online;
+            return this;
+        }
+
         public DirectChatThreadDto build() {
-            return new DirectChatThreadDto(chatId, peer, createdAt);
+            return new DirectChatThreadDto(chatId, peer, createdAt, online);
         }
     }
 }
