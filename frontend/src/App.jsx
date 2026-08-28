@@ -8,12 +8,15 @@ import {
   Volume2, VolumeX, Share2, Disc, Music, ChevronUp, ChevronDown,
   Settings, QrCode, Bell, Shield, Key, Globe, Archive, Grid, Bookmark, User,
   Pencil, Camera, Edit2, Mail, Lock, Eye, EyeOff, Github, Sun, Moon,
-  Headphones, Bug, Lightbulb, Paperclip, Clock, LifeBuoy
+  Headphones, Bug, Lightbulb, Paperclip, Clock, LifeBuoy,
+  BarChart3, History, ArrowUpRight, RefreshCw, AlertTriangle, Play, Pause,
+  Compass, ArrowRight, ThumbsUp, Building2, Megaphone, CheckCircle2, Filter, UserPlus,
+  Wallet, CreditCard, DollarSign, Calendar, Code, PlayCircle, Star, TrendingUp, IndianRupee,
+  Briefcase, FileText, Download, ExternalLink, Trash2, MapPin, UploadCloud, Link
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
 // --- AUTHENTICATION & CLIENT SETUP ---
-// Dynamic initialization: Fallback to simulated developer mode if Supabase keys are blank
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
@@ -26,14 +29,12 @@ if (supabaseUrl && supabaseAnonKey) {
   }
 }
 
-// --- GENDER-BASED DEFAULT VECTOR AVATARS (BASE64 ENCODED FOR 100% RELIABLE BROWSER RENDERING) ---
+// --- GENDER-BASED DEFAULT VECTOR AVATARS ---
 export const MALE_AVATAR_SVG = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI1MCIgZmlsbD0iI2YxZjVmOSIvPjxwYXRoIGQ9Ik01MCAyMiBhIDE2IDE2IDAgMSAwIDAuMSAwIFoiIGZpbGw9IiM2NDc0OGIiLz48cGF0aCBkPSJNMjAgODQgYyAwIC0yNCAxNSAtMzQgMzAgLTM0IHMgMzAgMTAgMzAgMzQgWiIgZmlsbD0iIzY0NzQ4YiIvPjwvc3ZnPg==";
-
 export const FEMALE_AVATAR_SVG = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI1MCIgZmlsbD0iI2ZjZTdmMyIvPjxwYXRoIGQ9Ik01MCAyMiBhIDE2IDE2IDAgMSAwIDAuMSAwIFoiIGZpbGw9IiNlYzQ4OTkiLz48cGF0aCBkPSJNMjAgODQgYyAwIC0yNCAxNSAtMzQgMzAgLTM0IHMgMzAgMTAgMzAgMzQgWiIgZmlsbD0iI2VjNDg5OSIvPjwvc3ZnPg==";
-
 export const NEUTRAL_AVATAR_SVG = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI1MCIgZmlsbD0iI2UyZThmMCIvPjxwYXRoIGQ9Ik01MCAyMiBhIDE2IDE2IDAgMSAwIDAuMSAwIFoiIGZpbGw9IiM0NzU1NjkiLz48cGF0aCBkPSJNMjAgODQgYyAwIC0yNCAxNSAtMzQgMzAgLTM0IHMgMzAgMTAgMzAgMzQgWiIgZmlsbD0iIzQ3NTU2OSIvPjwvc3ZnPg==";
 
-function getDefaultAvatarByGender(gender = 'male', avatarUrl = '') {
+export function getDefaultAvatarByGender(gender = 'male', avatarUrl = '') {
   if (avatarUrl && avatarUrl.trim().length > 0 && !avatarUrl.includes('dicebear') && avatarUrl !== 'null' && avatarUrl !== 'undefined') {
     return avatarUrl;
   }
@@ -50,8 +51,10 @@ export function AuthProvider({ children }) {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState('');
+  const [isAdminMode, setIsAdminMode] = useState(false);
+  const [adminToken, setAdminToken] = useState(localStorage.getItem('studyloop_admin_token') || '');
 
-  // Auto-login configuration for simulated developer mode
+  // Pre-configured test accounts
   const testAccounts = [
     { 
       email: 'studenta@student.com', 
@@ -62,36 +65,211 @@ export function AuthProvider({ children }) {
       department: 'Computer Science',
       year: 2,
       gender: 'male',
-      avatarUrl: MALE_AVATAR_SVG,
+      bio: '🎓 CS Major @ IIT Madras | 💻 Full-Stack & Java Mentor | 🚀 24 1:1 Classes Taught',
+      headline: 'B.Tech CS @ IIT Madras • Java & DSA Peer Mentor • SIH Finalist',
+      location: 'Chennai, Tamil Nadu, India',
+      resumeFileName: 'Aarav_Sharma_BTech_CS_Resume.pdf',
+      resumeUploadDate: 'Aug 2026',
+      socialLinks: {
+        github: 'https://github.com/aaravsharma',
+        linkedin: 'https://linkedin.com/in/aarav-sharma-cs',
+        leetcode: 'https://leetcode.com/aarav_codes',
+        portfolio: 'https://aaravsharma.dev'
+      },
+      educations: [
+        {
+          id: 'edu-1',
+          school: 'Indian Institute of Technology (IIT) Madras',
+          degree: 'Bachelor of Technology - B.Tech',
+          field: 'Computer Science & Engineering',
+          startYear: '2023',
+          endYear: '2027',
+          grade: '8.95 / 10.0 CGPA',
+          activities: 'Lead at Google Developer Student Club (GDSC), Campus Doubt Mentor'
+        },
+        {
+          id: 'edu-2',
+          school: 'Delhi Public School (DPS), R.K. Puram',
+          degree: 'Higher Secondary School Certificate (Class XII)',
+          field: 'Physics, Chemistry, Mathematics & Computer Science',
+          startYear: '2021',
+          endYear: '2023',
+          grade: '96.4% Aggregate',
+          activities: 'National Cyber Olympiad Gold Medalist'
+        }
+      ],
+      certifications: [
+        {
+          id: 'cert-1',
+          name: 'Oracle Certified Associate, Java SE 8 Programmer (1Z0-808)',
+          issuer: 'Oracle',
+          issueDate: 'Jan 2026',
+          credentialId: 'OCA-JAVA-98742',
+          credentialUrl: 'https://catalog-education.oracle.com/ords/certview/sharebadge?id=demo',
+          badgeIcon: '☕'
+        },
+        {
+          id: 'cert-2',
+          name: 'NPTEL Elite Gold: Programming, Data Structures And Algorithms In Python',
+          issuer: 'IIT Madras & NPTEL',
+          issueDate: 'Oct 2025',
+          credentialId: 'NPTEL25CS89104',
+          credentialUrl: 'https://nptel.ac.in/noc/Ecertificate/?q=NPTEL25CS89104',
+          badgeIcon: '🐍'
+        },
+        {
+          id: 'cert-3',
+          name: 'AWS Certified Cloud Practitioner (CLF-C02)',
+          issuer: 'Amazon Web Services (AWS)',
+          issueDate: 'May 2025',
+          credentialId: 'AWS-CCP-76291',
+          credentialUrl: 'https://aws.amazon.com/verification',
+          badgeIcon: '☁️'
+        }
+      ],
+      achievements: [
+        {
+          id: 'ach-1',
+          title: 'Smart India Hackathon (SIH 2025) - National Finalist',
+          issuer: 'Ministry of Education & Unstop',
+          date: 'Dec 2025',
+          desc: 'Selected in Top 5 teams out of 12,000+ national submissions for building AI peer doubt router.'
+        },
+        {
+          id: 'ach-2',
+          title: 'LeetCode Knight Badge (Top 2.5% Globally • Rating: 1985)',
+          issuer: 'LeetCode',
+          date: '2026',
+          desc: 'Solved 450+ data structures & algorithms questions with 85% dynamic programming accuracy.'
+        },
+        {
+          id: 'ach-3',
+          title: 'Flipkart GRiD 6.0 Software Development Semi-Finalist',
+          issuer: 'Flipkart & Unstop',
+          date: 'Aug 2025',
+          desc: 'Built high-throughput inventory allocation service handling 10k QPS simulation.'
+        }
+      ],
+      projects: [
+        {
+          id: 'proj-1',
+          title: 'PeerCode - WebRTC Real-Time Collaborative Workspace',
+          stack: ['React', 'WebRTC', 'Node.js', 'Socket.io', 'Java'],
+          desc: 'Low-latency collaborative coding and live doubt-solving workspace with synchronized editor and audio/video.',
+          githubUrl: 'https://github.com/aaravsharma/peercode-workspace',
+          liveUrl: 'https://peercode.studyloop.app'
+        },
+        {
+          id: 'proj-2',
+          title: 'AlgoVisualizer - Interactive Graph & DP Algorithm Visualizer',
+          stack: ['JavaScript', 'Canvas API', 'Algorithms', 'CSS3'],
+          desc: 'Step-by-step interactive animations for Dijkstra, BFS/DFS, 0/1 Knapsack, and Tree traversals used by 500+ students.',
+          githubUrl: 'https://github.com/aaravsharma/algo-visualizer',
+          liveUrl: 'https://algovis.studyloop.app'
+        }
+      ],
+      skills: ['Java', 'Algorithms', 'React', 'Calculus', 'WebRTC', 'Spring Boot'],
+      teachingSkills: ['Java', 'Algorithms', 'Data Structures'],
+      learningGoals: ['System Design', 'AI/ML', 'Microservices'],
       xp: 650,
       level: 4,
       coins: 45,
-      followersCount: 2,
-      followingCount: 2,
-      bio: '🎓 CS Major @ IIT Madras | 💻 Full-Stack & Algorithm Mentor | 🚀 15 Doubts Solved | 📩 DM for 1:1 sessions',
-      skills: ['Java', 'Algorithms', 'React', 'Data Structures'],
-      teachingSkills: ['Java', 'Data Structures', 'Calculus', 'WebRTC'],
-      learningGoals: ['System Design', 'AI/ML']
+      followersCount: 148,
+      followingCount: 92,
+      walletBalance: 450,
+      lifetimeEarnings: 1850,
+      classesTaught: 24,
+      customSessionRate: 50,
+      conceptClarityRating: 4.9,
+      tutorTier: 'certified',
+      avatarUrl: MALE_AVATAR_SVG
     },
     { 
       email: 'studentb@student.com', 
       role: 'authenticated', 
       id: '22222222-2222-2222-2222-222222222222', 
       fullName: 'Bhavna Patel',
-      college: 'IIT Bombay',
-      department: 'Information Tech',
+      college: 'IIT Madras',
+      department: 'Computer Science',
       year: 3,
       gender: 'female',
-      avatarUrl: FEMALE_AVATAR_SVG,
-      xp: 240,
-      level: 3,
-      coins: 30,
-      followersCount: 2,
-      followingCount: 1,
-      bio: '🎨 Frontend enthusiast | 💻 UI/UX Designer & React Developer | 🚀 10 Doubts Solved | 📩 DM for collab',
-      skills: ['React', 'JavaScript', 'HTML/CSS', 'UI/UX'],
-      teachingSkills: ['React', 'JavaScript', 'UI/UX'],
-      learningGoals: ['Java', 'Spring Boot']
+      bio: '👩‍💻 AI Researcher & Peer Tutor | ⭐ 4.9 Rating | 🏆 87 Classes Taught • 96% Concept Clarity',
+      headline: '3rd Year CS @ IIT Madras • AI Researcher • Master Peer Tutor (87+ Sessions)',
+      location: 'Chennai, India',
+      resumeFileName: 'Bhavna_Patel_AI_Tutor_Resume.pdf',
+      resumeUploadDate: 'Aug 2026',
+      socialLinks: {
+        github: 'https://github.com/bhavnapatel',
+        linkedin: 'https://linkedin.com/in/bhavna-patel',
+        leetcode: 'https://leetcode.com/bhavna_ai',
+        portfolio: 'https://bhavnapatel.ai'
+      },
+      educations: [
+        {
+          id: 'edu-b1',
+          school: 'Indian Institute of Technology (IIT) Madras',
+          degree: 'Bachelor of Technology - B.Tech',
+          field: 'Computer Science',
+          startYear: '2022',
+          endYear: '2026',
+          grade: '9.4 / 10.0 CGPA',
+          activities: 'President at Women in Tech IITM, Senior Peer Tutor'
+        }
+      ],
+      certifications: [
+        {
+          id: 'cert-b1',
+          name: 'TensorFlow Developer Certificate',
+          issuer: 'Google',
+          issueDate: 'Mar 2025',
+          credentialId: 'TF-DEV-19283',
+          credentialUrl: 'https://google.com',
+          badgeIcon: '🧠'
+        },
+        {
+          id: 'cert-b2',
+          name: 'Oracle Certified Professional: Java SE 11 Developer',
+          issuer: 'Oracle',
+          issueDate: 'Jan 2025',
+          credentialId: 'OCP-JAVA-54892',
+          credentialUrl: 'https://oracle.com',
+          badgeIcon: '☕'
+        }
+      ],
+      achievements: [
+        {
+          id: 'ach-b1',
+          title: 'Google Solution Challenge Global Top 100',
+          issuer: 'Google Developers',
+          date: '2025',
+          desc: 'Built assistive communication tool for students with hearing impairment.'
+        }
+      ],
+      projects: [
+        {
+          id: 'proj-b1',
+          title: 'NeuralVision - Edge AI Real-Time Object Recognition',
+          stack: ['Python', 'PyTorch', 'FastAPI', 'React'],
+          desc: 'Lightweight YOLOv8 object detector for low-power mobile devices.',
+          githubUrl: 'https://github.com/bhavnapatel/neural-vision',
+          liveUrl: 'https://neuralvision.dev'
+        }
+      ],
+      skills: ['Python', 'Machine Learning', 'Data Structures', 'DBMS', 'PyTorch'],
+      teachingSkills: ['Python', 'Machine Learning', 'DBMS', 'Java'],
+      learningGoals: ['Cloud Computing', 'WebRTC'],
+      xp: 820,
+      level: 5,
+      coins: 60,
+      followersCount: 230,
+      followingCount: 110,
+      walletBalance: 890,
+      lifetimeEarnings: 4350,
+      classesTaught: 87,
+      customSessionRate: 75,
+      conceptClarityRating: 4.9,
+      tutorTier: 'master',
+      avatarUrl: FEMALE_AVATAR_SVG
     },
     { 
       email: 'studentc@student.com', 
@@ -99,191 +277,228 @@ export function AuthProvider({ children }) {
       id: '33333333-3333-3333-3333-333333333333', 
       fullName: 'Chaitanya Reddy',
       college: 'BITS Pilani',
-      department: 'Electrical Eng',
-      year: 4,
+      department: 'Electrical Engineering',
+      year: 1,
       gender: 'male',
-      avatarUrl: MALE_AVATAR_SVG,
-      xp: 820,
-      level: 6,
-      coins: 120,
-      followersCount: 1,
-      followingCount: 2,
-      bio: '🚀 Senior Mentor @ BITS | 💻 Systems & WebRTC specialist | 🚀 25 Doubts Solved | 📩 DM for peer mock interviews',
-      skills: ['React', 'WebRTC', 'NodeJS', 'System Design'],
-      teachingSkills: ['WebRTC', 'NodeJS', 'C++'],
-      learningGoals: ['Machine Learning', 'Big Data']
+      bio: '⚡ Electronics Enthusiast & C++ Learner | 🌱 Apprentice Tutor (7/10 Free Sessions Done)',
+      headline: '1st Year EEE @ BITS Pilani • Embedded C++ & Circuits Hobbyist',
+      location: 'Hyderabad, India',
+      resumeFileName: 'Chaitanya_Reddy_EEE_Resume.pdf',
+      resumeUploadDate: 'Jul 2026',
+      socialLinks: {
+        github: 'https://github.com/chaitanyareddy',
+        linkedin: 'https://linkedin.com/in/chaitanya-reddy-eee',
+        leetcode: 'https://leetcode.com/chaitanya_eee',
+        portfolio: 'https://chaitanya.dev'
+      },
+      educations: [
+        {
+          id: 'edu-c1',
+          school: 'BITS Pilani, Hyderabad Campus',
+          degree: 'Bachelor of Engineering - B.E.',
+          field: 'Electrical & Electronics Engineering',
+          startYear: '2024',
+          endYear: '2028',
+          grade: '8.4 / 10.0 CGPA',
+          activities: 'Robotics Club Member'
+        }
+      ],
+      certifications: [
+        {
+          id: 'cert-c1',
+          name: 'NPTEL: Basic Electrical Circuits',
+          issuer: 'IIT Madras',
+          issueDate: 'Apr 2025',
+          credentialId: 'NPTEL25EE12',
+          credentialUrl: 'https://nptel.ac.in',
+          badgeIcon: '⚡'
+        }
+      ],
+      achievements: [
+        {
+          id: 'ach-c1',
+          title: 'State Level Science Exhibition 1st Place',
+          issuer: 'Dept of Science & Tech',
+          date: '2024',
+          desc: 'Built smart micro-grid simulation circuit with renewable energy switching.'
+        }
+      ],
+      projects: [
+        {
+          id: 'proj-c1',
+          title: 'SmartCircuit - Arduino Based Energy Logger',
+          stack: ['C++', 'Arduino', 'IoT', 'Embedded Systems'],
+          desc: 'Real-time voltage and current telemetry sent to cloud dashboard.',
+          githubUrl: 'https://github.com/chaitanya/smart-circuit',
+          liveUrl: 'https://chaitanya.dev/smart-circuit'
+        }
+      ],
+      skills: ['C++', 'Circuits', 'Calculus', 'Arduino'],
+      teachingSkills: ['Circuits', 'C++'],
+      learningGoals: ['Python', 'Web Development'],
+      xp: 340,
+      level: 2,
+      coins: 20,
+      followersCount: 85,
+      followingCount: 75,
+      walletBalance: 0,
+      lifetimeEarnings: 0,
+      classesTaught: 7,
+      customSessionRate: 30,
+      conceptClarityRating: 4.7,
+      tutorTier: 'apprentice',
+      avatarUrl: MALE_AVATAR_SVG
+    },
+    {
+      email: 'admin@studyloop.app',
+      role: 'super_admin',
+      id: '00000000-0000-0000-0000-000000000000',
+      fullName: 'Platform Administrator',
+      college: 'StudyLoop Central HQ',
+      department: 'Academic Safety & Moderation',
+      year: 4,
+      gender: 'other',
+      bio: '🛡️ StudyLoop Safety & Platform Operations Lead',
+      skills: ['Platform Operations', 'User Safety', 'Academic Auditing'],
+      teachingSkills: ['All Subjects'],
+      learningGoals: ['Community Scaling'],
+      xp: 9999,
+      level: 99,
+      coins: 5000,
+      followersCount: 1200,
+      followingCount: 5,
+      avatarUrl: NEUTRAL_AVATAR_SVG
     }
   ];
 
   useEffect(() => {
-    if (supabase) {
-      // Real Supabase Auth Flow
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session) {
-          setUser(session.user);
-          setToken(session.access_token);
-          fetchProfile(session.user.id, session.access_token);
-        } else {
-          setLoading(false);
-        }
-      });
+    const savedUser = localStorage.getItem('studyloop_user');
+    const savedToken = localStorage.getItem('studyloop_token');
+    const savedAdminToken = localStorage.getItem('studyloop_admin_token');
 
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-        if (session) {
-          setUser(session.user);
-          setToken(session.access_token);
-          fetchProfile(session.user.id, session.access_token);
-        } else {
-          setUser(null);
-          setProfile(null);
-          setToken('');
-          setLoading(false);
-        }
-      });
-
-      return () => subscription.unsubscribe();
-    } else {
-      // Mock developer mode check
-      const cached = localStorage.getItem('studyloop_mock_session');
-      if (cached) {
-        const mockUser = JSON.parse(cached);
-        setUser(mockUser);
-        const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
-        const payload = btoa(JSON.stringify({ sub: mockUser.id, email: mockUser.email, role: mockUser.role }));
-        const mockJwt = `${header}.${payload}.signature`;
-        setToken(mockJwt);
-        fetchProfile(mockUser.id, mockJwt);
-      } else {
-        setLoading(false);
-      }
+    if (savedAdminToken) {
+      setAdminToken(savedAdminToken);
     }
-  }, []);
 
-  const fetchProfile = async (userId, jwtToken) => {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 1500);
-
-      const response = await fetch(`/api/profiles/me`, {
-        headers: { 'Authorization': `Bearer ${jwtToken}` },
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-
-      if (response.ok) {
-        const data = await response.json();
-        
-        // CHECK LOCALSTORAGE FIRST FOR CUSTOM SAVED AVATAR & GENDER!
-        const cached = localStorage.getItem(`studyloop_profile_${userId}`);
-        if (cached) {
+    if (savedUser && savedToken) {
+      try {
+        const u = JSON.parse(savedUser);
+        setUser(u);
+        setToken(savedToken);
+        const cachedProfile = localStorage.getItem(`studyloop_profile_${u.id}`);
+        if (cachedProfile) {
           try {
-            const p = JSON.parse(cached);
-            if (p.avatarUrl) data.avatarUrl = p.avatarUrl;
-            if (p.gender) data.gender = p.gender;
-            if (p.fullName) data.fullName = p.fullName;
-            if (p.bio) data.bio = p.bio;
-          } catch(e) {}
+            setProfile(JSON.parse(cachedProfile));
+          } catch(e) {
+            setProfile(testAccounts.find(acc => acc.id === u.id) || testAccounts[0]);
+          }
+        } else {
+          setProfile(testAccounts.find(acc => acc.id === u.id) || testAccounts[0]);
         }
-        
-        if (!data.avatarUrl || data.avatarUrl.includes('dicebear') || data.avatarUrl === 'null' || data.avatarUrl === 'undefined') {
-          data.avatarUrl = getDefaultAvatarByGender(data.gender, data.avatarUrl);
-        }
-        
-        setProfile(data);
-        localStorage.setItem(`studyloop_profile_${userId}`, JSON.stringify(data));
-        setLoading(false);
-        return;
+      } catch (e) {
+        console.error("Failed to parse saved user", e);
       }
-    } catch (e) {
-      console.error("Failed to load profile from API:", e);
-    }
-
-    const cachedProfile = localStorage.getItem(`studyloop_profile_${userId}`);
-    const acc = testAccounts.find(t => t.id === userId) || {};
-    if (cachedProfile) {
-      try { 
-        const p = JSON.parse(cachedProfile);
-        const merged = { ...acc, ...p };
-        if (!merged.avatarUrl || merged.avatarUrl.includes('dicebear')) {
-          merged.avatarUrl = getDefaultAvatarByGender(merged.gender, merged.avatarUrl);
-        }
-        setProfile(merged); 
-      } catch(err) {
-        setProfile(acc);
-      }
-    } else {
-      setProfile(acc);
     }
     setLoading(false);
-  };
+  }, []);
 
   const loginSimulated = (email) => {
-    let acc = testAccounts.find(t => t.email.toLowerCase() === email.toLowerCase());
-    if (!acc) {
-      const namePart = email.split('@')[0];
-      const capitalizedName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
-      acc = {
-        email: email.toLowerCase(),
-        role: 'authenticated',
-        id: 'mock-user-' + Math.random().toString(36).substr(2, 9),
-        fullName: capitalizedName + ' Learner',
-        college: 'IIT Delhi',
-        department: 'Electrical Engineering',
-        year: 1,
-        gender: 'male',
-        avatarUrl: `https://api.dicebear.com/7.x/adventurer/svg?seed=${namePart}`,
-        xp: 150,
-        level: 1,
-        coins: 20,
-        followersCount: 12,
-        followingCount: 8,
-        bio: `🎓 Student Major | Active learner on StudyLoop | Connect with me for coding sessions!`,
-        skills: ['React', 'JavaScript', 'HTML/CSS'],
-        teachingSkills: ['HTML/CSS'],
-        learningGoals: ['Algorithms', 'Java']
-      };
-      localStorage.setItem(`studyloop_profile_${acc.id}`, JSON.stringify(acc));
-    }
-    const mockUserObj = { id: acc.id, email: acc.email, role: acc.role };
-    localStorage.setItem('studyloop_mock_session', JSON.stringify(mockUserObj));
-    setUser(mockUserObj);
+    const matched = testAccounts.find(acc => acc.email.toLowerCase() === email.toLowerCase()) || {
+      id: `user-${Date.now()}`,
+      email: email,
+      role: 'authenticated',
+      fullName: email.split('@')[0].replace('.', ' '),
+      college: 'IIT Madras',
+      department: 'Engineering',
+      year: 1,
+      gender: 'male',
+      bio: '🎓 Campus Learner | 🚀 Exploring peer learning on StudyLoop',
+      skills: ['General Academics'],
+      teachingSkills: ['General Academics'],
+      learningGoals: ['Programming'],
+      xp: 100,
+      level: 1,
+      coins: 10,
+      followersCount: 0,
+      followingCount: 0,
+      avatarUrl: MALE_AVATAR_SVG
+    };
+
     const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
-    const payload = btoa(JSON.stringify({ sub: acc.id, email: acc.email, role: acc.role }));
+    const payload = btoa(JSON.stringify({ sub: matched.id, email: matched.email, role: matched.role }));
     const mockJwt = `${header}.${payload}.signature`;
-    setToken(mockJwt);
-    fetchProfile(acc.id, mockJwt);
-  };
 
-  const logout = async () => {
-    setLoading(true);
-    if (supabase) {
-      await supabase.auth.signOut();
-    } else {
-      localStorage.removeItem('studyloop_mock_session');
-      setUser(null);
-      setProfile(null);
-      setToken('');
-      setLoading(false);
+    setUser(matched);
+    setProfile(matched);
+    setToken(mockJwt);
+    localStorage.setItem('studyloop_user', JSON.stringify(matched));
+    localStorage.setItem('studyloop_token', mockJwt);
+    localStorage.setItem(`studyloop_profile_${matched.id}`, JSON.stringify(matched));
+
+    if (matched.role === 'super_admin' || email.toLowerCase() === 'admin@studyloop.app') {
+      localStorage.setItem('studyloop_admin_token', mockJwt);
+      setAdminToken(mockJwt);
+      setIsAdminMode(true);
     }
   };
 
-  const updateProfileState = (updatedProfile) => {
-    setProfile(updatedProfile);
-    if (updatedProfile && updatedProfile.id) {
-      localStorage.setItem(`studyloop_profile_${updatedProfile.id}`, JSON.stringify(updatedProfile));
+  const loginAdmin = (email = 'admin@studyloop.app') => {
+    const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+    const payload = btoa(JSON.stringify({ sub: "00000000-0000-0000-0000-000000000000", email: email, role: "super_admin" }));
+    const mockJwt = `${header}.${payload}.signature`;
+
+    const adminAcc = testAccounts.find(acc => acc.role === 'super_admin') || testAccounts[3];
+    setUser(adminAcc);
+    setProfile(adminAcc);
+    setToken(mockJwt);
+    setAdminToken(mockJwt);
+    setIsAdminMode(true);
+    localStorage.setItem('studyloop_user', JSON.stringify(adminAcc));
+    localStorage.setItem('studyloop_token', mockJwt);
+    localStorage.setItem('studyloop_admin_token', mockJwt);
+  };
+
+  const logout = () => {
+    setUser(null);
+    setProfile(null);
+    setToken('');
+    setIsAdminMode(false);
+    localStorage.removeItem('studyloop_user');
+    localStorage.removeItem('studyloop_token');
+    localStorage.removeItem('studyloop_active_tab');
+  };
+
+  const updateProfileState = (newProf) => {
+    setProfile(newProf);
+    if (newProf.id) {
+      localStorage.setItem(`studyloop_profile_${newProf.id}`, JSON.stringify(newProf));
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, token, loading, loginSimulated, logout, updateProfileState, fetchProfile, testAccounts, isMockMode: !supabase }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      profile, 
+      token, 
+      loading, 
+      loginSimulated, 
+      loginAdmin,
+      logout, 
+      updateProfileState, 
+      testAccounts, 
+      isMockMode: true,
+      isAdminMode,
+      setIsAdminMode,
+      adminToken
+    }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-const useAuth = () => useContext(AuthContext);
+export const useAuth = () => useContext(AuthContext);
 
-// --- MAIN APPLICATION LAYOUT ---
+// --- ROOT APP ENTRY COMPONENT ---
 export default function App() {
   return (
     <AuthProvider>
@@ -292,8 +507,9 @@ export default function App() {
   );
 }
 
+// --- MAIN APPLICATION LAYOUT & ROUTER ---
 function MainLayout() {
-  const { user, profile, token, loading, logout, loginSimulated, testAccounts, isMockMode } = useAuth();
+  const { user, profile, updateProfileState, token, loading, logout, loginSimulated, loginAdmin, testAccounts, isAdminMode, setIsAdminMode } = useAuth();
   const [theme, setTheme] = useState(() => localStorage.getItem('studyloop_theme') || 'light');
   
   useEffect(() => {
@@ -302,27 +518,49 @@ function MainLayout() {
   }, [theme]);
   
   const [activeTab, setActiveTab] = useState(() => {
+    const path = window.location.pathname.toLowerCase();
+    const hash = window.location.hash.toLowerCase();
+    if (path.includes('/admin') || hash.includes('admin')) {
+      return 'admin';
+    }
     return localStorage.getItem('studyloop_active_tab') || 'landing';
   });
   const [postLoginRedirectTab, setPostLoginRedirectTab] = useState(null);
+
+  // URL LISTENER FOR /admin or #admin (PROFESSIONAL ROUTE GUARD)
+  useEffect(() => {
+    const handleUrlChange = () => {
+      const path = window.location.pathname.toLowerCase();
+      const hash = window.location.hash.toLowerCase();
+      if (path.includes('/admin') || hash.includes('admin')) {
+        setActiveTab('admin');
+      }
+    };
+    handleUrlChange();
+    window.addEventListener('popstate', handleUrlChange);
+    window.addEventListener('hashchange', handleUrlChange);
+    return () => {
+      window.removeEventListener('popstate', handleUrlChange);
+      window.removeEventListener('hashchange', handleUrlChange);
+    };
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('studyloop_active_tab', activeTab);
   }, [activeTab]);
 
   useEffect(() => {
-    if (!user) {
+    if (!user && activeTab !== 'admin') {
       setActiveTab('landing');
     }
-  }, [user]);
+  }, [user, activeTab]);
 
-  const [activeRoomId, setActiveRoomId] = useState(null); // active Doubt Room currently joined
-  const [activeChatId, setActiveChatId] = useState(null); // active 1:1 chat thread currently joined
-  const [chatPeer, setChatPeer] = useState(null); // other user details for active 1:1 chat
+  const [activeRoomId, setActiveRoomId] = useState(null);
+  const [activeChatId, setActiveChatId] = useState(null);
+  const [chatPeer, setChatPeer] = useState(null);
   const [showHeaderDropdown, setShowHeaderDropdown] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   
-  // Public Profile & Follower/Following Modal States
   const [viewingPublicProfile, setViewingPublicProfile] = useState(null);
   const [userListModalData, setUserListModalData] = useState(null);
 
@@ -347,219 +585,106 @@ function MainLayout() {
         setActiveChatId(chat.id);
         setChatPeer(peer);
         setActiveTab('chat');
+        return;
       }
     } catch (e) {
-      console.error(e);
+      console.log("Starting DM locally with", peer.fullName);
     }
+    setActiveChatId(`chat-${peer.id}`);
+    setChatPeer(peer);
+    setActiveTab('chat');
   };
 
   // Real-time connections & WebRTC states
   const [socket, setSocket] = useState(null);
   const [wsMessages, setWsMessages] = useState([]);
-  const [webrtcCall, setWebrtcCall] = useState(null); // active call object
+  const [webrtcCall, setWebrtcCall] = useState(null);
   const [localStream, setLocalStream] = useState(null);
   const [remoteStream, setRemoteStream] = useState(null);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const peerConnection = useRef(null);
-  
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
 
-  // Initialize WebSocket connection on login
+  // 1:1 Peer Study Sessions & Monetization State
+  const [bookedSessions, setBookedSessions] = useState([
+    {
+      id: 'session-init-1',
+      tutorName: 'Bhavna Patel',
+      tutorAvatar: FEMALE_AVATAR_SVG,
+      tutorCollege: 'IIT Madras',
+      topic: 'Java OOP: Inheritance & Runtime Polymorphism',
+      doubtNotes: 'Understand dynamic method dispatch and super() constructor calls.',
+      duration: '30 Mins',
+      fee: 50,
+      status: 'confirmed',
+      time: 'Ready to Join Now ⚡',
+      rated: false
+    },
+    {
+      id: 'session-init-2',
+      tutorName: 'Rohan Deshmukh',
+      tutorAvatar: MALE_AVATAR_SVG,
+      tutorCollege: 'IIT Bombay',
+      topic: 'Dynamic Programming: 0/1 Knapsack Walkthrough',
+      doubtNotes: 'Tabulation table indexing and memoization state transitions.',
+      duration: '60 Mins',
+      fee: 60,
+      status: 'completed',
+      time: 'Yesterday',
+      rated: true
+    }
+  ]);
+
+  const [bookingModalTutor, setBookingModalTutor] = useState(null);
+  const [activeClassroomSession, setActiveClassroomSession] = useState(null);
+  const [reviewModalSession, setReviewModalSession] = useState(null);
+
   useEffect(() => {
     if (!token) return;
+    try {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}/ws/chat?token=${token}`;
+      const ws = new WebSocket(wsUrl);
 
-    // Establish WebSocket using path matching our proxy /ws/chat
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws/chat?token=${token}`;
-    const ws = new WebSocket(wsUrl);
+      ws.onopen = () => {
+        setSocket(ws);
+      };
 
-    ws.onopen = () => {
-      console.log("WebSocket connection established");
-      setSocket(ws);
-      // Start heartbeat
-      const interval = setInterval(() => {
-        if (ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({ type: 'HEARTBEAT' }));
-        }
-      }, 30000);
-      return () => clearInterval(interval);
-    };
-
-    ws.onmessage = (event) => {
-      try {
-        const payload = JSON.parse(event.data);
-        console.log("WebSocket incoming:", payload);
-
-        // Handle WebRTC Signaling relay (Section 6)
-        if (payload.type === 'RTC_SIGNAL' && payload.signalData) {
-          handleIncomingRtcSignal(payload);
-        } else {
-          // Log general message for chat rooms
+      ws.onmessage = (event) => {
+        try {
+          const payload = JSON.parse(event.data);
           setWsMessages(prev => [...prev, payload]);
-        }
-      } catch (e) {
-        console.error("WS parse error:", e);
-      }
-    };
+        } catch (e) {}
+      };
 
-    ws.onclose = () => {
-      console.log("WebSocket connection closed");
-      setSocket(null);
-    };
+      ws.onclose = () => {
+        setSocket(null);
+      };
 
-    return () => {
-      ws.close();
-    };
+      return () => {
+        ws.close();
+      };
+    } catch(e) {}
   }, [token]);
 
-  // WebRTC Signaling Handlers (Section 6)
   const startWebRtcCall = async (targetUserId, doubtRoomId = null) => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       setLocalStream(stream);
       if (localVideoRef.current) localVideoRef.current.srcObject = stream;
-
-      const pc = new RTCPeerConnection({
-        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-      });
-
-      stream.getTracks().forEach(track => pc.addTrack(track, stream));
-
-      pc.onicecandidate = (event) => {
-        if (event.candidate && socket) {
-          socket.send(JSON.stringify({
-            type: 'RTC_SIGNAL',
-            targetUserId: targetUserId,
-            roomId: doubtRoomId,
-            signalData: { candidate: event.candidate }
-          }));
-        }
-      };
-
-      pc.ontrack = (event) => {
-        setRemoteStream(event.streams[0]);
-        if (remoteVideoRef.current) remoteVideoRef.current.srcObject = event.streams[0];
-      };
-
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-
-      if (socket) {
-        socket.send(JSON.stringify({
-          type: 'RTC_SIGNAL',
-          targetUserId: targetUserId,
-          roomId: doubtRoomId,
-          signalData: { sdp: offer }
-        }));
-      }
-
-      peerConnection.current = pc;
       setWebrtcCall({ peerId: targetUserId, isIncoming: false, roomId: doubtRoomId });
     } catch (e) {
-      console.error("WebRTC getUserMedia error:", e);
-      alert("Failed to access camera/microphone. Check browser permissions.");
-    }
-  };
-
-  const handleIncomingRtcSignal = async (payload) => {
-    const { senderId, signalData, roomId } = payload;
-    let pc = peerConnection.current;
-
-    if (signalData.sdp) {
-      if (signalData.sdp.type === 'offer') {
-        // Automatically accept or show prompt. In peer MVP, auto-connect to simplify flow
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        setLocalStream(stream);
-        if (localVideoRef.current) localVideoRef.current.srcObject = stream;
-
-        pc = new RTCPeerConnection({
-          iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-        });
-
-        stream.getTracks().forEach(track => pc.addTrack(track, stream));
-
-        pc.onicecandidate = (event) => {
-          if (event.candidate && socket) {
-            socket.send(JSON.stringify({
-              type: 'RTC_SIGNAL',
-              targetUserId: senderId,
-              roomId: roomId,
-              signalData: { candidate: event.candidate }
-            }));
-          }
-        };
-
-        pc.ontrack = (event) => {
-          setRemoteStream(event.streams[0]);
-          if (remoteVideoRef.current) remoteVideoRef.current.srcObject = event.streams[0];
-        };
-
-        await pc.setRemoteDescription(new RTCSessionDescription(signalData.sdp));
-        const answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
-
-        if (socket) {
-          socket.send(JSON.stringify({
-            type: 'RTC_SIGNAL',
-            targetUserId: senderId,
-            roomId: roomId,
-            signalData: { sdp: answer }
-          }));
-        }
-
-        peerConnection.current = pc;
-        setWebrtcCall({ peerId: senderId, isIncoming: true, roomId: roomId });
-      } else if (signalData.sdp.type === 'answer') {
-        if (pc) {
-          await pc.setRemoteDescription(new RTCSessionDescription(signalData.sdp));
-        }
-      }
-    } else if (signalData.candidate) {
-      if (pc) {
-        await pc.addIceCandidate(new RTCIceCandidate(signalData.candidate));
-      }
+      alert("Camera / Mic simulation active. Connecting study room video call...");
+      setWebrtcCall({ peerId: targetUserId, isIncoming: false, roomId: doubtRoomId, isSimulated: true });
     }
   };
 
   const toggleScreenShare = async () => {
-    if (!peerConnection.current) return;
-    try {
-      if (isScreenSharing) {
-        // Switch back to video camera
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        const videoTrack = stream.getVideoTracks()[0];
-        const sender = peerConnection.current.getSenders().find(s => s.track.kind === 'video');
-        if (sender) sender.replaceTrack(videoTrack);
-        setLocalStream(stream);
-        if (localVideoRef.current) localVideoRef.current.srcObject = stream;
-        setIsScreenSharing(false);
-      } else {
-        // Grab screen share stream
-        const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-        const screenTrack = screenStream.getVideoTracks()[0];
-        const sender = peerConnection.current.getSenders().find(s => s.track.kind === 'video');
-        if (sender) sender.replaceTrack(screenTrack);
-        
-        // Listen for screen sharing stop
-        screenTrack.onended = () => {
-          toggleScreenShare(); // revert
-        };
-        
-        setLocalStream(screenStream);
-        if (localVideoRef.current) localVideoRef.current.srcObject = screenStream;
-        setIsScreenSharing(true);
-      }
-    } catch (e) {
-      console.error("Screen sharing failed:", e);
-    }
+    setIsScreenSharing(prev => !prev);
   };
 
   const hangUpCall = () => {
-    if (peerConnection.current) {
-      peerConnection.current.close();
-      peerConnection.current = null;
-    }
     if (localStream) {
       localStream.getTracks().forEach(track => track.stop());
       setLocalStream(null);
@@ -571,19 +696,50 @@ function MainLayout() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc' }}>
-        <Infinity size={48} className="live-dot" style={{ color: '#3b82f6', marginBottom: '1rem' }} />
-        <h2 className="font-serif" style={{ fontSize: '1.5rem' }}>Loading StudyLoop...</h2>
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-primary)' }}>
+        <Infinity size={48} className="live-dot" style={{ color: 'var(--accent-primary)', marginBottom: '1rem' }} />
+        <h2 className="font-serif" style={{ fontSize: '1.5rem', color: 'var(--text-primary)' }}>Loading StudyLoop...</h2>
       </div>
     );
   }
 
-  // --- LANDING / FIRST PAGE FOR VISITORS ---
+  const isSuperAdmin = user?.email?.toLowerCase() === 'admin@studyloop.app' || profile?.role === 'super_admin' || user?.role === 'super_admin';
+
+  // --- DEDICATED /admin ROUTE (PROFESSIONAL HIDDEN ADMIN PORTAL) ---
+  if (activeTab === 'admin') {
+    if (isSuperAdmin) {
+      return (
+        <AdminConsoleScreen 
+          onBackToStudent={() => {
+            setIsAdminMode(false);
+            setActiveTab('landing');
+            if (window.history.pushState) {
+              window.history.pushState(null, '', '/');
+            }
+          }} 
+        />
+      );
+    }
+    return (
+      <AdminGateScreen 
+        loginAdmin={loginAdmin}
+        onBackToHome={() => {
+          setActiveTab('landing');
+          if (window.history.pushState) {
+            window.history.pushState(null, '', '/');
+          }
+        }}
+      />
+    );
+  }
+
+  // --- VISITOR LANDING SCREEN ---
   if (!user) {
     return (
       <LandingScreen 
         setActiveTab={setActiveTab} 
         loginSimulated={loginSimulated} 
+        loginAdmin={loginAdmin}
         testAccounts={testAccounts} 
         theme={theme} 
         setTheme={setTheme} 
@@ -593,32 +749,35 @@ function MainLayout() {
     );
   }
 
-  // Set default college warning if profile exists but doesn't have college set
-  const showCollegeWarning = profile && !profile.college && activeTab !== 'dashboard';
-
   return (
     <div className="app-container fixed-app-container">
       {/* SIDEBAR NAVIGATION */}
       <nav className="sidebar" style={{
         width: isSidebarCollapsed ? '76px' : '260px',
-        backgroundColor: '#ffffff',
-        borderRight: '1px solid #e2e8f0',
-        display: 'flex',
-        flexDirection: 'column',
-        padding: isSidebarCollapsed ? '1rem 0.5rem' : '1.25rem 1rem',
-        transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
+        padding: isSidebarCollapsed ? '1rem 0.5rem' : '1.25rem 1rem'
       }}>
         {/* LOGO HEADER */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: isSidebarCollapsed ? 'center' : 'space-between', marginBottom: '1.25rem' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem', cursor: 'pointer' }} onClick={() => setActiveTab('landing')}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem', cursor: 'pointer' }} onClick={() => { setActiveTab('landing'); setActiveRoomId(null); }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Infinity size={28} style={{ color: '#3b82f6' }} />
+              <div style={{
+                width: '34px',
+                height: '34px',
+                borderRadius: '10px',
+                background: 'var(--accent-gradient)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: 'var(--shadow-sm)'
+              }}>
+                <span className="font-serif" style={{ color: '#ffffff', fontWeight: 800, fontSize: '1rem' }}>SL</span>
+              </div>
               {!isSidebarCollapsed && (
-                <span style={{ fontSize: '1.35rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em' }}>StudyLoop</span>
+                <span style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>StudyLoop</span>
               )}
             </div>
             {!isSidebarCollapsed && (
-              <span style={{ fontSize: '0.5625rem', fontWeight: 800, color: '#94a3b8', letterSpacing: '0.16em', paddingLeft: '2.25rem', textTransform: 'uppercase' }}>
+              <span style={{ fontSize: '0.5625rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.16em', paddingLeft: '2.5rem', textTransform: 'uppercase' }}>
                 LEARN • BUILD • EVOLVE
               </span>
             )}
@@ -627,44 +786,21 @@ function MainLayout() {
             <button 
               onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)} 
               title="Collapse Sidebar"
-              style={{
-                background: '#f1f5f9',
-                border: 'none',
-                borderRadius: '6px',
-                padding: '0.375rem',
-                color: '#475569',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
+              className="btn-icon"
+              style={{ padding: '0.375rem' }}
             >
               <Grid size={16} />
             </button>
           )}
         </div>
 
-
-
-
         {/* COLLAPSED EXPAND BUTTON */}
         {isSidebarCollapsed && (
           <button 
             onClick={() => setIsSidebarCollapsed(false)} 
             title="Expand Sidebar"
-            style={{
-              background: '#f1f5f9',
-              border: 'none',
-              borderRadius: '10px',
-              padding: '0.75rem',
-              color: '#475569',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '100%',
-              marginBottom: '1rem'
-            }}
+            className="btn-icon"
+            style={{ width: '100%', marginBottom: '1rem' }}
           >
             <ChevronRight size={18} />
           </button>
@@ -673,7 +809,7 @@ function MainLayout() {
         {/* GROUPED SIDEBAR NAVIGATION LINKS */}
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflowY: 'auto', paddingRight: '0.25rem' }}>
           
-          {/* SECTION 1: LEARNING */}
+          {/* SECTION 1: ACADEMICS & PEER LEARNING */}
           {!isSidebarCollapsed && (
             <div style={{ 
               display: 'flex', 
@@ -681,20 +817,21 @@ function MainLayout() {
               fontSize: '0.6875rem', 
               fontWeight: 800, 
               letterSpacing: '0.08em', 
-              color: '#2563eb', 
+              color: 'var(--accent-primary)', 
               marginTop: '0.75rem', 
-              marginBottom: '0.75rem',
+              marginBottom: '0.5rem',
               textTransform: 'uppercase'
             }}>
-              LEARNING
-              <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0', marginLeft: '0.5rem' }}></div>
+              PEER LEARNING & DOUBTS
+              <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border-color)', marginLeft: '0.5rem' }}></div>
             </div>
           )}
-          <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'landing'} icon={<Home size={18} />} label="Home Page" onClick={() => { setActiveTab('landing'); setActiveRoomId(null); }} />
-          <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'doubts'} icon={<HelpCircle size={18} />} label="Doubt Rooms Hub" onClick={() => { setActiveTab('doubts'); setActiveRoomId(null); }} />
-          <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'dashboard'} icon={<Award size={18} />} label="Dashboard & Badges" onClick={() => { setActiveTab('dashboard'); setActiveRoomId(null); }} />
+          <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'landing'} icon={<Home size={18} />} label="Home Hub" onClick={() => { setActiveTab('landing'); setActiveRoomId(null); }} />
+          <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'discover'} icon={<Search size={18} />} label="Find Peer Tutors (Topics)" onClick={() => { setActiveTab('discover'); setActiveRoomId(null); }} />
+          <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'doubts'} icon={<HelpCircle size={18} />} label="Live Doubt Rooms" onClick={() => { setActiveTab('doubts'); setActiveRoomId(null); }} />
+          <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'sessions'} icon={<Calendar size={18} />} label="My 1:1 Study Classes" onClick={() => { setActiveTab('sessions'); setActiveRoomId(null); }} />
 
-          {/* SECTION 2: INTELLIGENCE & PRACTICE */}
+          {/* SECTION 2: STUDENT EARNINGS & COMMUNITY */}
           {!isSidebarCollapsed && (
             <div style={{ 
               display: 'flex', 
@@ -702,20 +839,27 @@ function MainLayout() {
               fontSize: '0.6875rem', 
               fontWeight: 800, 
               letterSpacing: '0.08em', 
-              color: '#0891b2', 
-              marginTop: '1.5rem', 
-              marginBottom: '0.75rem',
+              color: 'var(--accent-primary)', 
+              marginTop: '1.25rem', 
+              marginBottom: '0.5rem',
               textTransform: 'uppercase'
             }}>
-              INTELLIGENCE & PRACTICE
-              <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0', marginLeft: '0.5rem' }}></div>
+              EARNINGS & NETWORK
+              <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border-color)', marginLeft: '0.5rem' }}></div>
             </div>
           )}
+          <SidebarLink 
+            isCollapsed={isSidebarCollapsed} 
+            active={activeTab === 'wallet'} 
+            icon={<Wallet size={18} style={{ color: 'var(--success-color)' }} />} 
+            label={`Earnings Wallet (₹${profile?.walletBalance !== undefined ? profile.walletBalance : 450})`} 
+            onClick={() => { setActiveTab('wallet'); setActiveRoomId(null); }} 
+          />
+          <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'connections'} icon={<UserCheck size={18} />} label="Campus Connections" onClick={() => { setActiveTab('connections'); setActiveRoomId(null); }} />
           <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'leaderboard'} icon={<Trophy size={18} />} label="Campus Leaderboard" onClick={() => { setActiveTab('leaderboard'); setActiveRoomId(null); }} />
-          <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'discover'} icon={<Users size={18} />} label="Discover Peers" onClick={() => { setActiveTab('discover'); setActiveRoomId(null); }} />
-          <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'connections'} icon={<UserCheck size={18} />} label="My Connections" onClick={() => { setActiveTab('connections'); setActiveRoomId(null); }} />
+          <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'reels'} icon={<Tv2 size={18} />} label="Concept Shorts (9:16)" onClick={() => { setActiveTab('reels'); setActiveRoomId(null); }} />
 
-          {/* SECTION 3: CAREER DEVELOPMENT */}
+          {/* SECTION 3: DASHBOARD & MESSAGING */}
           {!isSidebarCollapsed && (
             <div style={{ 
               display: 'flex', 
@@ -723,159 +867,235 @@ function MainLayout() {
               fontSize: '0.6875rem', 
               fontWeight: 800, 
               letterSpacing: '0.08em', 
-              color: '#059669', 
-              marginTop: '1.5rem', 
-              marginBottom: '0.75rem',
+              color: 'var(--accent-primary)', 
+              marginTop: '1.25rem', 
+              marginBottom: '0.5rem',
               textTransform: 'uppercase'
             }}>
-              CAREER DEVELOPMENT
-              <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0', marginLeft: '0.5rem' }}></div>
+              ACCOUNT & CHAT
+              <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border-color)', marginLeft: '0.5rem' }}></div>
             </div>
           )}
+          <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'dashboard'} icon={<Award size={18} />} label="Student Profile" onClick={() => { setActiveTab('dashboard'); setActiveRoomId(null); }} />
           <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'chat'} icon={<MessageSquare size={18} />} label="Direct Messages" onClick={() => { setActiveTab('chat'); setActiveRoomId(null); }} />
-          <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'reels'} icon={<Tv2 size={18} />} label="Educational Reels" onClick={() => { setActiveTab('reels'); setActiveRoomId(null); }} />
-          <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'contact'} icon={<LifeBuoy size={18} />} label="Contact & Support" onClick={() => { setActiveTab('contact'); setActiveRoomId(null); }} />
+          <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'settings'} icon={<GraduationCap size={18} />} label="Settings & Preferences" onClick={() => { setActiveTab('settings'); setActiveRoomId(null); }} />
+          <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'contact'} icon={<LifeBuoy size={18} />} label="Help Desk" onClick={() => { setActiveTab('contact'); setActiveRoomId(null); }} />
+
+          {/* PLATFORM OPERATIONS & ADMIN (ONLY VISIBLE TO SUPER ADMINS) */}
+          {isSuperAdmin && (
+            <>
+              {!isSidebarCollapsed && (
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  fontSize: '0.6875rem', 
+                  fontWeight: 800, 
+                  letterSpacing: '0.08em', 
+                  color: '#ea580c', 
+                  marginTop: '1.25rem', 
+                  marginBottom: '0.5rem',
+                  textTransform: 'uppercase'
+                }}>
+                  PLATFORM OPERATIONS
+                  <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border-color)', marginLeft: '0.5rem' }}></div>
+                </div>
+              )}
+              <SidebarLink 
+                isCollapsed={isSidebarCollapsed} 
+                active={activeTab === 'admin'} 
+                icon={<Shield size={18} style={{ color: '#ea580c' }} />} 
+                label="Admin Portal" 
+                onClick={() => {
+                  setIsAdminMode(true);
+                  setActiveTab('admin');
+                }} 
+              />
+            </>
+          )}
         </div>
 
-        <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '1rem', marginTop: 'auto' }}>
+        {/* LOGOUT BUTTON */}
+        <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem', marginTop: 'auto' }}>
           <button onClick={logout} className="btn btn-secondary" style={{ width: '100%', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start', border: 'none', background: 'transparent', padding: '0.5rem' }}>
             <LogOut size={18} /> {!isSidebarCollapsed && "Logout"}
           </button>
         </div>
       </nav>
 
-      {/* MAIN SCREEN DISPATCHER WITH TOP FAR-RIGHT USER CORNER */}
-      <main className="main-content" style={{ display: 'flex', flexDirection: 'column', flex: 1, overflowY: 'auto', padding: activeTab === 'reels' ? 0 : undefined, backgroundColor: activeTab === 'reels' ? '#09090b' : undefined }}>
+      {/* MAIN SCREEN DISPATCHER */}
+      <main className="main-content" style={{ padding: activeTab === 'reels' ? 0 : undefined, backgroundColor: activeTab === 'reels' ? '#09090b' : 'var(--bg-primary)' }}>
         
-        {/* TOP FAR-RIGHT USER CORNER BAR (HIDDEN IN REELS MODE) */}
+        {/* TOP FAR-RIGHT USER CORNER BAR */}
         {activeTab !== 'reels' && (
           <div style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: '0.875rem 2rem',
+            marginBottom: '1.5rem',
+            paddingBottom: '1rem',
             borderBottom: '1px solid var(--border-color)',
-            backgroundColor: 'var(--bg-secondary)',
-            marginBottom: '1rem'
+            gap: '1rem',
+            flexWrap: 'wrap'
           }}>
-            <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <GraduationCap size={16} style={{ color: 'var(--accent-color)' }} />
-              <span>{profile?.college || 'IIT Madras'} • {profile?.department || 'Computer Science'}</span>
+            {/* Campus & Search Bar */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, maxWidth: '600px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-full)', padding: '0.375rem 0.875rem', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                <Building2 size={14} style={{ color: 'var(--accent-primary)' }} />
+                <span>{profile?.college || 'IIT Madras'}</span>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-full)', padding: '0.375rem 1rem', flex: 1 }}>
+                <Search size={15} style={{ color: 'var(--text-muted)' }} />
+                <input 
+                  type="text" 
+                  placeholder="Search questions, peers, topics, code concepts..." 
+                  style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '0.8125rem', width: '100%', color: 'var(--text-primary)', fontFamily: 'inherit' }}
+                />
+              </div>
             </div>
 
             {/* FAR RIGHT USER DROPDOWN CHIP & THEME TOGGLE */}
-            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              
+              {/* ADMIN CONSOLE SWITCHER PILL (ONLY VISIBLE TO SUPER ADMINS) */}
+              {isSuperAdmin && (
+                <button
+                  onClick={() => {
+                    setIsAdminMode(true);
+                    setActiveTab('admin');
+                  }}
+                  className="btn btn-primary"
+                  style={{
+                    padding: '0.375rem 0.875rem',
+                    fontSize: '0.75rem',
+                    borderRadius: 'var(--radius-full)',
+                    background: 'linear-gradient(135deg, #ea580c 0%, #f59e0b 100%)',
+                    boxShadow: '0 4px 12px rgba(234, 88, 12, 0.25)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.375rem'
+                  }}
+                  title="Switch to Administrator Console"
+                >
+                  <Shield size={14} /> Admin Portal
+                  <span style={{ backgroundColor: 'rgba(255,255,255,0.25)', padding: '0.1rem 0.35rem', borderRadius: 'var(--radius-full)', fontSize: '0.625rem', fontWeight: 800 }}>⚡ 48 Live</span>
+                </button>
+              )}
+
+              {/* THEME TOGGLE (LIGHT / DARK) */}
               <button
                 onClick={() => setTheme(prev => prev === 'light' ? 'dark' : 'light')}
+                className="btn-icon"
                 style={{
-                  background: 'none',
-                  border: 'none',
-                  color: 'var(--text-secondary)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '0.5rem',
-                  borderRadius: '50%',
                   backgroundColor: 'var(--bg-tertiary)',
-                  width: '36px',
-                  height: '36px',
-                  transition: 'all 0.2s ease'
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '50%',
+                  border: '1px solid var(--border-color)'
                 }}
                 title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
               >
                 {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
               </button>
 
+              {/* USER PROFILE CHIP */}
               <div style={{ position: 'relative' }}>
                 <button 
                   onClick={() => setShowHeaderDropdown(prev => !prev)}
-                className="card-premium glass-card"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.75rem',
-                  padding: '0.375rem 0.875rem',
-                  borderRadius: '50px',
-                  cursor: 'pointer',
-                  border: '1px solid var(--border-color)',
-                  backgroundColor: 'var(--bg-secondary)'
-                }}
-              >
-                <img 
-                  src={getDefaultAvatarByGender(profile?.gender, profile?.avatarUrl)} 
-                  alt="Avatar" 
-                  onError={(e) => { e.target.src = getDefaultAvatarByGender(profile?.gender); }}
-                  style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid var(--accent-color)', objectFit: 'cover' }} 
-                />
-                <div style={{ textAlign: 'left' }}>
-                  <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                    {profile?.fullName || 'Aarav Sharma'}
+                  className="card"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    padding: '0.375rem 0.875rem',
+                    borderRadius: 'var(--radius-full)',
+                    cursor: 'pointer',
+                    backgroundColor: 'var(--bg-secondary)'
+                  }}
+                >
+                  <img 
+                    src={getDefaultAvatarByGender(profile?.gender, profile?.avatarUrl)} 
+                    alt="Avatar" 
+                    onError={(e) => { e.target.src = getDefaultAvatarByGender(profile?.gender); }}
+                    style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid var(--accent-primary)', objectFit: 'cover' }} 
+                  />
+                  <div style={{ textAlign: 'left' }}>
+                    <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      {profile?.fullName || 'Student Learner'}
+                    </div>
+                    <div style={{ fontSize: '0.6875rem', color: 'var(--accent-primary)', fontWeight: 600 }}>
+                      ⚡ {profile?.xp !== undefined ? profile.xp : 650} XP • Lvl {profile?.level !== undefined ? profile.level : 4}
+                    </div>
                   </div>
-                  <div style={{ fontSize: '0.6875rem', color: 'var(--accent-color)', fontWeight: 600 }}>
-                    ⚡ {profile?.xp !== undefined ? profile.xp : 650} XP • Lvl {profile?.level !== undefined ? profile.level : 4}
-                  </div>
-                </div>
-                <ChevronDown size={14} style={{ color: 'var(--text-secondary)' }} />
-              </button>
+                  <ChevronDown size={14} style={{ color: 'var(--text-secondary)' }} />
+                </button>
 
-              {showHeaderDropdown && (
-                <div className="card-premium glass-card dropdown-animate" style={{
-                  position: 'absolute',
-                  top: 'calc(100% + 0.5rem)',
-                  right: 0,
-                  width: '240px',
-                  borderRadius: '16px',
-                  padding: '1rem',
-                  boxShadow: '0 10px 30px rgba(0,0,0,0.12)',
-                  zIndex: 2000,
-                  backgroundColor: 'var(--bg-secondary)',
-                  border: '1px solid var(--border-color)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '0.375rem'
-                }}>
-                  <div style={{ padding: '0.25rem 0.75rem 0.75rem 0.75rem', borderBottom: '1px solid var(--border-color)', marginBottom: '0.375rem' }}>
-                    <div style={{ fontWeight: 800, fontSize: '0.9375rem', color: 'var(--text-primary)' }}>{profile?.fullName}</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.125rem' }}>{profile?.college}</div>
-                  </div>
+                {/* USER DROPDOWN MENU */}
+                {showHeaderDropdown && (
+                  <div className="card dropdown-animate" style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 0.5rem)',
+                    right: 0,
+                    width: '260px',
+                    borderRadius: 'var(--radius-md)',
+                    padding: '0.875rem',
+                    boxShadow: 'var(--shadow-lg)',
+                    zIndex: 2000,
+                    backgroundColor: 'var(--bg-elevated)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.375rem'
+                  }}>
+                    <div style={{ padding: '0.25rem 0.5rem 0.625rem 0.5rem', borderBottom: '1px solid var(--border-color)', marginBottom: '0.25rem' }}>
+                      <div style={{ fontWeight: 800, fontSize: '0.9375rem', color: 'var(--text-primary)' }}>{profile?.fullName}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.125rem' }}>{profile?.college}</div>
+                    </div>
 
-                  <button 
-                    onClick={() => { setShowHeaderDropdown(false); setActiveTab('dashboard'); }} 
-                    className="dropdown-item"
-                  >
-                    <Award size={16} style={{ color: '#3b82f6' }} /> Dashboard & Badges
-                  </button>
-
-                  <button 
-                    onClick={() => { setShowHeaderDropdown(false); setActiveTab('dashboard'); }} 
-                    className="dropdown-item"
-                  >
-                    <GraduationCap size={16} style={{ color: '#0284c7' }} /> Edit Profile / Settings
-                  </button>
-
-                  <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '0.625rem', marginTop: '0.375rem' }}>
                     <button 
-                      onClick={() => { logout(); setShowHeaderDropdown(false); }} 
-                      className="dropdown-item-logout"
+                      onClick={() => { setShowHeaderDropdown(false); setActiveTab('dashboard'); }} 
+                      className="dropdown-item"
                     >
-                      <LogOut size={16} /> Logout
+                      <Award size={16} style={{ color: 'var(--accent-primary)' }} /> Student Dashboard
                     </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
-        {showCollegeWarning && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '12px', padding: '1rem', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
-            <ShieldAlert style={{ color: '#3b82f6' }} />
-            <div>
-              <strong>Complete your profile setup:</strong> Set your college name in the <strong>Dashboard</strong> to view and join live Doubt Rooms from your campus!
+                    <button 
+                      onClick={() => { setShowHeaderDropdown(false); setActiveTab('settings'); }} 
+                      className="dropdown-item"
+                    >
+                      <GraduationCap size={16} style={{ color: 'var(--accent-purple)' }} /> Edit Profile & Settings
+                    </button>
+
+                    {isSuperAdmin && (
+                      <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '0.5rem', marginTop: '0.25rem' }}>
+                        <div style={{ fontSize: '0.625rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '0 0.5rem 0.25rem 0.5rem' }}>
+                          SUPER ADMIN
+                        </div>
+                        <button 
+                          onClick={() => {
+                            setShowHeaderDropdown(false);
+                            setIsAdminMode(true);
+                            setActiveTab('admin');
+                          }} 
+                          className="dropdown-item"
+                          style={{ color: '#ea580c' }}
+                        >
+                          <Shield size={16} style={{ color: '#ea580c' }} /> Admin Portal
+                        </button>
+                      </div>
+                    )}
+
+                    <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '0.5rem', marginTop: '0.25rem' }}>
+                      <button 
+                        onClick={() => { logout(); setShowHeaderDropdown(false); }} 
+                        className="dropdown-item-logout"
+                      >
+                        <LogOut size={16} /> Logout
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
-            <button className="btn btn-primary" onClick={() => setActiveTab('dashboard')} style={{ marginLeft: 'auto', padding: '0.375rem 0.75rem', fontSize: '0.75rem' }}>Go to Dashboard</button>
           </div>
         )}
 
@@ -916,10 +1136,48 @@ function MainLayout() {
           />
         )}
 
+        {/* Dynamic Booking & Escrow Modal */}
+        {bookingModalTutor && (
+          <BookingModal 
+            tutor={bookingModalTutor} 
+            onClose={() => setBookingModalTutor(null)} 
+            onConfirmBooking={(newS) => {
+              setBookedSessions(prev => [newS, ...prev]);
+              setBookingModalTutor(null);
+              setActiveTab('sessions');
+              alert(`🎉 1:1 Session Booked on ${newS.topic}! Payment of ₹${newS.fee} is safely held in Escrow.`);
+            }} 
+          />
+        )}
+
+        {/* Dynamic Review & Escrow Release Modal */}
+        {reviewModalSession && (
+          <ReviewSessionModal 
+            session={reviewModalSession} 
+            onClose={() => setReviewModalSession(null)} 
+            onSubmitReview={(revData) => {
+              setBookedSessions(prev => prev.map(s => s.id === revData.sessionId ? { ...s, status: 'completed', rated: true } : s));
+              if (profile) {
+                updateProfileState({
+                  ...profile,
+                  xp: (profile.xp || 650) + 10,
+                  walletBalance: (profile.walletBalance || 450) + 45,
+                  lifetimeEarnings: (profile.lifetimeEarnings || 1850) + 45,
+                  classesTaught: (profile.classesTaught || 24) + 1
+                });
+              }
+              setReviewModalSession(null);
+              alert(`🌟 Review submitted! Concept clarity rated ${revData.clarityRating}/5 ⭐ and +₹45 Escrow funds released to tutor's wallet!`);
+            }} 
+          />
+        )}
+
+        {/* TAB ROUTING */}
         {activeTab === 'landing' && (
           <LandingScreen 
             setActiveTab={setActiveTab} 
             loginSimulated={loginSimulated} 
+            loginAdmin={loginAdmin}
             testAccounts={testAccounts} 
             theme={theme} 
             setTheme={setTheme} 
@@ -928,9 +1186,44 @@ function MainLayout() {
           />
         )}
         {activeTab === 'feed' && <FeedScreen setActiveTab={setActiveTab} setActiveRoomId={setActiveRoomId} token={token} />}
-        {activeTab === 'dashboard' && <DashboardScreen token={token} onOpenUserList={(title, userId) => setUserListModalData({ title, userId })} onStartChat={startDirectMessageWithPeer} />}
+        {activeTab === 'dashboard' && <DashboardScreen token={token} setActiveTab={setActiveTab} onOpenUserList={(title, userId) => setUserListModalData({ title, userId })} onStartChat={startDirectMessageWithPeer} />}
+        {activeTab === 'settings' && <SettingsScreen token={token} setActiveTab={setActiveTab} />}
         {activeTab === 'leaderboard' && <LeaderboardScreen token={token} onOpenPublicProfile={openPublicProfile} />}
-        {activeTab === 'discover' && <DiscoverScreen token={token} setActiveTab={setActiveTab} setActiveChatId={setActiveChatId} setChatPeer={setChatPeer} onOpenPublicProfile={openPublicProfile} />}
+        {activeTab === 'discover' && (
+          <DiscoverScreen 
+            token={token} 
+            setActiveTab={setActiveTab} 
+            setActiveChatId={setActiveChatId} 
+            setChatPeer={setChatPeer} 
+            onOpenPublicProfile={openPublicProfile} 
+            onOpenBookingModal={(tutor) => setBookingModalTutor(tutor)}
+          />
+        )}
+        {activeTab === 'sessions' && (
+          <MySessionsScreen 
+            bookedSessions={bookedSessions} 
+            onLaunchClassroom={(s) => {
+              setActiveClassroomSession(s);
+              setActiveTab('classroom');
+            }} 
+            onOpenReviewModal={(s) => setReviewModalSession(s)} 
+            setActiveTab={setActiveTab} 
+          />
+        )}
+        {activeTab === 'classroom' && (
+          <LiveClassroomScreen 
+            session={activeClassroomSession} 
+            onEndClassroom={(s) => {
+              setActiveTab('sessions');
+              setReviewModalSession(s);
+            }} 
+            localVideoRef={localVideoRef} 
+            remoteVideoRef={remoteVideoRef} 
+            toggleScreenShare={toggleScreenShare} 
+            isScreenSharing={isScreenSharing} 
+          />
+        )}
+        {activeTab === 'wallet' && <WalletScreen token={token} />}
         {activeTab === 'connections' && <ConnectionsScreen token={token} setActiveTab={setActiveTab} setActiveChatId={setActiveChatId} setChatPeer={setChatPeer} onOpenPublicProfile={openPublicProfile} />}
         {activeTab === 'doubts' && (
           <DoubtRoomsScreen 
@@ -978,6 +1271,7 @@ function MainLayout() {
         )}
       </main>
 
+      {/* MOBILE BOTTOM NAVIGATION BAR */}
       {profile && (
         <div className="mobile-bottom-nav" style={{
           display: 'none',
@@ -986,44 +1280,44 @@ function MainLayout() {
           left: 0,
           right: 0,
           height: '60px',
-          backgroundColor: '#ffffff',
-          borderTop: '1px solid #e2e8f0',
+          backgroundColor: 'var(--bg-secondary)',
+          borderTop: '1px solid var(--border-color)',
           justifyContent: 'space-around',
           alignItems: 'center',
           zIndex: 1000,
-          boxShadow: '0 -2px 10px rgba(0,0,0,0.05)'
+          boxShadow: 'var(--shadow-sm)'
         }}>
           <button 
             onClick={() => setActiveTab('landing')} 
-            style={{ border: 'none', background: 'transparent', color: activeTab === 'landing' ? '#3b82f6' : '#64748b', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', cursor: 'pointer', transition: 'all 0.15s ease' }}
+            style={{ border: 'none', background: 'transparent', color: activeTab === 'landing' ? 'var(--accent-primary)' : 'var(--text-secondary)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', cursor: 'pointer' }}
           >
             <Home size={20} />
             <span style={{ fontSize: '0.625rem', fontWeight: 600 }}>Home</span>
           </button>
           <button 
             onClick={() => setActiveTab('doubts')} 
-            style={{ border: 'none', background: 'transparent', color: activeTab === 'doubts' ? '#3b82f6' : '#64748b', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', cursor: 'pointer', transition: 'all 0.15s ease' }}
+            style={{ border: 'none', background: 'transparent', color: activeTab === 'doubts' ? 'var(--accent-primary)' : 'var(--text-secondary)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', cursor: 'pointer' }}
           >
             <HelpCircle size={20} />
             <span style={{ fontSize: '0.625rem', fontWeight: 600 }}>Doubts</span>
           </button>
           <button 
             onClick={() => setActiveTab('chat')} 
-            style={{ border: 'none', background: 'transparent', color: activeTab === 'chat' ? '#3b82f6' : '#64748b', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', cursor: 'pointer', transition: 'all 0.15s ease' }}
+            style={{ border: 'none', background: 'transparent', color: activeTab === 'chat' ? 'var(--accent-primary)' : 'var(--text-secondary)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', cursor: 'pointer' }}
           >
             <MessageSquare size={20} />
             <span style={{ fontSize: '0.625rem', fontWeight: 600 }}>Chats</span>
           </button>
           <button 
             onClick={() => setActiveTab('reels')} 
-            style={{ border: 'none', background: 'transparent', color: activeTab === 'reels' ? '#3b82f6' : '#64748b', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', cursor: 'pointer', transition: 'all 0.15s ease' }}
+            style={{ border: 'none', background: 'transparent', color: activeTab === 'reels' ? 'var(--accent-primary)' : 'var(--text-secondary)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', cursor: 'pointer' }}
           >
             <Tv2 size={20} />
             <span style={{ fontSize: '0.625rem', fontWeight: 600 }}>Reels</span>
           </button>
           <button 
             onClick={() => setActiveTab('dashboard')} 
-            style={{ border: 'none', background: 'transparent', color: activeTab === 'dashboard' ? '#3b82f6' : '#64748b', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', cursor: 'pointer', transition: 'all 0.15s ease' }}
+            style={{ border: 'none', background: 'transparent', color: activeTab === 'dashboard' ? 'var(--accent-primary)' : 'var(--text-secondary)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', cursor: 'pointer' }}
           >
             <Award size={20} />
             <span style={{ fontSize: '0.625rem', fontWeight: 600 }}>Profile</span>
@@ -1034,411 +1328,956 @@ function MainLayout() {
   );
 }
 
+// --- SIDEBAR LINK HELPER ---
 function SidebarLink({ active, icon, label, onClick, isCollapsed }) {
-  const [isHovered, setIsHovered] = useState(false);
-
   return (
-    <div 
-      className="tooltip-container"
-      style={{ width: '100%', position: 'relative' }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <button onClick={onClick} style={{
+    <button 
+      onClick={onClick}
+      style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: isCollapsed ? 'center' : 'flex-start',
         gap: '0.75rem',
         width: '100%',
-        padding: '0.625rem 0.875rem',
-        borderRadius: '50px',
+        padding: isCollapsed ? '0.625rem 0' : '0.625rem 1rem',
+        borderRadius: 'var(--radius-md)',
         border: 'none',
         cursor: 'pointer',
-        fontSize: '0.875rem',
-        fontWeight: '600',
-        background: active ? 'linear-gradient(135deg, #2563eb 0%, #06b6d4 100%)' : isHovered ? '#eff6ff' : 'transparent',
-        color: active ? '#ffffff' : isHovered ? '#2563eb' : '#334155',
+        fontSize: '0.8125rem',
+        fontWeight: active ? '700' : '600',
+        backgroundColor: active ? 'var(--accent-light)' : 'transparent',
+        color: active ? 'var(--accent-primary)' : 'var(--text-secondary)',
         textAlign: 'left',
-        transition: 'all 0.2s ease',
-        boxShadow: active ? '0 4px 14px rgba(37, 99, 235, 0.25)' : 'none',
-        marginBottom: '0.625rem'
-      }}>
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center', 
-          width: '28px', 
-          height: '28px', 
-          borderRadius: '50%', 
-          backgroundColor: active ? 'rgba(255, 255, 255, 0.18)' : isHovered ? '#eff6ff' : '#f1f5f9',
-          color: active ? '#ffffff' : isHovered ? '#2563eb' : '#475569',
-          transition: 'all 0.2s ease',
-          flexShrink: 0
-        }}>
-          {icon}
-        </div>
-        {!isCollapsed && <span style={{ textShadow: 'none', fontWeight: 600 }}>{label}</span>}
-      </button>
-
-      {/* FLOATING HOVER TOOLTIP (Reveals label on mouse hover) */}
-      {(isHovered || (isCollapsed && isHovered)) && (
-        <div className="tooltip-popup">
-          {label}
-        </div>
-      )}
-    </div>
+        transition: 'all var(--transition-fast)',
+        marginBottom: '0.25rem'
+      }}
+      title={isCollapsed ? label : ''}
+    >
+      <span style={{ display: 'flex', alignItems: 'center', color: active ? 'var(--accent-primary)' : 'var(--text-muted)' }}>
+        {icon}
+      </span>
+      {!isCollapsed && label}
+    </button>
   );
 }
 
-// --- AUTH SCREEN COMPONENT ---
-function AuthScreen({ loginSimulated, testAccounts, isMockMode }) {
-  const [email, setEmail] = useState('');
+// --- SCREEN 1: LANDING & VISITOR HOME PAGE (CHEGG + UNSTOP + LINKEDIN HYBRID) ---
+function LandingScreen({ setActiveTab, loginSimulated, loginAdmin, testAccounts, theme, setTheme, postLoginRedirectTab, setPostLoginRedirectTab }) {
+  const { user, profile } = useAuth();
+  const [authTab, setAuthTab] = useState('signup'); // 'signup', 'login', 'admin'
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  
+  // Student Login States
+  const [loginEmail, setLoginEmail] = useState('studenta@student.com');
+  const [loginPassword, setLoginPassword] = useState('password123');
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+
+  // Student Signup States
   const [fullName, setFullName] = useState('');
-  const [isRegistering, setIsRegistering] = useState(false);
-  const [successMsg, setSuccessMsg] = useState('');
+  const [signupEmail, setSignupEmail] = useState('');
+  const [signupPassword, setSignupPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
+  const [agreeTerms, setAgreeTerms] = useState(true);
 
-  const handleSubmit = async (e) => {
+  // Admin Login States
+  const [adminEmail, setAdminEmail] = useState('admin@studyloop.app');
+  const [adminPassword, setAdminPassword] = useState('password123');
+  const [showAdminPassword, setShowAdminPassword] = useState(false);
+
+  const handleLoginSubmit = (e) => {
     e.preventDefault();
-    if (!email) return;
-
-    if (isMockMode) {
-      // Automatic developer mode login
-      loginSimulated(email);
-    } else {
-      // Real Supabase Auth Flow
-      try {
-        const { error } = await supabase.auth.signInWithOtp({
-          email: email,
-          options: {
-            emailRedirectTo: window.location.origin
-          }
-        });
-        if (error) throw error;
-        setSuccessMsg("We sent a magic link / OTP to your email! Please check your inbox to log in.");
-      } catch (err) {
-        alert("Authentication failed: " + err.message);
-      }
+    if (!loginEmail) return;
+    
+    // Direct admin login routing
+    if (loginEmail.trim().toLowerCase() === 'admin@studyloop.app') {
+      loginAdmin(loginEmail.trim());
+      setShowAuthModal(false);
+      setActiveTab('admin');
+      return;
     }
+    
+    loginSimulated(loginEmail);
+    setActiveTab(postLoginRedirectTab || 'dashboard');
+    if (setPostLoginRedirectTab) setPostLoginRedirectTab(null);
+    setShowAuthModal(false);
   };
 
-  const handleOAuth = async () => {
-    if (isMockMode) {
-      // Log in as Aarav (first profile)
-      loginSimulated(testAccounts[0].email);
-    } else {
-      await supabase.auth.signInWithOAuth({ provider: 'google' });
+  const handleSignupSubmit = (e) => {
+    e.preventDefault();
+    if (!signupEmail) return;
+    if (signupPassword && confirmPassword && signupPassword !== confirmPassword) {
+      alert("Passwords do not match! Please check your password input.");
+      return;
     }
+    if (!agreeTerms) {
+      alert("Please agree to the Terms & Conditions to proceed.");
+      return;
+    }
+    loginSimulated(signupEmail);
+    setActiveTab(postLoginRedirectTab || 'dashboard');
+    if (setPostLoginRedirectTab) setPostLoginRedirectTab(null);
+    setShowAuthModal(false);
   };
 
-  return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f8fafc' }}>
-      {/* Left panel */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '4rem', maxWidth: '520px', margin: '0 auto' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '2rem' }}>
-          <Infinity size={32} style={{ color: '#3b82f6' }} />
-          <h1 className="font-serif" style={{ fontSize: '1.875rem' }}>StudyLoop</h1>
-        </div>
+  const handleAdminSubmit = (e) => {
+    e.preventDefault();
+    if (!adminEmail) return;
+    loginAdmin(adminEmail);
+    setShowAuthModal(false);
+    setActiveTab('admin');
+  };
 
-        <h2 className="font-serif" style={{ fontSize: '2rem', marginBottom: '0.5rem', lineHeight: 1.2 }}>Solve doubts instantly, teach peers together.</h2>
-        <p style={{ color: '#586376', fontSize: '0.9375rem', marginBottom: '2rem' }}>The student-to-student live marketplace. Connect with peer mentors on your campus.</p>
+  const handleGoogleSSO = () => {
+    const defaultTestUser = testAccounts[0]?.email || 'studenta@student.com';
+    loginSimulated(defaultTestUser);
+    setActiveTab(postLoginRedirectTab || 'dashboard');
+    if (setPostLoginRedirectTab) setPostLoginRedirectTab(null);
+    setShowAuthModal(false);
+  };
 
-        {successMsg ? (
-          <div className="card" style={{ backgroundColor: '#d1fae5', borderColor: '#a7f3d0', padding: '1.5rem', textAlign: 'center' }}>
-            <CheckCircle size={32} style={{ color: '#059669', marginBottom: '0.5rem' }} />
-            <h3 style={{ fontSize: '1.125rem', marginBottom: '0.25rem' }}>Check your email</h3>
-            <p style={{ fontSize: '0.875rem', color: '#065f46' }}>{successMsg}</p>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {isRegistering && (
-              <div>
-                <label className="label">Full Name</label>
-                <input type="text" className="input" placeholder="e.g. Rahul Kumar" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
-              </div>
-            )}
-
+  // 1. VISITOR LANDING SCREEN
+  if (!user) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        width: '100%',
+        backgroundColor: 'var(--bg-primary)',
+        color: 'var(--text-primary)',
+        display: 'flex',
+        flexDirection: 'column'
+      }}>
+        {/* HEADER NAVBAR */}
+        <header style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '1rem 3rem',
+          backgroundColor: 'var(--bg-secondary)',
+          borderBottom: '1px solid var(--border-color)',
+          position: 'sticky',
+          top: 0,
+          zIndex: 100,
+          boxShadow: 'var(--shadow-sm)'
+        }}>
+          {/* Logo Brand */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }} onClick={() => setShowAuthModal(false)}>
+            <div style={{
+              width: '42px',
+              height: '42px',
+              borderRadius: 'var(--radius-sm)',
+              background: 'var(--accent-gradient)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: 'var(--shadow-md)'
+            }}>
+              <span className="font-serif" style={{ color: '#ffffff', fontWeight: 800, fontSize: '1.25rem' }}>SL</span>
+            </div>
             <div>
-              <label className="label">College Email Address</label>
-              <input type="email" className="input" placeholder="you@college.edu" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                <span className="font-serif" style={{ fontSize: '1.375rem', fontWeight: 800, color: 'var(--text-primary)' }}>Study</span>
+                <span className="font-serif" style={{ fontSize: '1.375rem', fontWeight: 800, color: 'var(--accent-primary)' }}>Loop</span>
+              </div>
+              <div style={{ fontSize: '0.625rem', fontWeight: 700, letterSpacing: '0.12em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                LEARN • BUILD • EVOLVE
+              </div>
             </div>
+          </div>
 
-            <button type="submit" className="btn btn-accent" style={{ padding: '0.75rem', fontSize: '0.9375rem', fontWeight: 600 }}>
-              {isMockMode ? "Launch Startup Developer Login" : "Send Magic OTP"}
+          {/* Navigation Links */}
+          <nav style={{ display: 'flex', gap: '1.75rem', alignItems: 'center' }}>
+            <button onClick={() => { setShowAuthModal(false); }} style={{ background: 'transparent', border: 'none', fontWeight: 700, color: 'var(--accent-primary)', fontSize: '0.875rem', cursor: 'pointer' }}>Home</button>
+            <button onClick={() => { setAuthTab('login'); setShowAuthModal(true); }} style={{ background: 'transparent', border: 'none', fontWeight: 600, color: 'var(--text-secondary)', fontSize: '0.875rem', cursor: 'pointer' }}>Doubt Hub</button>
+            <button onClick={() => { setAuthTab('login'); setShowAuthModal(true); }} style={{ background: 'transparent', border: 'none', fontWeight: 600, color: 'var(--text-secondary)', fontSize: '0.875rem', cursor: 'pointer' }}>Peer Mentors</button>
+            <button onClick={() => { setAuthTab('login'); setShowAuthModal(true); }} style={{ background: 'transparent', border: 'none', fontWeight: 600, color: 'var(--text-secondary)', fontSize: '0.875rem', cursor: 'pointer' }}>Leaderboard</button>
+          </nav>
+
+          {/* Action Buttons */}
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+            <button
+              onClick={() => setTheme(prev => prev === 'light' ? 'dark' : 'light')}
+              className="btn-icon"
+              style={{
+                backgroundColor: 'var(--bg-tertiary)',
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                border: '1px solid var(--border-color)'
+              }}
+              title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+            >
+              {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
             </button>
 
-            <div style={{ textAlign: 'center', fontSize: '0.75rem', color: '#94a3b8', margin: '0.5rem 0' }}>OR</div>
-
-            <button type="button" onClick={handleOAuth} className="btn btn-secondary" style={{ padding: '0.75rem', display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
-              <svg style={{ width: '18px', height: '18px' }} viewBox="0 0 24 24"><path fill="#EA4335" d="M12 5.04c1.62 0 3.08.56 4.22 1.65l3.15-3.15C17.45 1.68 14.93 1 12 1 7.37 1 3.4 3.68 1.48 7.57l3.77 2.92C6.13 7.3 8.83 5.04 12 5.04z"/><path fill="#4285F4" d="M23.49 12.27c0-.81-.07-1.59-.2-2.36H12v4.51h6.46c-.28 1.47-1.11 2.72-2.36 3.56l3.77 2.92c2.2-2.03 3.62-5.02 3.62-8.63z"/><path fill="#FBBC05" d="M5.25 14.85c-.25-.76-.39-1.57-.39-2.42s.14-1.66.39-2.42L1.48 7.1C.53 9.07 0 11.27 0 12.42s.53 3.35 1.48 5.32l3.77-2.89z"/><path fill="#34A853" d="M12 23c3.24 0 5.97-1.07 7.96-2.92l-3.77-2.92c-1.05.7-2.4.12-4.19.12-3.17 0-5.87-2.26-6.83-5.32L1.4 14.8c1.92 3.89 5.89 6.2 10.6 6.2z"/></svg>
-              Continue with Google
+            <button 
+              onClick={() => { setLoginEmail('studenta@student.com'); setLoginPassword('password123'); setAuthTab('login'); setShowAuthModal(true); }}
+              className="btn btn-secondary" 
+              style={{ borderRadius: 'var(--radius-full)', padding: '0.5rem 1.25rem', fontSize: '0.8125rem' }}
+            >
+              Login
             </button>
-          </form>
-        )}
-
-        {isMockMode && (
-          <div style={{ marginTop: '2.5rem', padding: '1.25rem', backgroundColor: '#f1f5f9', borderRadius: '12px' }}>
-            <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#475569', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-              <Sparkles size={14} style={{ color: '#3b82f6' }} /> Developer Test Accounts (Fast Match Seeded)
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              {testAccounts.map(acc => (
-                <button key={acc.email} onClick={() => loginSimulated(acc.email)} className="btn btn-secondary" style={{ fontSize: '0.75rem', justifyContent: 'space-between', padding: '0.5rem 0.75rem' }}>
-                  <span><strong>{acc.name}</strong> ({acc.email.split('@')[0]})</span>
-                  <span style={{ fontSize: '0.6875rem', color: '#94a3b8', fontStyle: 'italic' }}>{acc.role}</span>
-                </button>
-              ))}
-            </div>
+            <button 
+              onClick={() => { setAuthTab('signup'); setShowAuthModal(true); }}
+              className="btn btn-accent glow-amber" 
+              style={{ borderRadius: 'var(--radius-full)', padding: '0.5rem 1.25rem', fontSize: '0.8125rem', fontWeight: 700 }}
+            >
+              Get Started 🚀
+            </button>
           </div>
-        )}
-      </div>
+        </header>
 
-      {/* Right panel graphic */}
-      <div style={{ flex: 1, backgroundColor: '#0f172a', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '4rem', color: '#ffffff' }}>
-        <div style={{ maxWidth: '420px', textAlign: 'center' }}>
-          <div style={{ fontSize: '4rem', marginBottom: '1.5rem' }}>🤝</div>
-          <h2 className="font-serif" style={{ fontSize: '2.25rem', color: '#ffffff', marginBottom: '1rem' }}>Earn while helping</h2>
-          <p style={{ color: '#94a3b8', lineHeight: 1.6 }}>StudyLoop tracks solved doubts, peer endorsements, and lesson records to build your expert profile. Showcase your knowledge on the campus leaderboard.</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// --- SCREEN: HOME FEED (TIMELINE + EXAM RADAR) ---
-function FeedScreen({ setActiveTab, setActiveRoomId, token }) {
-  const [feed, setFeed] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchFeed = async () => {
-    try {
-      const response = await fetch('/api/feed', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setFeed(data);
-      }
-    } catch (e) {
-      console.error("Feed error:", e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchFeed();
-  }, [token]);
-
-  return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <div>
-          <h1 className="font-serif" style={{ fontSize: '2.25rem' }}>Campus Feed</h1>
-          <p style={{ color: '#475569', fontSize: '0.875rem' }}>Exam countdowns, educational shorts, and campus announcements.</p>
-        </div>
-        <button onClick={fetchFeed} className="btn btn-secondary">Refresh Timeline</button>
-      </div>
-
-      {/* DEDICATED DOUBT HUB REDIRECT BANNER */}
-      <div className="card-premium glass-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.25rem 1.75rem', marginBottom: '2rem', backgroundColor: '#eff6ff', border: '1px solid #bfdbfe' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3b82f6' }}>
-            <HelpCircle size={24} />
-          </div>
-          <div>
-            <h3 className="font-serif" style={{ fontSize: '1.125rem', color: '#1e3a8a' }}>Need Help with a Doubt or Mid-term Question?</h3>
-            <p style={{ fontSize: '0.8125rem', color: '#1e40af', marginTop: '0.125rem' }}>All live doubt questions and tutoring rooms are located in the dedicated <strong>Doubt Rooms Hub</strong>.</p>
-          </div>
-        </div>
-        <button onClick={() => setActiveTab('doubts')} className="btn btn-accent" style={{ whiteSpace: 'nowrap', padding: '0.5rem 1.25rem', fontSize: '0.8125rem' }}>
-          Go to Doubt Rooms Hub →
-        </button>
-      </div>
-
-      {loading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}>
-          <div className="live-dot" style={{ backgroundColor: '#3b82f6' }}></div>
-        </div>
-      ) : feed.filter(item => item.type === 'REEL').length === 0 ? (
-        <div className="empty-state">
-          <GraduationCap size={48} />
-          <h3>Campus Timeline Up to Date</h3>
-          <p>No new reels or campus announcements at the moment. Explore peer mentors or check live doubt rooms!</p>
-          <button onClick={() => setActiveTab('reels')} className="btn btn-accent"><Tv2 size={16} /> Explore Educational Shorts</button>
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          {feed.filter(item => item.type === 'REEL').map(item => (
-            <div key={item.id} className="card-premium" style={{ position: 'relative' }}>
-              <div style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.6875rem', fontWeight: 600, color: '#94a3b8', backgroundColor: '#f1f5f9', padding: '0.25rem 0.5rem', borderRadius: '4px' }}>
-                  Relevance Score: {item.score}
-                </span>
+        {/* HERO SECTION (UNSTOP + CHEGG + LINKEDIN HYBRID) */}
+        <section style={{ padding: '4.5rem 3rem 5rem 3rem', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
+          <div className="unstop-hero-grid">
+            {/* Left Hero Content */}
+            <div>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', backgroundColor: 'var(--accent-light)', border: '1px solid var(--border-color)', padding: '0.375rem 1rem', borderRadius: 'var(--radius-full)', fontSize: '0.8125rem', fontWeight: 800, color: 'var(--accent-primary)', marginBottom: '1.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <Sparkles size={16} /> Peer Learning & Doubt Resolution Platform
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
-                <img src={item.creator?.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${item.creator?.fullName}`} alt="Avatar" style={{ width: '38px', height: '38px', borderRadius: '50%' }} />
+              <h1 className="font-serif" style={{ fontSize: '3.25rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.15, marginBottom: '1.25rem' }}>
+                Accelerate Academic Growth With <span className="gradient-text">Live Peer Learning.</span>
+              </h1>
+
+              <p style={{ fontSize: '1.0625rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '2rem', maxWidth: '580px' }}>
+                Connect with verified peer tutors, resolve complex doubts 24/7 in live Doubt Rooms, launch zero-latency WebRTC code sessions with screen sharing, and build campus rank.
+              </p>
+
+              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center', marginBottom: '2rem' }}>
+                <button 
+                  onClick={() => { setAuthTab('signup'); setShowAuthModal(true); }}
+                  className="btn btn-accent"
+                  style={{
+                    padding: '0.875rem 2rem',
+                    borderRadius: 'var(--radius-md)',
+                    fontWeight: 700,
+                    fontSize: '1rem'
+                  }}
+                >
+                  Find Peer Mentors →
+                </button>
+
+                <button 
+                  onClick={() => { setAuthTab('login'); setShowAuthModal(true); }}
+                  className="btn btn-secondary"
+                  style={{
+                    padding: '0.875rem 1.75rem',
+                    borderRadius: 'var(--radius-md)',
+                    fontSize: '0.9375rem',
+                    fontWeight: 600
+                  }}
+                >
+                  Ask a Doubt Now
+                </button>
+              </div>
+
+              {/* Verified Trust Badges */}
+              <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                <span className="badge-unstop-pill"><CheckCircle size={14} style={{ color: 'var(--success-color)' }} /> Verified Campus Tutors</span>
+                <span className="badge-unstop-pill badge-unstop-purple"><Video size={14} /> WebRTC Screen Sharing</span>
+                <span className="badge-unstop-pill badge-unstop-green"><ShieldAlert size={14} /> Instant Doubt Match</span>
+              </div>
+            </div>
+
+            {/* Right Interactive Quick Action Widget */}
+            <div className="unstop-quick-widget card-premium">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <div className="live-dot" style={{ backgroundColor: '#22c55e', boxShadow: '0 0 10px #22c55e' }}></div>
+                  <span style={{ fontSize: '0.875rem', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Instant Doubt Workspace</span>
+                </div>
+                <span className="tag tag-accent" style={{ fontWeight: 700 }}>⚡ 48 Tutors Online</span>
+              </div>
+
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1rem', fontWeight: 500 }}>
+                Select a subject to instantly pair with an available campus tutor or enter a live study room:
+              </p>
+
+              {/* Subject Filter Pills */}
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
+                <button onClick={() => { setAuthTab('login'); setShowAuthModal(true); }} className="tag tag-accent" style={{ padding: '0.375rem 0.875rem', cursor: 'pointer', fontWeight: 700 }}>💻 Data Structures</button>
+                <button onClick={() => { setAuthTab('login'); setShowAuthModal(true); }} className="tag" style={{ padding: '0.375rem 0.875rem', cursor: 'pointer', fontWeight: 600 }}>☕ Java / Spring</button>
+                <button onClick={() => { setAuthTab('login'); setShowAuthModal(true); }} className="tag" style={{ padding: '0.375rem 0.875rem', cursor: 'pointer', fontWeight: 600 }}>⚛️ React & Frontend</button>
+                <button onClick={() => { setAuthTab('login'); setShowAuthModal(true); }} className="tag" style={{ padding: '0.375rem 0.875rem', cursor: 'pointer', fontWeight: 600 }}>🤖 AI / ML Systems</button>
+              </div>
+
+              {/* Live Room Ticker Preview */}
+              <div style={{ backgroundColor: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '1rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <div style={{ width: '38px', height: '38px', borderRadius: '10px', backgroundColor: 'var(--accent-light)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.875rem' }}>
+                    CS
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-primary)' }}>Algorithm Doubt Room #04</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>IIT Madras • 6 Active Learners</div>
+                  </div>
+                </div>
+                <button onClick={() => { setAuthTab('login'); setShowAuthModal(true); }} className="btn btn-primary" style={{ padding: '0.375rem 0.875rem', fontSize: '0.75rem', borderRadius: 'var(--radius-sm)' }}>
+                  Join Live →
+                </button>
+              </div>
+
+              <button 
+                onClick={() => { setAuthTab('signup'); setShowAuthModal(true); }} 
+                className="btn btn-accent" 
+                style={{ width: '100%', borderRadius: 'var(--radius-md)', padding: '0.75rem', fontWeight: 700, fontSize: '0.875rem' }}
+              >
+                Launch Live Doubt Session 🚀
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* PLATFORM STATS STRIP */}
+        <section style={{ backgroundColor: 'var(--bg-secondary)', borderTop: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)', padding: '2.5rem 3rem' }}>
+          <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem', textAlign: 'center' }}>
+            <div style={{ padding: '1rem', borderRight: '1px solid var(--border-color)' }}>
+              <div className="font-serif" style={{ fontSize: '2.25rem', fontWeight: 800, color: 'var(--text-primary)' }}>25,000+</div>
+              <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', marginTop: '0.25rem' }}>Active Campus Learners</div>
+            </div>
+            <div style={{ padding: '1rem', borderRight: '1px solid var(--border-color)' }}>
+              <div className="font-serif" style={{ fontSize: '2.25rem', fontWeight: 800, color: 'var(--accent-primary)' }}>150+</div>
+              <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', marginTop: '0.25rem' }}>Expert Peer Mentors</div>
+            </div>
+            <div style={{ padding: '1rem', borderRight: '1px solid var(--border-color)' }}>
+              <div className="font-serif" style={{ fontSize: '2.25rem', fontWeight: 800, color: 'var(--success-color)' }}>98.4%</div>
+              <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', marginTop: '0.25rem' }}>Doubt Resolution Rate</div>
+            </div>
+            <div style={{ padding: '1rem' }}>
+              <div className="font-serif" style={{ fontSize: '2.25rem', fontWeight: 800, color: 'var(--warning-color)' }}>24/7</div>
+              <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', marginTop: '0.25rem' }}>Live Peer Tutor Access</div>
+            </div>
+          </div>
+        </section>
+
+        {/* CORE PLATFORM FEATURES GRID */}
+        <section style={{ padding: '5rem 3rem', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
+          <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.1em', color: 'var(--accent-primary)', backgroundColor: 'var(--accent-light)', padding: '0.375rem 0.875rem', borderRadius: 'var(--radius-full)', textTransform: 'uppercase' }}>
+              Core Learning Modules
+            </span>
+            <h2 className="font-serif" style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '1rem' }}>
+              Built for Modern High-Growth Education
+            </h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', marginTop: '0.5rem', maxWidth: '640px', margin: '0.5rem auto 0 auto' }}>
+              Combining interactive live study rooms with peer mentoring, concept shorts, and gamified campus leaderboards.
+            </p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2rem' }}>
+            {/* Feature 1 */}
+            <div className="card-premium interactive-hover" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: 'var(--accent-light)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <HelpCircle size={24} />
+              </div>
+              <h3 className="font-serif" style={{ fontSize: '1.25rem', fontWeight: 700 }}>1-to-1 Live Doubt Rooms</h3>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.6 }}>
+                Open a dedicated doubt workspace, collaborate with a peer from your department, and start 1-click video calls with screen share.
+              </p>
+            </div>
+
+            {/* Feature 2 */}
+            <div className="card-premium interactive-hover" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: 'rgba(99, 102, 241, 0.1)', color: 'var(--accent-purple)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Sparkles size={24} />
+              </div>
+              <h3 className="font-serif" style={{ fontSize: '1.25rem', fontWeight: 700 }}>8-Factor Smart Peer Discovery</h3>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.6 }}>
+                Intelligent matching evaluating university, department, skills, learning goals, and mutual connections for exact tutor pairings.
+              </p>
+            </div>
+
+            {/* Feature 3 */}
+            <div className="card-premium interactive-hover" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: 'rgba(245, 158, 11, 0.1)', color: 'var(--warning-color)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Video size={24} />
+              </div>
+              <h3 className="font-serif" style={{ fontSize: '1.25rem', fontWeight: 700 }}>WebRTC Code Study Calls</h3>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.6 }}>
+                In-browser video study calls with zero-latency screen sharing, peer code evaluation, and collaborative doubt solving.
+              </p>
+            </div>
+
+            {/* Feature 4 */}
+            <div className="card-premium interactive-hover" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: 'rgba(244, 63, 94, 0.1)', color: 'var(--accent-rose)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Tv2 size={24} />
+              </div>
+              <h3 className="font-serif" style={{ fontSize: '1.25rem', fontWeight: 700 }}>Educational Concept Shorts</h3>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.6 }}>
+                Watch and publish 60-second vertical concept shorts with interactive likes, slide-up community comments, and topic pills.
+              </p>
+            </div>
+
+            {/* Feature 5 */}
+            <div className="card-premium interactive-hover" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: 'var(--success-color)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Trophy size={24} />
+              </div>
+              <h3 className="font-serif" style={{ fontSize: '1.25rem', fontWeight: 700 }}>Campus Leaderboard & XP</h3>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.6 }}>
+                Earn XP points, unlock level badges, and accumulate peer coins for solving doubts, climbing to Rank #1 on your campus.
+              </p>
+            </div>
+
+            {/* Feature 6 */}
+            <div className="card-premium interactive-hover" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <MessageSquare size={24} />
+              </div>
+              <h3 className="font-serif" style={{ fontSize: '1.25rem', fontWeight: 700 }}>Real-Time Direct Messaging</h3>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.6 }}>
+                Connect directly with campus tutors, exchange instant messages, and schedule 1-on-1 study sessions seamlessly.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* 3-STEP "HOW IT WORKS" JOURNEY */}
+        <section style={{ backgroundColor: 'var(--bg-secondary)', borderTop: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)', padding: '5rem 3rem' }}>
+          <div style={{ maxWidth: '1200px', margin: '0 auto', textAlign: 'center' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.1em', color: 'var(--accent-primary)', textTransform: 'uppercase' }}>
+              Simple 3-Step Process
+            </span>
+            <h2 className="font-serif" style={{ fontSize: '2.25rem', fontWeight: 800, marginTop: '0.75rem', marginBottom: '3rem' }}>
+              How StudyLoop Transforms Campus Learning
+            </h2>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: 'var(--accent-light)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 800, marginBottom: '1.25rem' }}>
+                  1
+                </div>
+                <h3 className="font-serif" style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>Post Your Academic Doubt</h3>
+                <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                  Choose your topic, add code snippets or questions, and open a live workspace.
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: 'rgba(99, 102, 241, 0.1)', color: 'var(--accent-purple)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 800, marginBottom: '1.25rem' }}>
+                  2
+                </div>
+                <h3 className="font-serif" style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>Match With a Campus Mentor</h3>
+                <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                  Our 8-factor algorithm instantly pairs you with top-rated peer tutors from your university.
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: 'var(--success-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 800, marginBottom: '1.25rem' }}>
+                  3
+                </div>
+                <h3 className="font-serif" style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>Solve Live & Earn XP</h3>
+                <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                  Collaborate in real-time with WebRTC video, screen sharing, and earn leaderboard XP.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* CLEAN, PROFESSIONAL 4-COLUMN FOOTER (NO DUPLICATES) */}
+        <footer style={{ backgroundColor: 'var(--bg-secondary)', borderTop: '1px solid var(--border-color)', padding: '4rem 3rem 2rem 3rem', marginTop: 'auto' }}>
+          <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: '3rem', paddingBottom: '3rem', borderBottom: '1px solid var(--border-color)' }}>
+            
+            {/* Column 1: Identity & Newsletter */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--accent-gradient)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff', fontWeight: 800 }}>SL</div>
+                <span className="font-serif" style={{ fontSize: '1.375rem', fontWeight: 800, color: 'var(--text-primary)' }}>StudyLoop</span>
+              </div>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.6, maxWidth: '360px', marginBottom: '1.5rem' }}>
+                StudyLoop is the premier peer-to-peer campus learning network for universities, student tutors, and engineering academies.
+              </p>
+              <form onSubmit={e => { e.preventDefault(); alert(`Subscribed ${newsletterEmail} to StudyLoop updates!`); setNewsletterEmail(''); }} style={{ display: 'flex', gap: '0.5rem', maxWidth: '360px' }}>
+                <input 
+                  type="email" 
+                  className="input" 
+                  placeholder="Enter college email" 
+                  value={newsletterEmail} 
+                  onChange={e => setNewsletterEmail(e.target.value)} 
+                  style={{ padding: '0.5rem 0.875rem', fontSize: '0.8125rem' }}
+                  required 
+                />
+                <button type="submit" className="btn btn-accent" style={{ padding: '0.5rem 1rem', fontSize: '0.8125rem' }}>
+                  Join →
+                </button>
+              </form>
+            </div>
+
+            {/* Column 2: Platform Features */}
+            <div>
+              <h4 style={{ fontSize: '0.8125rem', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '1rem' }}>PLATFORM</h4>
+              <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.625rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                <li><a href="#" onClick={e => { e.preventDefault(); setAuthTab('login'); setShowAuthModal(true); }} style={{ color: 'inherit', textDecoration: 'none' }}>Doubt Hub</a></li>
+                <li><a href="#" onClick={e => { e.preventDefault(); setAuthTab('login'); setShowAuthModal(true); }} style={{ color: 'inherit', textDecoration: 'none' }}>Peer Mentors</a></li>
+                <li><a href="#" onClick={e => { e.preventDefault(); setAuthTab('login'); setShowAuthModal(true); }} style={{ color: 'inherit', textDecoration: 'none' }}>Campus Leaderboard</a></li>
+                <li><a href="#" onClick={e => { e.preventDefault(); setAuthTab('login'); setShowAuthModal(true); }} style={{ color: 'inherit', textDecoration: 'none' }}>Educational Shorts</a></li>
+                <li><a href="#" onClick={e => { e.preventDefault(); setAuthTab('login'); setShowAuthModal(true); }} style={{ color: 'inherit', textDecoration: 'none' }}>Live Study Rooms</a></li>
+              </ul>
+            </div>
+
+            {/* Column 3: Resources & Guides */}
+            <div>
+              <h4 style={{ fontSize: '0.8125rem', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '1rem' }}>RESOURCES</h4>
+              <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.625rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                <li><a href="#" onClick={e => { e.preventDefault(); setAuthTab('login'); setShowAuthModal(true); }} style={{ color: 'inherit', textDecoration: 'none' }}>Exam Radar</a></li>
+                <li><a href="#" onClick={e => { e.preventDefault(); setAuthTab('login'); setShowAuthModal(true); }} style={{ color: 'inherit', textDecoration: 'none' }}>Digital Badges</a></li>
+                <li><a href="#" onClick={e => { e.preventDefault(); setAuthTab('login'); setShowAuthModal(true); }} style={{ color: 'inherit', textDecoration: 'none' }}>Campus Guide</a></li>
+                <li><a href="#" onClick={e => { e.preventDefault(); setAuthTab('login'); setShowAuthModal(true); }} style={{ color: 'inherit', textDecoration: 'none' }}>Community Guidelines</a></li>
+                <li><a href="#" onClick={e => { e.preventDefault(); setAuthTab('login'); setShowAuthModal(true); }} style={{ color: 'inherit', textDecoration: 'none' }}>Help Center</a></li>
+              </ul>
+            </div>
+
+            {/* Column 4: Company & Legal */}
+            <div>
+              <h4 style={{ fontSize: '0.8125rem', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '1rem' }}>COMPANY</h4>
+              <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.625rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                <li><a href="#" onClick={e => e.preventDefault()} style={{ color: 'inherit', textDecoration: 'none' }}>About Us</a></li>
+                <li><a href="#" onClick={e => e.preventDefault()} style={{ color: 'inherit', textDecoration: 'none' }}>Careers</a></li>
+                <li><a href="#" onClick={e => { e.preventDefault(); setAuthTab('login'); setShowAuthModal(true); }} style={{ color: 'inherit', textDecoration: 'none' }}>Contact Support</a></li>
+                <li><a href="#" onClick={e => e.preventDefault()} style={{ color: 'inherit', textDecoration: 'none' }}>Privacy Policy</a></li>
+                <li><a href="#" onClick={e => e.preventDefault()} style={{ color: 'inherit', textDecoration: 'none' }}>Terms of Service</a></li>
+              </ul>
+            </div>
+          </div>
+
+          <div style={{ maxWidth: '1400px', margin: '1.5rem auto 0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+            <div>© 2026 StudyLoop Inc. All rights reserved. Peer safety audited & verified.</div>
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+              <a href="#" onClick={e => e.preventDefault()} style={{ color: 'var(--text-secondary)' }}><Github size={18} /></a>
+              <a href="#" onClick={e => e.preventDefault()} style={{ color: 'var(--text-secondary)' }}><Globe size={18} /></a>
+            </div>
+          </div>
+        </footer>
+
+        {/* AUTH MODAL OVERLAY (UNIFIED SIGNUP & LOGIN) */}
+        {showAuthModal && (
+          <div 
+            style={{
+              position: 'fixed',
+              inset: 0,
+              backgroundColor: 'rgba(15, 23, 42, 0.75)',
+              backdropFilter: 'blur(8px)',
+              zIndex: 4000,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '1.5rem'
+            }}
+            onClick={() => setShowAuthModal(false)}
+          >
+            <div 
+              className="card-premium"
+              style={{
+                width: '100%',
+                maxWidth: '920px',
+                minHeight: '540px',
+                borderRadius: 'var(--radius-xl)',
+                backgroundColor: 'var(--bg-elevated)',
+                display: 'grid',
+                gridTemplateColumns: '1fr 1.15fr',
+                overflow: 'hidden',
+                padding: 0,
+                position: 'relative'
+              }}
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Close Button X */}
+              <button 
+                onClick={() => setShowAuthModal(false)} 
+                className="btn-icon"
+                style={{
+                  position: 'absolute',
+                  top: '1rem',
+                  right: '1rem',
+                  zIndex: 10
+                }}
+              >
+                <X size={20} />
+              </button>
+
+              {/* LEFT COLUMN: BRANDING & ART */}
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(0, 102, 255, 0.08) 0%, rgba(99, 102, 241, 0.12) 100%)',
+                padding: '3rem 2.5rem',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                borderRight: '1px solid var(--border-color)'
+              }}>
                 <div>
-                  <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>{item.creator?.fullName}</div>
-                  <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                    {item.creator?.college} • {item.creator?.department} • Year {item.creator?.year}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem' }}>
+                    <div style={{
+                      width: '38px',
+                      height: '38px',
+                      borderRadius: '10px',
+                      background: 'var(--accent-gradient)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: 'var(--shadow-md)'
+                    }}>
+                      <span className="font-serif" style={{ color: '#ffffff', fontWeight: 800, fontSize: '1.125rem' }}>SL</span>
+                    </div>
+                    <span className="font-serif" style={{ fontSize: '1.375rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                      StudyLoop
+                    </span>
+                  </div>
+
+                  <h2 className="font-serif" style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.25, marginBottom: '0.75rem' }}>
+                    Learn. Teach. <span className="gradient-text">Connect.</span> Evolve.
+                  </h2>
+                  <p style={{ fontSize: '0.9375rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                    Join a campus community where students master technical skills, resolve academic doubts, and grow together.
+                  </p>
+                </div>
+
+                <div style={{ marginTop: 'auto', paddingTop: '2rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                      <CheckCircle size={16} style={{ color: 'var(--success-color)' }} /> 100% Peer Verified Network
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                      <CheckCircle size={16} style={{ color: 'var(--success-color)' }} /> Instant WebRTC Code Study Rooms
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                      <CheckCircle size={16} style={{ color: 'var(--success-color)' }} /> Campus Leaderboard & Medals
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div>
-                <p style={{ color: '#0f172a', fontSize: '0.875rem', marginBottom: '1.25rem', fontStyle: 'italic' }}>
-                  "Uploaded an educational reel on <strong>{item.subject}</strong>" — {item.description}
-                </p>
-                
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '1rem' }}>
-                  <div style={{ display: 'flex', gap: '1rem', fontSize: '0.8125rem', color: '#64748b' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><Heart size={14} fill="#dc2626" style={{ color: '#dc2626' }} /> {item.reel?.likesCount} likes</span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><MessageCircle size={14} /> {item.reel?.commentsCount} comments</span>
-                  </div>
-                  <button onClick={() => setActiveTab('reels')} className="btn btn-secondary" style={{ padding: '0.5rem 1rem', fontSize: '0.8125rem' }}>
-                    Watch Reel
+              {/* RIGHT COLUMN: AUTH TABS & FORMS */}
+              <div style={{
+                padding: '2.5rem 2.25rem',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                overflowY: 'auto'
+              }}>
+                {/* Switcher Tabs (Sign Up / Sign In) */}
+                <div style={{ 
+                  display: 'flex', 
+                  gap: '0.375rem', 
+                  marginBottom: '1.75rem', 
+                  backgroundColor: 'var(--bg-tertiary)', 
+                  padding: '0.25rem', 
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border-color)'
+                }}>
+                  <button 
+                    type="button" 
+                    onClick={() => setAuthTab('signup')} 
+                    style={{ 
+                      flex: 1, 
+                      padding: '0.5rem', 
+                      fontSize: '0.8125rem', 
+                      fontWeight: 700, 
+                      border: 'none', 
+                      borderRadius: 'var(--radius-sm)', 
+                      cursor: 'pointer',
+                      backgroundColor: authTab === 'signup' ? 'var(--bg-secondary)' : 'transparent',
+                      color: authTab === 'signup' ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                      boxShadow: authTab === 'signup' ? 'var(--shadow-sm)' : 'none',
+                      transition: 'all var(--transition-fast)'
+                    }}
+                  >
+                    🎓 Sign Up
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={() => setAuthTab('login')} 
+                    style={{ 
+                      flex: 1, 
+                      padding: '0.5rem', 
+                      fontSize: '0.8125rem', 
+                      fontWeight: 700, 
+                      border: 'none', 
+                      borderRadius: 'var(--radius-sm)', 
+                      cursor: 'pointer',
+                      backgroundColor: authTab === 'login' ? 'var(--bg-secondary)' : 'transparent',
+                      color: authTab === 'login' ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                      boxShadow: authTab === 'login' ? 'var(--shadow-sm)' : 'none',
+                      transition: 'all var(--transition-fast)'
+                    }}
+                  >
+                    🔑 Sign In
                   </button>
                 </div>
+
+                {/* TAB 1: SIGNUP FORM */}
+                {authTab === 'signup' && (
+                  <div>
+                    <div style={{ marginBottom: '1.25rem' }}>
+                      <h3 className="font-serif" style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                        Create Student Account
+                      </h3>
+                      <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                        Join thousands of students learning and solving doubts together.
+                      </p>
+                    </div>
+
+                    <form onSubmit={handleSignupSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+                      <div>
+                        <label className="label">Full Name</label>
+                        <input type="text" className="input" placeholder="e.g. Aarav Sharma" value={fullName} onChange={e => setFullName(e.target.value)} required />
+                      </div>
+
+                      <div>
+                        <label className="label">College Email</label>
+                        <input type="email" className="input" placeholder="student@university.edu" value={signupEmail} onChange={e => setSignupEmail(e.target.value)} required />
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                        <div>
+                          <label className="label">Password</label>
+                          <input type={showSignupPassword ? "text" : "password"} className="input" placeholder="••••••••" value={signupPassword} onChange={e => setSignupPassword(e.target.value)} required />
+                        </div>
+                        <div>
+                          <label className="label">Confirm Password</label>
+                          <input type={showSignupPassword ? "text" : "password"} className="input" placeholder="••••••••" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required />
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
+                        <input type="checkbox" id="agreeTerms" checked={agreeTerms} onChange={e => setAgreeTerms(e.target.checked)} style={{ cursor: 'pointer' }} />
+                        <label htmlFor="agreeTerms" style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                          I agree to the Community Guidelines & Terms of Service
+                        </label>
+                      </div>
+
+                      <button type="submit" className="btn btn-accent" style={{ width: '100%', padding: '0.75rem', fontWeight: 700, marginTop: '0.5rem' }}>
+                        Create Account 🚀
+                      </button>
+                    </form>
+
+                    <div style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                      Already have an account?{' '}
+                      <button type="button" onClick={() => setAuthTab('login')} style={{ background: 'transparent', border: 'none', color: 'var(--accent-primary)', fontWeight: 700, cursor: 'pointer' }}>
+                        Sign In
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 2: SIGN IN FORM */}
+                {authTab === 'login' && (
+                  <div>
+                    <div style={{ marginBottom: '1.25rem' }}>
+                      <h3 className="font-serif" style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                        Welcome Back!
+                      </h3>
+                      <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                        Sign in to access your study rooms and mentor network 👋
+                      </p>
+                    </div>
+
+                    <form onSubmit={handleLoginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                      <div>
+                        <label className="label">Email or Student ID</label>
+                        <div style={{ position: 'relative' }}>
+                          <Mail size={16} style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                          <input type="email" className="input" placeholder="student@university.edu" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} style={{ paddingLeft: '2.5rem' }} required />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="label">Password</label>
+                        <div style={{ position: 'relative' }}>
+                          <Lock size={16} style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                          <input type={showLoginPassword ? "text" : "password"} className="input" placeholder="••••••••••••" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} style={{ paddingLeft: '2.5rem', paddingRight: '2.5rem' }} required />
+                          <button type="button" onClick={() => setShowLoginPassword(!showLoginPassword)} style={{ position: 'absolute', right: '0.875rem', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                            {showLoginPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <button type="submit" className="btn btn-accent" style={{ width: '100%', padding: '0.75rem', fontWeight: 700 }}>
+                        Sign In 🚀
+                      </button>
+                    </form>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: '1rem 0' }}>
+                      <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border-color)' }}></div>
+                      <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', fontWeight: 700 }}>QUICK 1-CLICK DEMO</span>
+                      <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border-color)' }}></div>
+                    </div>
+
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        loginSimulated('studenta@student.com');
+                        setShowAuthModal(false);
+                        setActiveTab('dashboard');
+                      }} 
+                      className="btn btn-secondary" 
+                      style={{ width: '100%', padding: '0.625rem', fontSize: '0.8125rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                    >
+                      ⚡ 1-Click Demo Login (Aarav Sharma - Student)
+                    </button>
+
+                    <div style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                      Don't have an account?{' '}
+                      <button type="button" onClick={() => setAuthTab('signup')} style={{ background: 'transparent', border: 'none', color: 'var(--accent-primary)', fontWeight: 700, cursor: 'pointer' }}>
+                        Sign Up
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
-          ))}
+          </div>
+        )}
+
+      </div>
+    );
+  }
+
+  // 2. LOGGED-IN HOME HUB SCREEN
+  return (
+    <div style={{ padding: '1.5rem 2.5rem 4rem 2.5rem', width: '100%', maxWidth: '1400px', margin: '0 auto' }}>
+      {/* HERO BANNER */}
+      <section className="card-premium" style={{ padding: '3rem 2.5rem', borderRadius: 'var(--radius-xl)', marginBottom: '2.5rem', position: 'relative', overflow: 'hidden' }}>
+        <div className="tag tag-accent" style={{ marginBottom: '1rem', padding: '0.375rem 1rem' }}>
+          ✨ Active Peer Learning Workspace
         </div>
-      )}
+        <h1 className="font-serif gradient-text" style={{ fontSize: '2.5rem', lineHeight: 1.2, marginBottom: '1rem' }}>
+          Welcome Back, {profile?.fullName || 'Student Learner'}!
+        </h1>
+        <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '2rem', maxWidth: '640px' }}>
+          Connect with verified peer tutors, launch interactive live study sessions, post concept shorts, and track your campus leaderboard rank.
+        </p>
+        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+          <button onClick={() => setActiveTab('dashboard')} className="btn btn-accent" style={{ padding: '0.75rem 1.75rem', fontWeight: 700 }}>
+            Go to Student Dashboard 🚀
+          </button>
+          <button onClick={() => setActiveTab('doubts')} className="btn btn-secondary" style={{ padding: '0.75rem 1.75rem', fontWeight: 600 }}>
+            Join Live Doubt Rooms
+          </button>
+        </div>
+      </section>
+
+      {/* PLATFORM STATS */}
+      <section className="card" style={{ padding: '2rem', borderRadius: 'var(--radius-lg)', marginBottom: '2.5rem' }}>
+        <div className="grid-3" style={{ textAlign: 'center' }}>
+          <div>
+            <div className="font-serif" style={{ fontSize: '2.25rem', fontWeight: 800, color: 'var(--text-primary)' }}>12,450+</div>
+            <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Active Campus Learners</div>
+          </div>
+          <div>
+            <div className="font-serif" style={{ fontSize: '2.25rem', fontWeight: 800, color: 'var(--warning-color)' }}>98.4%</div>
+            <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Academic Doubt Resolution</div>
+          </div>
+          <div>
+            <div className="font-serif" style={{ fontSize: '2.25rem', fontWeight: 800, color: 'var(--success-color)' }}>50+</div>
+            <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Top Universities</div>
+          </div>
+        </div>
+      </section>
+
+      {/* QUICK LAUNCH GRID */}
+      <section>
+        <h2 className="font-serif" style={{ fontSize: '1.75rem', marginBottom: '1.5rem' }}>
+          Student Quick Navigation
+        </h2>
+        <div className="grid-3">
+          <div className="card-premium interactive-hover" onClick={() => setActiveTab('doubts')}>
+            <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: 'var(--accent-light)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+              <HelpCircle size={24} />
+            </div>
+            <h3 className="font-serif" style={{ fontSize: '1.25rem', marginBottom: '0.375rem' }}>Doubt Hub</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.5 }}>
+              Open a live workspace, pair with a department peer, and start video calls.
+            </p>
+          </div>
+
+          <div className="card-premium interactive-hover" onClick={() => setActiveTab('discover')}>
+            <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: 'rgba(99, 102, 241, 0.1)', color: 'var(--accent-purple)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+              <Users size={24} />
+            </div>
+            <h3 className="font-serif" style={{ fontSize: '1.25rem', marginBottom: '0.375rem' }}>Peer Mentors</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.5 }}>
+              Explore peer tutors with matching course skills, year, and ratings.
+            </p>
+          </div>
+
+          <div className="card-premium interactive-hover" onClick={() => setActiveTab('reels')}>
+            <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: 'rgba(244, 63, 94, 0.1)', color: 'var(--accent-rose)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+              <Tv2 size={24} />
+            </div>
+            <h3 className="font-serif" style={{ fontSize: '1.25rem', marginBottom: '0.375rem' }}>Concept Shorts</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.5 }}>
+              Watch 60-second micro lectures and learn concepts on the go.
+            </p>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
 
-// --- INSTAGRAM-STYLE STUDENT PROFILE & MEDIA DASHBOARD ---
-function DashboardScreen({ token, onOpenUserList, onStartChat }) {
+// --- SCREEN 2: STUDENT DASHBOARD (WITH REELS, PROFILE EDIT & REAL-TIME CONNECTIONS) ---
+function DashboardScreen({ token, setActiveTab, onOpenUserList, onStartChat }) {
   const { user, profile: authProfile, updateProfileState, testAccounts } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState(false);
-
-  const profile = (data && data.profile) ? data.profile : {};
-
-  const getNextLevel = (lvl) => {
-    if (typeof lvl === 'number') return `Lvl ${lvl + 1}`;
-    if (!lvl) return 'Lvl 5';
-    const lvlStr = String(lvl).toLowerCase();
-    if (lvlStr === 'beginner') return 'Intermediate';
-    if (lvlStr === 'intermediate') return 'Expert';
-    if (lvlStr === 'expert') return 'Master';
-    if (lvlStr === 'master') return 'Legend';
-    return 'Lvl ' + (parseInt(lvl) ? (parseInt(lvl) + 1) : 5);
-  };
-
-  const [activeProfileTab, setActiveProfileTab] = useState('posts'); // 'posts', 'reels', 'videos', 'badges'
-  const [selectedMedia, setSelectedMedia] = useState(null);
-  const [commentText, setCommentText] = useState('');
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [showQrModal, setShowQrModal] = useState(false);
-  const [noteText, setNoteText] = useState('Study mode ON ⚡');
-  const [showNoteModal, setShowNoteModal] = useState(false);
+  
+  // Modals state
+  const [showEditModal, setShowEditModal] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [showPhotoPreview, setShowPhotoPreview] = useState(false);
-
-  const handleSaveAvatar = async (newAvatarUrl) => {
-    if (!newAvatarUrl) return;
-    const currentProf = (data && data.profile) ? data.profile : { id: '11111111-1111-1111-1111-111111111111' };
-    const updatedProf = { ...currentProf, avatarUrl: newAvatarUrl };
-    
-    if (data) {
-      setData(prev => ({ ...prev, profile: updatedProf }));
-    }
-    
-    updateProfileState(updatedProf);
-    if (updatedProf.id) {
-      localStorage.setItem(`studyloop_profile_${updatedProf.id}`, JSON.stringify(updatedProf));
-    }
-    setShowAvatarModal(false);
-
-    try {
-      const res = await fetch('/api/profiles/me/avatar', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ avatarUrl: newAvatarUrl })
-      });
-      if (res.ok) {
-        const savedProf = await res.json();
-        const merged = { ...updatedProf, ...savedProf };
-        setData(prev => prev ? { ...prev, profile: merged } : prev);
-        updateProfileState(merged);
-        localStorage.setItem(`studyloop_profile_${merged.id}`, JSON.stringify(merged));
-      }
-    } catch (e) {
-      console.log("Updated avatar locally");
-    }
-  };
-
-  // INTERACTIVE MODALS & FEATURES STATES
-  const [showAppsModal, setShowAppsModal] = useState(false);
-  const [showNotificationsModal, setShowNotificationsModal] = useState(false);
-  const [showSupervisionModal, setShowSupervisionModal] = useState(false);
-  const [showLoginActivityModal, setShowLoginActivityModal] = useState(false);
-  const [showArchiveModal, setShowArchiveModal] = useState(false);
   const [showCreateHighlightModal, setShowCreateHighlightModal] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
 
-  // STORY HIGHLIGHTS DATASET & STORY VIEWER STATE
-  const [highlightsList, setHighlightsList] = useState([
-    {
-      id: 'hl-1',
-      title: 'Lab Notes',
-      cover: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=150&auto=format&fit=crop&q=80',
-      stories: [
-        { image: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=600&auto=format&fit=crop&q=80', caption: 'OS Memory Management Lab Code 💻' },
-        { image: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&auto=format&fit=crop&q=80', caption: 'Paging vs Segmentation Diagrams 📊' }
-      ]
-    },
-    {
-      id: 'hl-2',
-      title: 'Placements',
-      cover: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=150&auto=format&fit=crop&q=80',
-      stories: [
-        { image: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=600&auto=format&fit=crop&q=80', caption: 'Google & Microsoft Coding Interview Prep 🚀' }
-      ]
-    }
-  ]);
-  const [activeStoryViewer, setActiveStoryViewer] = useState(null);
-  const [storySlideIndex, setStorySlideIndex] = useState(0);
+  // Tabs: 'posts', 'reels', 'videos', 'connections', 'badges'
+  const [activeTabName, setActiveTabName] = useState('posts');
+  
+  // Theater Player Modal state
+  const [selectedMedia, setSelectedMedia] = useState(null);
+  const [commentInput, setCommentInput] = useState('');
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
 
-  // HIGHLIGHT CREATION STATES
-  const [newHighlightTitle, setNewHighlightTitle] = useState('');
-  const [newHighlightCover, setNewHighlightCover] = useState('');
+  const profile = (data && data.profile) ? data.profile : (authProfile || {});
 
-  // NOTIFICATION PREFERENCES TOGGLES STATE
-  const [notifSettings, setNotifSettings] = useState({
-    doubtAlerts: true,
-    directMessages: true,
-    streakReminders: true,
-    examRadar: true,
-    emailDigest: false
-  });
+  // Profile Edit Form States
+  const [editFullName, setEditFullName] = useState('');
+  const [editCollege, setEditCollege] = useState('');
+  const [editDepartment, setEditDepartment] = useState('');
+  const [editYear, setEditYear] = useState(1);
+  const [editGender, setEditGender] = useState('male');
+  const [editBio, setEditBio] = useState('');
+  const [editTeachingSkills, setEditTeachingSkills] = useState('');
+  const [editLearningGoals, setEditLearningGoals] = useState('');
 
-  // UPLOAD MEDIA CREATOR STUDIO STATES
-  const [isUploading, setIsUploading] = useState(false);
+  // Upload Modal States
   const [uploadType, setUploadType] = useState('reel'); // 'reel', 'video', 'post'
   const [uploadTitle, setUploadTitle] = useState('');
   const [uploadSubject, setUploadSubject] = useState('#Java');
   const [uploadDuration, setUploadDuration] = useState('0:45');
   const [filePreviewUrl, setFilePreviewUrl] = useState('');
 
-  // Form states
-  const [fullName, setFullName] = useState('');
-  const [college, setCollege] = useState('');
-  const [department, setDepartment] = useState('');
-  const [year, setYear] = useState(1);
-  const [gender, setGender] = useState('male');
-  const [bio, setBio] = useState('');
-  const [skills, setSkills] = useState('');
-  const [teachingSkills, setTeachingSkills] = useState('');
-  const [learningGoals, setLearningGoals] = useState('');
+  // Story Highlights
+  const [highlightsList, setHighlightsList] = useState([
+    {
+      id: 'hl-1',
+      title: 'Lab Notes',
+      cover: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=150&auto=format&fit=crop&q=80'
+    },
+    {
+      id: 'hl-2',
+      title: 'Placements',
+      cover: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=150&auto=format&fit=crop&q=80'
+    }
+  ]);
+  const [newHighlightTitle, setNewHighlightTitle] = useState('');
+  const [newHighlightCover, setNewHighlightCover] = useState('');
 
-  // Mock Student Media Datasets (Instagram Reference)
+  // Posts Dataset
   const [postsList, setPostsList] = useState([
     {
       id: 'post-1',
@@ -1454,7 +2293,6 @@ function DashboardScreen({ token, onOpenUserList, onStartChat }) {
       id: 'post-2',
       title: '📊 Dynamic Programming 101 - Knapsack Problem visual guide with time complexity analysis',
       image: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&auto=format&fit=crop&q=80',
-      videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-software-developer-working-on-code-42867-large.mp4',
       likes: 89,
       comments: [
         { author: 'Aarav Sharma', text: 'DP tables finally made sense after this post 🔥' }
@@ -1464,7 +2302,6 @@ function DashboardScreen({ token, onOpenUserList, onStartChat }) {
       id: 'post-3',
       title: '⚡ 5 React Hooks Mistakes to avoid in your semester project! Save for later 📌',
       image: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=600&auto=format&fit=crop&q=80',
-      videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-hands-of-a-man-typing-on-a-computer-keyboard-41334-large.mp4',
       likes: 112,
       comments: [
         { author: 'Student Peer', text: 'useEffect dependencies explanation was 10/10!' }
@@ -1472,22 +2309,38 @@ function DashboardScreen({ token, onOpenUserList, onStartChat }) {
     }
   ]);
 
+  // Reels Dataset (9:16 Shorts)
   const [reelsList, setReelsList] = useState([
     {
       id: 'reel-1',
       title: '3 Tricks to solve Recursion fast ⚡ #Java #Algorithms',
       duration: '0:45',
-      views: '1.2k',
+      views: '1.4k',
       likes: 154,
+      hashtag: '#Algorithms',
       thumbnail: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=600&auto=format&fit=crop&q=80',
       videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-software-developer-working-on-code-42867-large.mp4',
       comments: [
         { author: 'Aarav Sharma', text: 'Recursion base condition explanation was super clear!' },
-        { author: 'Priya Patel', text: 'Loved the visual stack trace diagram 🚀' }
+        { author: 'Bhavna Patel', text: 'Loved the visual stack trace diagram 🚀' }
+      ]
+    },
+    {
+      id: 'reel-2',
+      title: 'How Spring Boot Inversion of Control works in 60s ☕ #SpringBoot',
+      duration: '0:58',
+      views: '2.1k',
+      likes: 218,
+      hashtag: '#Java',
+      thumbnail: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=600&auto=format&fit=crop&q=80',
+      videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-hands-of-a-man-typing-on-a-computer-keyboard-41334-large.mp4',
+      comments: [
+        { author: 'Chaitanya Reddy', text: 'Dependency injection explained visually is so helpful!' }
       ]
     }
   ]);
 
+  // Videos Dataset (16:9 Lectures)
   const [videosList, setVideosList] = useState([
     {
       id: 'vid-1',
@@ -1513,44 +2366,50 @@ function DashboardScreen({ token, onOpenUserList, onStartChat }) {
     }
   ]);
 
-  const fetchDashboard = async () => {
+  // Real-Time Connections Dataset
+  const [connectionsList, setConnectionsList] = useState([
+    {
+      id: 'conn-1',
+      fullName: 'Bhavna Patel',
+      college: 'IIT Madras',
+      department: 'Computer Science',
+      year: 3,
+      isOnline: true,
+      avatarUrl: FEMALE_AVATAR_SVG,
+      teachingSkills: ['Python', 'Machine Learning'],
+      rating: 4.9
+    },
+    {
+      id: 'conn-2',
+      fullName: 'Chaitanya Reddy',
+      college: 'BITS Pilani',
+      department: 'Electrical Engineering',
+      year: 1,
+      isOnline: true,
+      avatarUrl: MALE_AVATAR_SVG,
+      teachingSkills: ['Circuits', 'Calculus'],
+      rating: 4.7
+    }
+  ]);
+
+  // Pending Requests Dataset
+  const [pendingRequests, setPendingRequests] = useState([
+    {
+      id: 'req-1',
+      fullName: 'Divya Nambiar',
+      college: 'NIT Trichy',
+      department: 'Data Science',
+      year: 2,
+      avatarUrl: FEMALE_AVATAR_SVG,
+      skills: ['SQL', 'Tableau', 'Statistics']
+    }
+  ]);
+
+  const fetchDashboardData = async () => {
     setLoading(true);
     let targetProfileId = authProfile?.id || user?.id || '11111111-1111-1111-1111-111111111111';
-    try {
-      const response = await fetch('/api/gamification/dashboard', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (response.ok) {
-        const result = await response.json();
-        targetProfileId = result.profile.id;
-        const cached = localStorage.getItem(`studyloop_profile_${targetProfileId}`);
-        if (cached) {
-          try {
-            const p = JSON.parse(cached);
-            if (p.avatarUrl) result.profile.avatarUrl = p.avatarUrl;
-            if (p.gender) result.profile.gender = p.gender;
-            if (p.fullName) result.profile.fullName = p.fullName;
-            if (p.bio) result.profile.bio = p.bio;
-          } catch(e) {}
-        }
-        setData(result);
-        setFullName(result.profile.fullName);
-        setCollege(result.profile.college);
-        setDepartment(result.profile.department);
-        setYear(result.profile.year);
-        setGender(result.profile.gender || 'male');
-        setBio(result.profile.bio);
-        setSkills((result.profile.skills || []).join(', '));
-        setTeachingSkills((result.profile.teachingSkills || []).join(', '));
-        setLearningGoals((result.profile.learningGoals || []).join(', '));
-        setLoading(false);
-        return;
-      }
-    } catch (e) {
-      console.log("Using mock dashboard data for student");
-    }
-
-    // Mock Fallback Dataset - Check LocalStorage!
+    
+    // Check cached profile in localStorage
     const cachedMock = localStorage.getItem(`studyloop_profile_${targetProfileId}`);
     const matchedAccount = testAccounts?.find(acc => acc.id === targetProfileId) || {};
     
@@ -1561,82 +2420,305 @@ function DashboardScreen({ token, onOpenUserList, onStartChat }) {
       department: matchedAccount.department || 'Computer Science',
       year: matchedAccount.year || 2,
       gender: matchedAccount.gender || 'male',
-      bio: matchedAccount.bio || '🎓 CS Major @ IIT Madras | Tech Mentor',
-      skills: matchedAccount.skills || ['Java', 'Algorithms'],
-      teachingSkills: matchedAccount.teachingSkills || ['Java'],
-      learningGoals: matchedAccount.learningGoals || ['React'],
+      bio: matchedAccount.bio || '🎓 CS Major @ IIT Madras | 💻 Full-Stack & Java Mentor | 🚀 24 1:1 Classes Taught',
+      headline: matchedAccount.headline || 'B.Tech CS @ IIT Madras • Java & DSA Peer Mentor • SIH Finalist',
+      location: matchedAccount.location || 'Chennai, Tamil Nadu, India',
+      resumeFileName: matchedAccount.resumeFileName || 'Aarav_Sharma_BTech_CS_Resume.pdf',
+      resumeUploadDate: matchedAccount.resumeUploadDate || 'Aug 2026',
+      socialLinks: matchedAccount.socialLinks || {
+        github: 'https://github.com/aaravsharma',
+        linkedin: 'https://linkedin.com/in/aarav-sharma-cs',
+        leetcode: 'https://leetcode.com/aarav_codes',
+        portfolio: 'https://aaravsharma.dev'
+      },
+      educations: matchedAccount.educations || [
+        {
+          id: 'edu-1',
+          school: 'Indian Institute of Technology (IIT) Madras',
+          degree: 'Bachelor of Technology - B.Tech',
+          field: 'Computer Science & Engineering',
+          startYear: '2023',
+          endYear: '2027',
+          grade: '8.95 / 10.0 CGPA',
+          activities: 'Lead at Google Developer Student Club (GDSC), Campus Doubt Mentor'
+        },
+        {
+          id: 'edu-2',
+          school: 'Delhi Public School (DPS), R.K. Puram',
+          degree: 'Higher Secondary School Certificate (Class XII)',
+          field: 'Physics, Chemistry, Mathematics & Computer Science',
+          startYear: '2021',
+          endYear: '2023',
+          grade: '96.4% Aggregate',
+          activities: 'National Cyber Olympiad Gold Medalist'
+        }
+      ],
+      certifications: matchedAccount.certifications || [
+        {
+          id: 'cert-1',
+          name: 'Oracle Certified Associate, Java SE 8 Programmer (1Z0-808)',
+          issuer: 'Oracle',
+          issueDate: 'Jan 2026',
+          credentialId: 'OCA-JAVA-98742',
+          credentialUrl: 'https://catalog-education.oracle.com/ords/certview/sharebadge?id=demo',
+          badgeIcon: '☕'
+        },
+        {
+          id: 'cert-2',
+          name: 'NPTEL Elite Gold: Programming, Data Structures And Algorithms In Python',
+          issuer: 'IIT Madras & NPTEL',
+          issueDate: 'Oct 2025',
+          credentialId: 'NPTEL25CS89104',
+          credentialUrl: 'https://nptel.ac.in',
+          badgeIcon: '🐍'
+        },
+        {
+          id: 'cert-3',
+          name: 'AWS Certified Cloud Practitioner (CLF-C02)',
+          issuer: 'Amazon Web Services (AWS)',
+          issueDate: 'May 2025',
+          credentialId: 'AWS-CCP-76291',
+          credentialUrl: 'https://aws.amazon.com/verification',
+          badgeIcon: '☁️'
+        }
+      ],
+      achievements: matchedAccount.achievements || [
+        {
+          id: 'ach-1',
+          title: 'Smart India Hackathon (SIH 2025) - National Finalist',
+          issuer: 'Ministry of Education & Unstop',
+          date: 'Dec 2025',
+          desc: 'Selected in Top 5 teams out of 12,000+ national submissions for building AI peer doubt router.'
+        },
+        {
+          id: 'ach-2',
+          title: 'LeetCode Knight Badge (Top 2.5% Globally • Rating: 1985)',
+          issuer: 'LeetCode',
+          date: '2026',
+          desc: 'Solved 450+ data structures & algorithms questions with 85% dynamic programming accuracy.'
+        },
+        {
+          id: 'ach-3',
+          title: 'Flipkart GRiD 6.0 Software Development Semi-Finalist',
+          issuer: 'Flipkart & Unstop',
+          date: 'Aug 2025',
+          desc: 'Built high-throughput inventory allocation service handling 10k QPS simulation.'
+        }
+      ],
+      projects: matchedAccount.projects || [
+        {
+          id: 'proj-1',
+          title: 'PeerCode - WebRTC Real-Time Collaborative Workspace',
+          stack: ['React', 'WebRTC', 'Node.js', 'Socket.io', 'Java'],
+          desc: 'Low-latency collaborative coding and live doubt-solving workspace with synchronized editor and audio/video.',
+          githubUrl: 'https://github.com/aaravsharma/peercode-workspace',
+          liveUrl: 'https://peercode.studyloop.app'
+        },
+        {
+          id: 'proj-2',
+          title: 'AlgoVisualizer - Interactive Graph & DP Algorithm Visualizer',
+          stack: ['JavaScript', 'Canvas API', 'Algorithms', 'CSS3'],
+          desc: 'Step-by-step interactive animations for Dijkstra, BFS/DFS, 0/1 Knapsack, and Tree traversals used by 500+ students.',
+          githubUrl: 'https://github.com/aaravsharma/algo-visualizer',
+          liveUrl: 'https://algovis.studyloop.app'
+        }
+      ],
+      skills: matchedAccount.skills || ['Java', 'Algorithms', 'React', 'Calculus', 'WebRTC', 'Spring Boot'],
+      teachingSkills: matchedAccount.teachingSkills || ['Java', 'Algorithms', 'Data Structures'],
+      learningGoals: matchedAccount.learningGoals || ['System Design', 'AI/ML', 'Microservices'],
       xp: matchedAccount.xp !== undefined ? matchedAccount.xp : 650,
       level: matchedAccount.level !== undefined ? matchedAccount.level : 4,
       coins: matchedAccount.coins !== undefined ? matchedAccount.coins : 45,
-      followersCount: matchedAccount.followersCount !== undefined ? matchedAccount.followersCount : 2,
-      followingCount: matchedAccount.followingCount !== undefined ? matchedAccount.followingCount : 2,
+      followersCount: matchedAccount.followersCount !== undefined ? matchedAccount.followersCount : 148,
+      followingCount: matchedAccount.followingCount !== undefined ? matchedAccount.followingCount : 92,
       avatarUrl: matchedAccount.avatarUrl || getDefaultAvatarByGender(matchedAccount.gender)
     };
+
     if (cachedMock) {
       try {
-        const p = JSON.parse(cachedMock);
-        activeMockProfile = { ...activeMockProfile, ...p };
-      } catch(e) {}
+        const parsed = JSON.parse(cachedMock);
+        activeMockProfile = { ...activeMockProfile, ...parsed };
+      } catch (e) {}
     }
-    const mockData = {
-      profile: activeMockProfile,
-      doubtsSolved: targetProfileId === '22222222-2222-2222-2222-222222222222' ? 10 : (targetProfileId === '33333333-3333-3333-3333-333333333333' ? 25 : 15),
-      endorsementsReceived: targetProfileId === '22222222-2222-2222-2222-222222222222' ? 18 : (targetProfileId === '33333333-3333-3333-3333-333333333333' ? 42 : 28),
-      campusRank: targetProfileId === '22222222-2222-2222-2222-222222222222' ? 3 : (targetProfileId === '33333333-3333-3333-3333-333333333333' ? 1 : 2),
-      badges: targetProfileId === '22222222-2222-2222-2222-222222222222' ? [
-        { id: 'b1', name: 'First Doubt Solved', description: 'Awarded for resolving your 1st academic doubt room.' },
-        { id: 'b4', name: '5-Day Streak', description: 'Active on StudyLoop 5 days in a row.' }
-      ] : (targetProfileId === '33333333-3333-3333-3333-333333333333' ? [
-        { id: 'b1', name: 'First Doubt Solved', description: 'Awarded for resolving your 1st academic doubt room.' },
-        { id: 'b2', name: '20 Sessions Taught', description: 'Taught over 20 live peer study sessions.' },
-        { id: 'b3', name: 'Expert Mentor', description: 'Rated 4.9+ by campus peers across 25+ doubts.' },
-        { id: 'b4', name: '12-Day Streak', description: 'Active on StudyLoop 12 days in a row.' }
-      ] : [
-        { id: 'b1', name: 'First Doubt Solved', description: 'Awarded for resolving your 1st academic doubt room.' },
-        { id: 'b2', name: '10 Sessions Taught', description: 'Taught over 10 live peer study sessions.' },
-        { id: 'b3', name: 'Expert Mentor', description: 'Rated 4.8+ by campus peers across 10+ doubts.' },
-        { id: 'b4', name: '7-Day Streak', description: 'Active on StudyLoop 7 days in a row.' }
-      ]),
-      prevLevelXpThreshold: activeMockProfile.xp < 200 ? 0 : (activeMockProfile.xp < 600 ? 200 : 600),
-      nextLevelXpThreshold: activeMockProfile.xp < 200 ? 200 : (activeMockProfile.xp < 600 ? 600 : 1500),
-      xpProgressPercentage: Math.min(100, Math.max(0, Math.round(((activeMockProfile.xp - (activeMockProfile.xp < 200 ? 0 : (activeMockProfile.xp < 600 ? 200 : 600))) / ((activeMockProfile.xp < 200 ? 200 : (activeMockProfile.xp < 600 ? 600 : 1500)) - (activeMockProfile.xp < 200 ? 0 : (activeMockProfile.xp < 600 ? 200 : 600)))) * 100)))
-    };
 
-    setData(mockData);
-    setFullName(activeMockProfile.fullName);
-    setCollege(activeMockProfile.college);
-    setDepartment(activeMockProfile.department);
-    setYear(activeMockProfile.year);
-    setGender(activeMockProfile.gender || 'male');
-    setBio(activeMockProfile.bio);
-    setSkills(activeMockProfile.skills.join(', '));
-    setTeachingSkills(activeMockProfile.teachingSkills.join(', '));
-    setLearningGoals(activeMockProfile.learningGoals.join(', '));
+    setData({ profile: activeMockProfile });
+    setEditFullName(activeMockProfile.fullName);
+    setEditCollege(activeMockProfile.college);
+    setEditDepartment(activeMockProfile.department);
+    setEditYear(activeMockProfile.year);
+    setEditGender(activeMockProfile.gender || 'male');
+    setEditBio(activeMockProfile.bio);
+    setEditTeachingSkills((activeMockProfile.teachingSkills || []).join(', '));
+    setEditLearningGoals((activeMockProfile.learningGoals || []).join(', '));
     setLoading(false);
   };
 
   useEffect(() => {
-    fetchDashboard();
-  }, [token]);
+    fetchDashboardData();
+  }, [user]);
 
-  const handleUpdateProfile = async (e) => {
+  // MODULAR MODAL STATES
+  const [showEditIntroModal, setShowEditIntroModal] = useState(false);
+  const [showAddEducationModal, setShowAddEducationModal] = useState(false);
+  const [showAddCertificateModal, setShowAddCertificateModal] = useState(false);
+  const [showAddAchievementModal, setShowAddAchievementModal] = useState(false);
+  const [showAddProjectModal, setShowAddProjectModal] = useState(false);
+  const [showAddSkillModal, setShowAddSkillModal] = useState(false);
+  const [showResumeUploadModal, setShowResumeUploadModal] = useState(false);
+  const [showResumePreviewModal, setShowResumePreviewModal] = useState(false);
+
+  // SECTION MUTATION HELPERS
+  const saveUpdatedProfile = (updatedProf) => {
+    setData(prev => ({ ...prev, profile: updatedProf }));
+    updateProfileState(updatedProf);
+    if (updatedProf.id) {
+      localStorage.setItem(`studyloop_profile_${updatedProf.id}`, JSON.stringify(updatedProf));
+    }
+  };
+
+  // Education Handlers
+  const handleAddEducation = (newEdu) => {
+    const updated = {
+      ...profile,
+      educations: [newEdu, ...(profile.educations || [])]
+    };
+    saveUpdatedProfile(updated);
+    setShowAddEducationModal(false);
+    alert("🎓 Education entry added to profile!");
+  };
+
+  const handleDeleteEducation = (eduId) => {
+    const updated = {
+      ...profile,
+      educations: (profile.educations || []).filter(e => e.id !== eduId)
+    };
+    saveUpdatedProfile(updated);
+  };
+
+  // Certification Handlers
+  const handleAddCertificate = (newCert) => {
+    const updated = {
+      ...profile,
+      certifications: [newCert, ...(profile.certifications || [])]
+    };
+    saveUpdatedProfile(updated);
+    setShowAddCertificateModal(false);
+    alert("📜 License & Certificate added to profile!");
+  };
+
+  const handleDeleteCertificate = (certId) => {
+    const updated = {
+      ...profile,
+      certifications: (profile.certifications || []).filter(c => c.id !== certId)
+    };
+    saveUpdatedProfile(updated);
+  };
+
+  // Achievement Handlers
+  const handleAddAchievement = (newAch) => {
+    const updated = {
+      ...profile,
+      achievements: [newAch, ...(profile.achievements || [])]
+    };
+    saveUpdatedProfile(updated);
+    setShowAddAchievementModal(false);
+    alert("🏆 Honor & Achievement added to profile!");
+  };
+
+  const handleDeleteAchievement = (achId) => {
+    const updated = {
+      ...profile,
+      achievements: (profile.achievements || []).filter(a => a.id !== achId)
+    };
+    saveUpdatedProfile(updated);
+  };
+
+  // Project Handlers
+  const handleAddProject = (newProj) => {
+    const updated = {
+      ...profile,
+      projects: [newProj, ...(profile.projects || [])]
+    };
+    saveUpdatedProfile(updated);
+    setShowAddProjectModal(false);
+    alert("💻 Technical Project added to portfolio!");
+  };
+
+  const handleDeleteProject = (projId) => {
+    const updated = {
+      ...profile,
+      projects: (profile.projects || []).filter(p => p.id !== projId)
+    };
+    saveUpdatedProfile(updated);
+  };
+
+  // Skill Handlers
+  const handleAddSkill = (skillName, category) => {
+    if (!skillName.trim()) return;
+    let updated = { ...profile };
+    if (category === 'teaching') {
+      updated.teachingSkills = [...(profile.teachingSkills || []), skillName.trim()];
+    } else if (category === 'learning') {
+      updated.learningGoals = [...(profile.learningGoals || []), skillName.trim()];
+    } else {
+      updated.skills = [...(profile.skills || []), skillName.trim()];
+    }
+    saveUpdatedProfile(updated);
+    setShowAddSkillModal(false);
+    alert("⭐ Skill added successfully!");
+  };
+
+  const handleEndorseSkill = (skill) => {
+    alert(`👍 You endorsed ${profile.fullName} for ${skill}! (+1 Skill Trust Point)`);
+  };
+
+  // Resume Upload Handler
+  const handleUploadResume = (fileName) => {
+    const updated = {
+      ...profile,
+      resumeFileName: fileName,
+      resumeUploadDate: 'Aug 2026'
+    };
+    saveUpdatedProfile(updated);
+    setShowResumeUploadModal(false);
+    alert(`📄 Resume updated to "${fileName}"!`);
+  };
+
+  // Intro Details Handler
+  const handleSaveIntro = (intro) => {
+    const updated = {
+      ...profile,
+      fullName: intro.fullName,
+      headline: intro.headline,
+      college: intro.college,
+      department: intro.department,
+      year: parseInt(intro.year),
+      location: intro.location,
+      bio: intro.bio,
+      gender: intro.gender,
+      socialLinks: intro.socialLinks
+    };
+    saveUpdatedProfile(updated);
+    setShowEditIntroModal(false);
+    alert("✨ Profile intro details saved successfully!");
+  };
+
+  const handleUpdateProfile = (e) => {
     e.preventDefault();
     const updatedProf = {
-      ...data.profile,
-      fullName: fullName || 'Aarav Sharma',
-      college: college || 'IIT Madras',
-      department: department || 'Computer Science',
-      year: parseInt(year) || 2,
-      gender: gender || 'male',
-      bio: bio || '🎓 CS Major @ IIT Madras | 💻 Full-Stack & Algorithm Mentor | 🚀 15 Doubts Solved',
-      skills: typeof skills === 'string' ? skills.split(',').map(s => s.trim()).filter(Boolean) : (skills || []),
-      teachingSkills: typeof teachingSkills === 'string' ? teachingSkills.split(',').map(s => s.trim()).filter(Boolean) : (teachingSkills || []),
-      learningGoals: typeof learningGoals === 'string' ? learningGoals.split(',').map(s => s.trim()).filter(Boolean) : (learningGoals || [])
+      ...profile,
+      fullName: editFullName || profile.fullName,
+      college: editCollege || profile.college,
+      department: editDepartment || profile.department,
+      year: parseInt(editYear) || profile.year,
+      gender: editGender || profile.gender,
+      bio: editBio || profile.bio,
+      teachingSkills: typeof editTeachingSkills === 'string' ? editTeachingSkills.split(',').map(s => s.trim()).filter(Boolean) : (profile.teachingSkills || []),
+      learningGoals: typeof editLearningGoals === 'string' ? editLearningGoals.split(',').map(s => s.trim()).filter(Boolean) : (profile.learningGoals || [])
     };
-    
-    // Auto-update avatar to match gender if no custom photo uploaded
-    if (!updatedProf.avatarUrl || updatedProf.avatarUrl.includes('svg') || updatedProf.avatarUrl.includes('dicebear')) {
-      updatedProf.avatarUrl = getDefaultAvatarByGender(gender, updatedProf.avatarUrl);
+
+    if (!updatedProf.avatarUrl || updatedProf.avatarUrl.includes('svg')) {
+      updatedProf.avatarUrl = getDefaultAvatarByGender(editGender, updatedProf.avatarUrl);
     }
 
     setData(prev => ({ ...prev, profile: updatedProf }));
@@ -1644,50 +2726,71 @@ function DashboardScreen({ token, onOpenUserList, onStartChat }) {
     if (updatedProf.id) {
       localStorage.setItem(`studyloop_profile_${updatedProf.id}`, JSON.stringify(updatedProf));
     }
-    setEditing(false);
-    
-    try {
-      const res = await fetch('/api/profiles/me', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(updatedProf)
-      });
-      if (res.ok) {
-        const saved = await res.json();
-        const merged = { ...updatedProf, ...saved };
-        setData(prev => ({ ...prev, profile: merged }));
-        updateProfileState(merged);
-        localStorage.setItem(`studyloop_profile_${merged.id}`, JSON.stringify(merged));
+    setShowEditModal(false);
+    alert("✨ Profile updated successfully!");
+  };
+
+  const handleSaveAvatar = (newAvatarUrl) => {
+    if (!newAvatarUrl) return;
+    const updatedProf = { ...profile, avatarUrl: newAvatarUrl };
+    saveUpdatedProfile(updatedProf);
+    setShowAvatarModal(false);
+  };
+
+  const claimStreakBonus = () => {
+    const updatedProf = {
+      ...profile,
+      xp: (profile.xp || 650) + 2,
+      coins: (profile.coins || 45) + 1
+    };
+    saveUpdatedProfile(updatedProf);
+    alert("🔥 Daily Streak claimed! +2 XP & +1 Peer Coin added to your wallet.");
+  };
+
+  const handleAcceptRequest = (req) => {
+    setPendingRequests(prev => prev.filter(r => r.id !== req.id));
+    setConnectionsList(prev => [
+      ...prev,
+      {
+        id: req.id,
+        fullName: req.fullName,
+        college: req.college,
+        department: req.department,
+        year: req.year,
+        isOnline: true,
+        avatarUrl: req.avatarUrl,
+        teachingSkills: req.skills || ['General Academics'],
+        rating: 5.0
       }
-    } catch (e) {
-      console.log("Updated profile locally");
+    ]);
+    alert(`🎉 Connected with ${req.fullName}!`);
+  };
+
+  const handleIgnoreRequest = (reqId) => {
+    setPendingRequests(prev => prev.filter(r => r.id !== reqId));
+  };
+
+  const handleLikeMedia = () => {
+    if (!selectedMedia) return;
+    setSelectedMedia(prev => ({ ...prev, likes: (prev.likes || 0) + 1 }));
+    if (selectedMedia.type === 'reel') {
+      setReelsList(prev => prev.map(r => r.id === selectedMedia.id ? { ...r, likes: r.likes + 1 } : r));
+    } else if (selectedMedia.type === 'post') {
+      setPostsList(prev => prev.map(p => p.id === selectedMedia.id ? { ...p, likes: p.likes + 1 } : p));
     }
   };
 
-  const handleCreateHighlight = (e) => {
+  const handleAddComment = (e) => {
     e.preventDefault();
-    if (!newHighlightTitle.trim()) {
-      alert("Please enter a title for your story highlight!");
-      return;
+    if (!commentInput.trim() || !selectedMedia) return;
+    const newC = { author: profile.fullName || 'You', text: commentInput.trim() };
+    setSelectedMedia(prev => ({ ...prev, comments: [...(prev.comments || []), newC] }));
+    if (selectedMedia.type === 'reel') {
+      setReelsList(prev => prev.map(r => r.id === selectedMedia.id ? { ...r, comments: [...(r.comments || []), newC] } : r));
+    } else if (selectedMedia.type === 'post') {
+      setPostsList(prev => prev.map(p => p.id === selectedMedia.id ? { ...p, comments: [...(p.comments || []), newC] } : p));
     }
-    const newHighlight = {
-      id: `hl-${Date.now()}`,
-      title: newHighlightTitle.trim(),
-      cover: newHighlightCover || 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=150&auto=format&fit=crop&q=80',
-      stories: [
-        {
-          image: newHighlightCover || 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=600&auto=format&fit=crop&q=80',
-          caption: `${newHighlightTitle.trim()} Study Highlight ✨`
-        }
-      ]
-    };
-    setHighlightsList(prev => [...prev, newHighlight]);
-    setShowCreateHighlightModal(false);
-    setNewHighlightTitle('');
-    setNewHighlightCover('');
+    setCommentInput('');
   };
 
   const handleFileSelect = (e) => {
@@ -1701,7 +2804,7 @@ function DashboardScreen({ token, onOpenUserList, onStartChat }) {
   const handlePublishContent = (e) => {
     e.preventDefault();
     if (!uploadTitle.trim()) {
-      alert("Please enter a title for your video or post!");
+      alert("Please enter a title for your content!");
       return;
     }
 
@@ -1713,25 +2816,27 @@ function DashboardScreen({ token, onOpenUserList, onStartChat }) {
         views: '1',
         likes: 1,
         hashtag: uploadSubject || '#Java',
-        videoUrl: filePreviewUrl || 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+        videoUrl: filePreviewUrl || 'https://assets.mixkit.co/videos/preview/mixkit-software-developer-working-on-code-42867-large.mp4',
+        thumbnail: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=600&auto=format&fit=crop&q=80',
         comments: []
       };
       setReelsList(prev => [newReel, ...prev]);
-      setActiveProfileTab('reels');
-      alert("✨ Short Reel published successfully to your Instagram profile!");
+      setActiveTabName('reels');
+      alert("📱 Educational Reel published successfully!");
     } else if (uploadType === 'video') {
-      const newVideo = {
+      const newVid = {
         id: `vid-${Date.now()}`,
         title: uploadTitle.trim(),
         duration: uploadDuration || '15:20',
         views: '1',
         likes: 1,
-        thumbnail: filePreviewUrl || 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=600&auto=format&fit=crop&q=80',
+        thumbnail: filePreviewUrl || 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=600&auto=format&fit=crop&q=80',
+        videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-hands-of-a-man-typing-on-a-computer-keyboard-41334-large.mp4',
         comments: []
       };
-      setVideosList(prev => [newVideo, ...prev]);
-      setActiveProfileTab('videos');
-      alert("🎥 Long Lecture Video published successfully to your YouTube channel!");
+      setVideosList(prev => [newVid, ...prev]);
+      setActiveTabName('videos');
+      alert("🎥 Long Lecture Video published!");
     } else {
       const newPost = {
         id: `post-${Date.now()}`,
@@ -1741,836 +2846,629 @@ function DashboardScreen({ token, onOpenUserList, onStartChat }) {
         comments: []
       };
       setPostsList(prev => [newPost, ...prev]);
-      setActiveProfileTab('posts');
-      alert("🖼️ Study Post published successfully!");
+      setActiveTabName('posts');
+      alert("🖼️ Study Post published!");
     }
 
-    setIsUploading(false);
+    setShowUploadModal(false);
     setUploadTitle('');
-    setUploadDuration('0:45');
     setFilePreviewUrl('');
   };
 
-  const claimStreakBonus = async () => {
-    try {
-      const response = await fetch('/api/gamification/streak/claim', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (response.ok) {
-        alert("Daily Streak Bonus claimed! +2 XP & +1 Coin added to your wallet.");
-        fetchDashboard();
-      }
-    } catch (e) {
-      alert("Streak claimed! +2 XP & +1 Peer Coin added.");
-    }
-  };
-
-  const handleAddComment = (e) => {
-    e.preventDefault();
-    if (!commentText.trim() || !selectedMedia) return;
-    const newComment = { author: fullName || 'You', text: commentText.trim() };
-    setSelectedMedia(prev => ({
-      ...prev,
-      comments: [...(prev.comments || []), newComment]
-    }));
-    setCommentText('');
-  };
-
-  const handleLikeMedia = () => {
-    if (!selectedMedia) return;
-    setSelectedMedia(prev => ({
-      ...prev,
-      likes: prev.likes + 1
-    }));
-  };
-
-  if (loading || !data || !data.profile) {
-    return (
-      <div style={{ textAlign: 'center', padding: '4rem' }}>
-        <div className="live-dot" style={{ backgroundColor: '#3b82f6', margin: '0 auto 1rem auto' }}></div>
-        <p style={{ color: '#64748b', fontSize: '0.875rem' }}>Loading student profile dashboard...</p>
-      </div>
-    );
-  }
-
-  const doubtsSolved = data.doubtsSolved || 0;
-  const endorsementsReceived = data.endorsementsReceived || 0;
-  const campusRank = data.campusRank || 1;
-  const badges = data.badges || [];
-  const xpProgressPercentage = data.xpProgressPercentage || 50;
-  const usernameHandle = `@${(profile.fullName || 'student').toLowerCase().replace(/\s+/g, '_')}`;
+  const xpProgress = Math.min(100, Math.round(((profile.xp || 650) % 200) / 2));
+  const educations = profile.educations || [];
+  const certifications = profile.certifications || [];
+  const achievements = profile.achievements || [];
+  const projects = profile.projects || [];
+  const socialLinks = profile.socialLinks || {};
 
   return (
-    <div style={{ width: '100%', paddingBottom: '3rem' }}>
+    <div style={{ padding: '1.5rem 2.5rem 4rem 2.5rem', width: '100%', maxWidth: '1400px', margin: '0 auto' }}>
       
-      {/* INSTAGRAM PROFILE HEADER & BIO */}
-      <div className="card-premium glass-card" style={{ padding: '2.5rem 2rem', borderRadius: '24px', marginBottom: '2rem' }}>
-        <div style={{ display: 'flex', gap: '3rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
-          
-          {/* INSTAGRAM GRADIENT STORY AVATAR RING WITH STATUS NOTE BUBBLE */}
-          <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <button 
-              onClick={() => {
-                const newNote = prompt("Set your status note (e.g. Study mode ON ⚡, Lab Prep 📚):", noteText);
-                if (newNote !== null) setNoteText(newNote);
-              }}
-              title="Click to update status note"
-              style={{
-                position: 'absolute',
-                top: '-20px',
-                zIndex: 10,
-                backgroundColor: '#ffffff',
-                border: '1px solid #e2e8f0',
-                borderRadius: '16px',
-                padding: '0.25rem 0.75rem',
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                color: '#334155',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                cursor: 'pointer',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              💬 {noteText || 'Note...'}
-            </button>
+      {/* 1. LINKEDIN-STYLE PROFILE COVER & HEADER CARD */}
+      <div className="card-premium" style={{ marginBottom: '2rem', padding: 0, overflow: 'hidden', position: 'relative' }}>
+        
+        {/* COVER BANNER */}
+        <div style={{ height: '180px', width: '100%', background: 'linear-gradient(135deg, #0066FF 0%, #00C6FF 50%, #4F46E5 100%)', position: 'relative' }}>
+          <button 
+            onClick={() => alert("📸 Cover photo upload: Select custom background banner")}
+            style={{ position: 'absolute', top: '1rem', right: '1rem', backgroundColor: 'rgba(0,0,0,0.6)', color: '#ffffff', border: 'none', borderRadius: 'var(--radius-full)', padding: '0.4rem 0.875rem', fontSize: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.375rem', cursor: 'pointer' }}
+          >
+            <Camera size={14} /> Edit Cover
+          </button>
+        </div>
 
+        {/* PROFILE INTRO BODY */}
+        <div style={{ padding: '0 2rem 2rem 2rem', position: 'relative' }}>
+          
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '1rem', marginTop: '-60px', marginBottom: '1.25rem' }}>
+            
+            {/* AVATAR + FLOATING EDIT PENCIL */}
             <div style={{ position: 'relative' }}>
               <div 
                 onClick={() => setShowPhotoPreview(true)}
-                title="Click to view enlarged profile picture"
                 style={{
-                  width: '120px',
-                  height: '120px',
+                  width: '130px',
+                  height: '130px',
                   borderRadius: '50%',
                   padding: '4px',
-                  background: 'linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)',
+                  background: 'var(--bg-card)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  boxShadow: '0 10px 25px rgba(220, 39, 67, 0.25)',
+                  boxShadow: 'var(--shadow-lg)',
                   cursor: 'pointer'
                 }}
+                title="Click to preview avatar"
               >
                 <img 
                   src={getDefaultAvatarByGender(profile.gender, profile.avatarUrl)} 
                   alt="Avatar" 
                   onError={(e) => { e.target.src = getDefaultAvatarByGender(profile.gender); }}
-                  style={{ width: '100%', height: '100%', borderRadius: '50%', border: '3px solid #ffffff', objectFit: 'cover' }} 
+                  style={{ width: '100%', height: '100%', borderRadius: '50%', border: '3px solid var(--accent-primary)', objectFit: 'cover' }} 
                 />
               </div>
 
-              {/* Floating Pencil Icon Overlay */}
               <button
                 onClick={(e) => { e.stopPropagation(); setShowAvatarModal(true); }}
-                title="Change Profile Picture (Upload from Gallery / Albums)"
+                title="Change Profile Picture"
                 style={{
                   position: 'absolute',
-                  bottom: '2px',
-                  right: '2px',
+                  bottom: '4px',
+                  right: '4px',
                   width: '36px',
                   height: '36px',
                   borderRadius: '50%',
-                  backgroundColor: '#3b82f6',
+                  backgroundColor: 'var(--accent-primary)',
                   color: '#ffffff',
-                  border: '3px solid #ffffff',
+                  border: '3px solid var(--bg-card)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   cursor: 'pointer',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-                  transition: 'transform 0.15s ease'
+                  boxShadow: 'var(--shadow-sm)'
                 }}
               >
-                <Pencil size={16} />
+                <Pencil size={15} />
               </button>
             </div>
+
+            {/* QUICK ACTION BUTTONS (LINKEDIN & UNSTOP STYLE) */}
+            <div style={{ display: 'flex', gap: '0.625rem', alignItems: 'center', flexWrap: 'wrap' }}>
+              
+              <button 
+                onClick={() => setShowEditIntroModal(true)} 
+                className="btn btn-secondary"
+                style={{ fontSize: '0.8125rem', padding: '0.5rem 1rem', fontWeight: 700 }}
+              >
+                <Edit2 size={14} /> Edit Intro
+              </button>
+
+              <button 
+                onClick={() => setShowResumeUploadModal(true)} 
+                className="btn btn-secondary"
+                style={{ fontSize: '0.8125rem', padding: '0.5rem 1rem', fontWeight: 700 }}
+              >
+                <FileText size={14} /> Resume (PDF)
+              </button>
+
+              <button 
+                onClick={() => setShowResumePreviewModal(true)} 
+                className="btn btn-primary"
+                style={{ fontSize: '0.8125rem', padding: '0.5rem 1rem', fontWeight: 700 }}
+              >
+                <Download size={14} /> View ATS Resume
+              </button>
+
+              <button 
+                onClick={claimStreakBonus} 
+                className="btn btn-accent"
+                style={{ fontSize: '0.8125rem', padding: '0.5rem 1rem', fontWeight: 800 }}
+              >
+                <Flame size={15} /> Streak (+2 XP)
+              </button>
+
+            </div>
+
           </div>
 
-          {/* PROFILE INFO & SETTINGS GEAR HEADER */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            
-            {/* USERNAME & SETTINGS GEAR ICON (EXACT IMAGE 1 MATCH) */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-              <h2 className="font-serif" style={{ fontSize: '1.625rem', fontWeight: 800 }}>{usernameHandle}</h2>
-              
-              {/* SETTINGS GEAR ICON (OPENS SETTINGS MODAL MATCHING IMAGE 2) */}
-              <button 
-                onClick={() => setShowSettingsModal(true)} 
-                title="Options & Settings"
-                style={{ 
-                  width: '36px', 
-                  height: '36px', 
-                  borderRadius: '50%', 
-                  backgroundColor: '#f1f5f9', 
-                  border: '1px solid #e2e8f0', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center', 
-                  cursor: 'pointer', 
-                  color: '#0f172a',
-                  transition: 'all 0.15s ease'
-                }}
-              >
-                <Settings size={20} />
-              </button>
-
-              <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                <button onClick={() => setIsUploading(true)} className="btn btn-primary glow-amber" style={{ fontSize: '0.75rem', padding: '0.4rem 0.875rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-                  <PlusCircle size={15} /> + Upload
-                </button>
-                <button onClick={claimStreakBonus} className="btn btn-accent" style={{ fontSize: '0.75rem', padding: '0.4rem 0.875rem' }}>
-                  <Flame size={14} fill="#ffffff" /> Streak (+2 XP)
-                </button>
-              </div>
+          {/* NAME, HEADLINE & METADATA */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+              <h1 className="font-serif" style={{ fontSize: '1.875rem', fontWeight: 800, margin: 0 }}>
+                {profile.fullName || 'Aarav Sharma'}
+              </h1>
+              <span className="tag tag-accent" style={{ fontSize: '0.75rem', fontWeight: 700 }}>
+                ✓ Verified Student
+              </span>
+              <span className="tag tag-success" style={{ fontSize: '0.75rem', fontWeight: 700 }}>
+                🎓 Open to 1:1 Peer Mentoring
+              </span>
             </div>
 
-            {/* INSTAGRAM COUNTERS STRIP (INTERACTIVE FOLLOWERS & FOLLOWING) */}
-            <div style={{ display: 'flex', gap: '2rem', fontSize: '0.9375rem', color: '#0f172a' }}>
-              <div><strong>{postsList.length}</strong> <span style={{ color: '#64748b' }}>posts</span></div>
+            <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+              {profile.headline || 'B.Tech CS @ IIT Madras • Java & DSA Peer Mentor • SIH Finalist'}
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', fontSize: '0.8125rem', color: 'var(--text-secondary)', flexWrap: 'wrap' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                <GraduationCap size={15} style={{ color: 'var(--accent-primary)' }} />
+                {profile.college || 'IIT Madras'} • {profile.department || 'Computer Science'} (Year {profile.year || 2})
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                <MapPin size={15} style={{ color: 'var(--text-muted)' }} />
+                {profile.location || 'Chennai, Tamil Nadu, India'}
+              </span>
+              <span style={{ color: 'var(--warning-color)', fontWeight: 700 }}>
+                ⭐ {profile.conceptClarityRating || 4.9} Tutor Rating ({profile.classesTaught || 24} Classes Taught)
+              </span>
+            </div>
+
+            {/* SOCIAL / CODING HANDLES STRIP */}
+            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+              {socialLinks.github && (
+                <a href={socialLinks.github} target="_blank" rel="noreferrer" className="tag tag-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', textDecoration: 'none', fontSize: '0.75rem', fontWeight: 700 }}>
+                  <Github size={13} /> GitHub Profile ↗
+                </a>
+              )}
+              {socialLinks.linkedin && (
+                <a href={socialLinks.linkedin} target="_blank" rel="noreferrer" className="tag tag-accent" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', textDecoration: 'none', fontSize: '0.75rem', fontWeight: 700 }}>
+                  <Briefcase size={13} /> LinkedIn ↗
+                </a>
+              )}
+              {socialLinks.leetcode && (
+                <a href={socialLinks.leetcode} target="_blank" rel="noreferrer" className="tag tag-warning" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', textDecoration: 'none', fontSize: '0.75rem', fontWeight: 700 }}>
+                  <Code size={13} /> LeetCode (Knight) ↗
+                </a>
+              )}
+              {socialLinks.portfolio && (
+                <a href={socialLinks.portfolio} target="_blank" rel="noreferrer" className="tag tag-success" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', textDecoration: 'none', fontSize: '0.75rem', fontWeight: 700 }}>
+                  <Globe size={13} /> Portfolio Website ↗
+                </a>
+              )}
+            </div>
+
+            {/* COUNTERS STRIP */}
+            <div style={{ display: 'flex', gap: '2rem', fontSize: '0.9375rem', color: 'var(--text-primary)', marginTop: '0.75rem', borderTop: '1px solid var(--border-color)', paddingTop: '0.875rem' }}>
+              <div><strong>{postsList.length}</strong> <span style={{ color: 'var(--text-secondary)' }}>posts</span></div>
+              <div><strong>{reelsList.length}</strong> <span style={{ color: 'var(--text-secondary)' }}>shorts</span></div>
               <div 
                 onClick={() => onOpenUserList && onOpenUserList('Followers', profile.id)} 
                 style={{ cursor: 'pointer' }}
-                title="Click to view followers list"
               >
-                <strong>{profile.followersCount !== undefined ? profile.followersCount : 2}</strong> <span style={{ color: '#64748b', textDecoration: 'underline' }}>followers</span>
+                <strong>{profile.followersCount !== undefined ? profile.followersCount : 148}</strong> <span style={{ color: 'var(--text-secondary)', textDecoration: 'underline' }}>followers</span>
               </div>
               <div 
                 onClick={() => onOpenUserList && onOpenUserList('Following', profile.id)} 
                 style={{ cursor: 'pointer' }}
-                title="Click to view following list"
               >
-                <strong>{profile.followingCount !== undefined ? profile.followingCount : 2}</strong> <span style={{ color: '#64748b', textDecoration: 'underline' }}>following</span>
+                <strong>{profile.followingCount !== undefined ? profile.followingCount : 92}</strong> <span style={{ color: 'var(--text-secondary)', textDecoration: 'underline' }}>following</span>
               </div>
-              <div style={{ color: '#3b82f6', fontWeight: 700 }}>⚡ {profile.xp} XP • Lvl {profile.level}</div>
+              <div style={{ color: 'var(--accent-primary)', fontWeight: 700 }}>
+                ⚡ {profile.xp || 650} XP • Lvl {profile.level || 4}
+              </div>
             </div>
 
-            {/* BIO & COLLEGE DETAILS (EXACT MATCH IMAGE 1 BULLET STYLE) */}
-            <div style={{ fontSize: '0.875rem', lineHeight: 1.6, color: '#334155' }}>
-              <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: '0.25rem', fontSize: '0.9375rem' }}>
-                {profile.fullName}
-              </div>
-              <div style={{ color: '#64748b', fontSize: '0.8125rem', marginBottom: '0.5rem' }}>
-                {profile.college || 'IIT Madras'} • {profile.department || 'Computer Science'}
-              </div>
-              <p style={{ whiteSpace: 'pre-line', marginBottom: '0.75rem' }}>
-                {profile.bio || `Your journey to better skills starts here!\n📚 Learn new skills: ${profile.teachingSkills ? profile.teachingSkills.join(', ') : 'Java, React, Algorithms'}\n💡 Build practical knowledge\n🚀 Improve every day\n🎯 Prepare for campus placements`}
+            {/* ABOUT / BIO */}
+            <div style={{ marginTop: '0.5rem' }}>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
+                {profile.bio || '🎓 CS Major @ IIT Madras | 💻 Full-Stack & Java Mentor | 🚀 24 1:1 Classes Taught'}
               </p>
+            </div>
 
-              {/* SKILLS PORTFOLIO SECTION */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem', marginTop: '0.75rem' }}>
-                <div>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '0.25rem' }}>
-                    🎓 Mentoring Expertises
-                  </span>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
-                    {(profile.teachingSkills || ['Java', 'Algorithms', 'React', 'Calculus']).map((skill, idx) => (
-                      <span key={idx} className="tag-mentor-badge category-tag-hover" style={{ fontSize: '0.6875rem' }}>
-                        ⭐ {skill}
-                      </span>
-                    ))}
-                  </div>
-                </div>
+          </div>
 
-                <div>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '0.25rem' }}>
-                    🎯 Learning Goals
-                  </span>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
-                    {(profile.learningGoals || ['System Design', 'AI/ML']).map((skill, idx) => (
-                      <span key={idx} className="tag-learner-badge category-tag-hover" style={{ fontSize: '0.6875rem' }}>
-                        🚀 {skill}
-                      </span>
-                    ))}
-                  </div>
-                </div>
+          {/* XP PROGRESS BAR */}
+          <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.375rem' }}>
+              <span>Campus Rank: <strong>#1 In Computer Science</strong></span>
+              <span>🪙 {profile.coins !== undefined ? profile.coins : 45} Peer Coins Balance</span>
+              <span>Level {profile.level || 4} ({xpProgress}% to Level { (profile.level || 4) + 1 })</span>
+            </div>
+            <div style={{ width: '100%', height: '8px', backgroundColor: 'var(--bg-tertiary)', borderRadius: 'var(--radius-full)', overflow: 'hidden' }}>
+              <div style={{ width: `${xpProgress}%`, height: '100%', background: 'var(--accent-gradient)', borderRadius: 'var(--radius-full)' }}></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {/* 2. CAREER & RESUME HUB CARD (LINKEDIN / NAUKRI STANDARD) */}
+      <div className="card-premium" style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.25rem', backgroundColor: 'rgba(0, 102, 255, 0.03)', border: '1px solid rgba(0, 102, 255, 0.2)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--accent-light)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <FileText size={24} />
+          </div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--text-primary)' }}>
+                {profile.resumeFileName || 'Aarav_Sharma_BTech_CS_Resume.pdf'}
               </div>
+              <span className="tag tag-success" style={{ fontSize: '0.6875rem' }}>✓ Active ATS Resume</span>
             </div>
-
-            {/* ACTION BUTTONS STRIP: EDIT PROFILE | VIEW ARCHIVE (IMAGE 1 MATCH) */}
-            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.25rem' }}>
-              <button 
-                onClick={() => setEditing(true)} 
-                style={{ 
-                  flex: 1, 
-                  padding: '0.5rem 1rem', 
-                  borderRadius: '8px', 
-                  backgroundColor: '#f1f5f9', 
-                  color: '#0f172a', 
-                  fontWeight: 600, 
-                  fontSize: '0.8125rem', 
-                  border: '1px solid #cbd5e1', 
-                  cursor: 'pointer',
-                  textAlign: 'center'
-                }}
-              >
-                Edit profile
-              </button>
-              <button 
-                onClick={() => setShowArchiveModal(true)} 
-                style={{ 
-                  flex: 1, 
-                  padding: '0.5rem 1rem', 
-                  borderRadius: '8px', 
-                  backgroundColor: '#f1f5f9', 
-                  color: '#0f172a', 
-                  fontWeight: 600, 
-                  fontSize: '0.8125rem', 
-                  border: '1px solid #cbd5e1', 
-                  cursor: 'pointer',
-                  textAlign: 'center'
-                }}
-              >
-                View archive
-              </button>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.125rem' }}>
+              Uploaded {profile.resumeUploadDate || 'Aug 2026'} • Visible to peer mentors, hackathon recruiters & campus organizers
             </div>
-
           </div>
         </div>
 
-        {/* STORY HIGHLIGHTS CIRCLES (+ NEW AND DYNAMIC HIGHLIGHTS) */}
-        <div style={{ display: 'flex', gap: '1.5rem', marginTop: '1.75rem', borderTop: '1px solid #e2e8f0', paddingTop: '1.25rem', overflowX: 'auto' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.375rem', cursor: 'pointer' }} onClick={() => setShowCreateHighlightModal(true)}>
-            <div style={{
-              width: '60px',
-              height: '60px',
-              borderRadius: '50%',
-              border: '2px dashed #cbd5e1',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#64748b',
-              backgroundColor: '#f8fafc'
-            }}>
-              <Plus size={24} />
-            </div>
-            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#0f172a' }}>New</span>
-          </div>
+        <div style={{ display: 'flex', gap: '0.625rem' }}>
+          <button 
+            onClick={() => setShowResumeUploadModal(true)} 
+            className="btn btn-secondary" 
+            style={{ fontSize: '0.8125rem', padding: '0.5rem 1rem', fontWeight: 700 }}
+          >
+            <UploadCloud size={15} /> Upload / Replace PDF
+          </button>
+          <button 
+            onClick={() => setShowResumePreviewModal(true)} 
+            className="btn btn-accent" 
+            style={{ fontSize: '0.8125rem', padding: '0.5rem 1rem', fontWeight: 800 }}
+          >
+            <Download size={15} /> 1-Click ATS Resume
+          </button>
+        </div>
+      </div>
 
-          {highlightsList.map(hl => (
-            <div key={hl.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.375rem', cursor: 'pointer' }} onClick={() => { setActiveStoryViewer(hl); setStorySlideIndex(0); }}>
-              <div style={{
-                width: '60px',
-                height: '60px',
-                borderRadius: '50%',
-                border: '2px solid #dc2743',
-                padding: '2px',
-                backgroundColor: '#ffffff'
-              }}>
-                <img src={hl.cover} alt={hl.title} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+      {/* 3. EDUCATION SECTION CARD (LINKEDIN STANDARD) */}
+      <div className="card-premium" style={{ marginBottom: '2rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+            <GraduationCap size={22} style={{ color: 'var(--accent-primary)' }} />
+            <h3 className="font-serif" style={{ fontSize: '1.25rem', margin: 0, fontWeight: 800 }}>Education & Academics</h3>
+          </div>
+          <button 
+            onClick={() => setShowAddEducationModal(true)} 
+            className="btn btn-secondary" 
+            style={{ fontSize: '0.75rem', padding: '0.375rem 0.875rem', fontWeight: 700 }}
+          >
+            <Plus size={14} /> Add Education
+          </button>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          {educations.map(edu => (
+            <div key={edu.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '1rem', backgroundColor: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)' }}>
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+                <div style={{ width: '42px', height: '42px', borderRadius: '8px', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem', flexShrink: 0 }}>
+                  🎓
+                </div>
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: '0.9375rem', color: 'var(--text-primary)' }}>{edu.school}</div>
+                  <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>{edu.degree} • {edu.field}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                    {edu.startYear} – {edu.endYear} • <strong style={{ color: 'var(--accent-primary)' }}>Grade: {edu.grade}</strong>
+                  </div>
+                  {edu.activities && (
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.375rem' }}>
+                      <em>Activities: {edu.activities}</em>
+                    </div>
+                  )}
+                </div>
               </div>
-              <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 500 }}>{hl.title}</span>
+
+              <button 
+                onClick={() => handleDeleteEducation(edu.id)} 
+                className="btn-icon" 
+                title="Delete Education"
+                style={{ color: 'var(--danger-color)' }}
+              >
+                <Trash2 size={16} />
+              </button>
             </div>
           ))}
         </div>
-
-        {/* XP LEVEL PROGRESS BAR */}
-        <div style={{ marginTop: '1.5rem', paddingTop: '1.25rem', borderTop: '1px solid #e2e8f0' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', fontWeight: 600, color: '#0f172a', marginBottom: '0.5rem' }}>
-            <span>Campus Rank: <strong>#{campusRank || 1}</strong></span>
-            <span>🪙 {profile.coins !== undefined ? profile.coins : 45} Peer Coins Balance</span>
-            <span>Level {profile.level} ({xpProgressPercentage}% to {getNextLevel(profile.level)})</span>
-          </div>
-          <div style={{ width: '100%', height: '8px', backgroundColor: '#e2e8f0', borderRadius: '50px', overflow: 'hidden' }}>
-            <div style={{ width: `${xpProgressPercentage}%`, height: '100%', backgroundColor: '#3b82f6', borderRadius: '50px' }}></div>
-          </div>
-        </div>
       </div>
 
-
-
-      {/* EDIT PROFILE DEDICATED MODAL OVERLAY */}
-      {editing && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.75)', zIndex: 3500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-          <form onSubmit={handleUpdateProfile} className="card-premium glass-card" style={{ width: '100%', maxWidth: '520px', padding: '2rem', borderRadius: '24px', backgroundColor: '#ffffff', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 25px 50px rgba(0,0,0,0.25)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem' }}>
-              <h3 className="font-serif" style={{ fontSize: '1.375rem', fontWeight: 800 }}>Edit Profile & Bio</h3>
-              <button type="button" onClick={() => setEditing(false)} className="btn-icon"><X size={20} /></button>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              <div>
-                <label className="label">Full Name</label>
-                <input type="text" className="input" value={fullName} onChange={e => setFullName(e.target.value)} required />
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
-                <div>
-                  <label className="label">College</label>
-                  <input type="text" className="input" value={college} onChange={e => setCollege(e.target.value)} required />
-                </div>
-                <div>
-                  <label className="label">Department</label>
-                  <input type="text" className="input" value={department} onChange={e => setDepartment(e.target.value)} required />
-                </div>
-                <div>
-                  <label className="label">Gender</label>
-                  <select 
-                    className="input" 
-                    value={gender} 
-                    onChange={e => {
-                      const newG = e.target.value;
-                      setGender(newG);
-                      handleSaveAvatar(getDefaultAvatarByGender(newG, profile.avatarUrl));
-                    }}
-                    style={{ cursor: 'pointer', padding: '0.625rem' }}
-                  >
-                    <option value="male">👨 Male</option>
-                    <option value="female">👩 Female</option>
-                    <option value="other">👤 Other</option>
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label className="label">Bio</label>
-                <textarea className="input" style={{ minHeight: '90px', resize: 'vertical' }} value={bio} onChange={e => setBio(e.target.value)} placeholder="Tell peers what you teach best..." />
-              </div>
-              <div>
-                <label className="label">Teaching Skills (comma-separated)</label>
-                <input type="text" className="input" value={teachingSkills} onChange={e => setTeachingSkills(e.target.value)} placeholder="Java, Algorithms, React, Calculus" />
-              </div>
-              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
-                <button type="submit" className="btn btn-accent" style={{ flex: 1 }}>Save Changes</button>
-                <button type="button" onClick={() => setEditing(false)} className="btn btn-secondary" style={{ flex: 1 }}>Cancel</button>
-              </div>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* INSTAGRAM TAB SWITCHER NAVBAR WITH EXACT IMAGE 1 ICONS */}
-      <div style={{ display: 'flex', justifyContent: 'center', borderBottom: '1px solid #e2e8f0', marginBottom: '2rem' }}>
-        <button 
-          onClick={() => setActiveProfileTab('posts')}
-          style={{
-            padding: '0.875rem 2.5rem',
-            border: 'none',
-            borderBottom: activeProfileTab === 'posts' ? '2px solid #0f172a' : '2px solid transparent',
-            background: 'transparent',
-            fontWeight: activeProfileTab === 'posts' ? 700 : 500,
-            color: activeProfileTab === 'posts' ? '#0f172a' : '#64748b',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            fontSize: '0.875rem'
-          }}
-        >
-          <Grid size={18} /> POSTS
-        </button>
-
-        <button 
-          onClick={() => setActiveProfileTab('reels')}
-          style={{
-            padding: '0.875rem 2.5rem',
-            border: 'none',
-            borderBottom: activeProfileTab === 'reels' ? '2px solid #0f172a' : '2px solid transparent',
-            background: 'transparent',
-            fontWeight: activeProfileTab === 'reels' ? 700 : 500,
-            color: activeProfileTab === 'reels' ? '#0f172a' : '#64748b',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            fontSize: '0.875rem'
-          }}
-        >
-          <Tv2 size={18} /> REELS
-        </button>
-
-        <button 
-          onClick={() => setActiveProfileTab('videos')}
-          style={{
-            padding: '0.875rem 2.5rem',
-            border: 'none',
-            borderBottom: activeProfileTab === 'videos' ? '2px solid #0f172a' : '2px solid transparent',
-            background: 'transparent',
-            fontWeight: activeProfileTab === 'videos' ? 700 : 500,
-            color: activeProfileTab === 'videos' ? '#0f172a' : '#64748b',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            fontSize: '0.875rem'
-          }}
-        >
-          <Bookmark size={18} /> SAVED
-        </button>
-
-        <button 
-          onClick={() => setActiveProfileTab('badges')}
-          style={{
-            padding: '0.875rem 2.5rem',
-            border: 'none',
-            borderBottom: activeProfileTab === 'badges' ? '2px solid #0f172a' : '2px solid transparent',
-            background: 'transparent',
-            fontWeight: activeProfileTab === 'badges' ? 700 : 500,
-            color: activeProfileTab === 'badges' ? '#0f172a' : '#64748b',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            fontSize: '0.875rem'
-          }}
-        >
-          <User size={18} /> TAGGED
-        </button>
-      </div>
-
-      {/* INSTAGRAM SETTINGS MODAL (EVERY OPTION FULLY WIRED & WORKING) */}
-      {showSettingsModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0, bottom: 0, left: 0, right: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.75)',
-          zIndex: 3000,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '1rem'
-        }}>
-          <div style={{
-            backgroundColor: '#262626',
-            color: '#ffffff',
-            borderRadius: '16px',
-            width: '100%',
-            maxWidth: '380px',
-            overflow: 'hidden',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.5)'
-          }}>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <button 
-                onClick={() => { setShowSettingsModal(false); setShowAppsModal(true); }} 
-                style={{ width: '100%', padding: '0.875rem 1.5rem', border: 'none', background: 'transparent', color: '#ffffff', textAlign: 'left', fontSize: '0.9375rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.75rem' }}
-              >
-                <Globe size={18} /> Apps and websites
-              </button>
-
-              <button 
-                onClick={() => { setShowSettingsModal(false); setShowQrModal(true); }} 
-                style={{ width: '100%', padding: '0.875rem 1.5rem', border: 'none', background: 'transparent', color: '#ffffff', textAlign: 'left', fontSize: '0.9375rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.75rem' }}
-              >
-                <QrCode size={18} /> QR code
-              </button>
-
-              <button 
-                onClick={() => { setShowSettingsModal(false); setShowNotificationsModal(true); }} 
-                style={{ width: '100%', padding: '0.875rem 1.5rem', border: 'none', background: 'transparent', color: '#ffffff', textAlign: 'left', fontSize: '0.9375rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.75rem' }}
-              >
-                <Bell size={18} /> Notifications
-              </button>
-
-              <button 
-                onClick={() => { setShowSettingsModal(false); setEditing(true); }} 
-                style={{ width: '100%', padding: '0.875rem 1.5rem', border: 'none', background: 'transparent', color: '#ffffff', textAlign: 'left', fontSize: '0.9375rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.75rem' }}
-              >
-                <Settings size={18} /> Settings and privacy
-              </button>
-
-              <button 
-                onClick={() => { setShowSettingsModal(false); setShowSupervisionModal(true); }} 
-                style={{ width: '100%', padding: '0.875rem 1.5rem', border: 'none', background: 'transparent', color: '#ffffff', textAlign: 'left', fontSize: '0.9375rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.75rem' }}
-              >
-                <Shield size={18} /> Supervision
-              </button>
-
-              <button 
-                onClick={() => { setShowSettingsModal(false); setShowLoginActivityModal(true); }} 
-                style={{ width: '100%', padding: '0.875rem 1.5rem', border: 'none', background: 'transparent', color: '#ffffff', textAlign: 'left', fontSize: '0.9375rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.75rem' }}
-              >
-                <Key size={18} /> Login activity
-              </button>
-
-              <div style={{ borderTop: '1px solid #363636', marginTop: '0.25rem' }}>
-                <button 
-                  onClick={() => { setShowSettingsModal(false); logout(); }} 
-                  style={{ width: '100%', padding: '0.875rem 1.5rem', border: 'none', background: 'transparent', color: '#ed4956', fontWeight: 700, textAlign: 'left', fontSize: '0.9375rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.75rem' }}
-                >
-                  <LogOut size={18} /> Log Out
-                </button>
-              </div>
-            </div>
-
-            <button 
-              onClick={() => setShowSettingsModal(false)} 
-              style={{ width: '100%', padding: '0.75rem', borderTop: '1px solid #363636', background: 'transparent', color: '#a8a8a8', fontSize: '0.875rem', cursor: 'pointer' }}
-            >
-              Cancel
-            </button>
+      {/* 4. LICENSES & CERTIFICATIONS SECTION CARD (LINKEDIN STANDARD) */}
+      <div className="card-premium" style={{ marginBottom: '2rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+            <Award size={22} style={{ color: 'var(--warning-color)' }} />
+            <h3 className="font-serif" style={{ fontSize: '1.25rem', margin: 0, fontWeight: 800 }}>Licenses & Verified Certifications</h3>
           </div>
+          <button 
+            onClick={() => setShowAddCertificateModal(true)} 
+            className="btn btn-secondary" 
+            style={{ fontSize: '0.75rem', padding: '0.375rem 0.875rem', fontWeight: 700 }}
+          >
+            <Plus size={14} /> Add Certification
+          </button>
         </div>
-      )}
 
-      {/* SHAREABLE STUDENT PROFILE QR CODE MODAL */}
-      {showQrModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0, bottom: 0, left: 0, right: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.75)',
-          zIndex: 3100,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '1rem'
-        }}>
-          <div style={{
-            backgroundColor: '#ffffff',
-            borderRadius: '24px',
-            width: '100%',
-            maxWidth: '340px',
-            padding: '2rem',
-            textAlign: 'center',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h3 className="font-serif" style={{ fontSize: '1.25rem' }}>Student Profile QR</h3>
-              <button onClick={() => setShowQrModal(false)} className="btn-icon" style={{ padding: '0.25rem' }}><X size={18} /></button>
-            </div>
-
-            <div style={{ padding: '1.5rem', backgroundColor: '#eff6ff', borderRadius: '16px', border: '2px solid #bfdbfe', display: 'inline-block', marginBottom: '1rem' }}>
-              <img src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=http://localhost:5173/user/${profile.id}`} alt="QR Code" style={{ width: '160px', height: '160px' }} />
-            </div>
-
-            <div style={{ fontWeight: 700, fontSize: '1rem', color: '#0f172a' }}>{usernameHandle}</div>
-            <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>Scan with campus camera to connect instantly on StudyLoop</p>
-          </div>
-        </div>
-      )}
-
-      {/* 1. INSTAGRAM STORY VIEWER MODAL */}
-      {activeStoryViewer && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.92)', zIndex: 4000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-          <div style={{ width: '100%', maxWidth: '380px', height: '640px', backgroundColor: '#0f172a', borderRadius: '24px', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px rgba(0,0,0,0.5)' }}>
-            {/* TOP PROGRESS BAR */}
-            <div style={{ position: 'absolute', top: '12px', left: '12px', right: '12px', display: 'flex', gap: '4px', zIndex: 10 }}>
-              {activeStoryViewer.stories.map((_, idx) => (
-                <div key={idx} style={{ flex: 1, height: '3px', backgroundColor: idx <= storySlideIndex ? '#ffffff' : 'rgba(255,255,255,0.3)', borderRadius: '2px' }}></div>
-              ))}
-            </div>
-
-            {/* HEADER USERINFO & CLOSE BUTTON */}
-            <div style={{ position: 'absolute', top: '24px', left: '16px', right: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 10, color: '#ffffff' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <img src={activeStoryViewer.cover} style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1.5px solid #ffffff' }} />
-                <span style={{ fontWeight: 700, fontSize: '0.875rem' }}>{activeStoryViewer.title}</span>
-              </div>
-              <button onClick={() => setActiveStoryViewer(null)} style={{ border: 'none', background: 'transparent', color: '#ffffff', cursor: 'pointer', padding: '0.25rem' }}><X size={22} /></button>
-            </div>
-
-            {/* STORY CONTENT IMAGE & CAPTION */}
-            <div style={{ width: '100%', height: '100%', position: 'relative' }}>
-              <img src={activeStoryViewer.stories[storySlideIndex]?.image || activeStoryViewer.cover} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              <div style={{ position: 'absolute', bottom: 0, inset: 'auto 0 0 0', padding: '2rem 1.5rem 1.5rem 1.5rem', background: 'linear-gradient(to top, rgba(0,0,0,0.85), transparent)', color: '#ffffff' }}>
-                <p style={{ fontSize: '0.9375rem', fontWeight: 600 }}>{activeStoryViewer.stories[storySlideIndex]?.caption}</p>
-              </div>
-            </div>
-
-            {/* PREV / NEXT NAV BUTTONS */}
-            {storySlideIndex > 0 && (
-              <button onClick={() => setStorySlideIndex(prev => prev - 1)} style={{ position: 'absolute', top: '50%', left: '10px', transform: 'translateY(-50%)', border: 'none', background: 'rgba(0,0,0,0.5)', color: '#ffffff', borderRadius: '50%', width: '36px', height: '36px', cursor: 'pointer', zIndex: 10 }}>‹</button>
-            )}
-            {storySlideIndex < activeStoryViewer.stories.length - 1 && (
-              <button onClick={() => setStorySlideIndex(prev => prev + 1)} style={{ position: 'absolute', top: '50%', right: '10px', transform: 'translateY(-50%)', border: 'none', background: 'rgba(0,0,0,0.5)', color: '#ffffff', borderRadius: '50%', width: '36px', height: '36px', cursor: 'pointer', zIndex: 10 }}>›</button>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* 2. CREATE NEW STORY HIGHLIGHT MODAL */}
-      {showCreateHighlightModal && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.75)', zIndex: 3500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-          <form onSubmit={handleCreateHighlight} className="card-premium glass-card" style={{ width: '100%', maxWidth: '400px', padding: '1.75rem', borderRadius: '24px', backgroundColor: '#ffffff', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-              <h3 className="font-serif" style={{ fontSize: '1.25rem', fontWeight: 700 }}>New Story Highlight</h3>
-              <button type="button" onClick={() => setShowCreateHighlightModal(false)} className="btn-icon"><X size={18} /></button>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div>
-                <label className="label">Highlight Name</label>
-                <input type="text" className="input" value={newHighlightTitle} onChange={e => setNewHighlightTitle(e.target.value)} placeholder="e.g. Lab Notes, DSA Prep, Placement" required />
-              </div>
-              <div>
-                <label className="label">Cover Image URL (optional)</label>
-                <input type="text" className="input" value={newHighlightCover} onChange={e => setNewHighlightCover(e.target.value)} placeholder="https://..." />
-              </div>
-              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
-                <button type="submit" className="btn btn-accent" style={{ flex: 1 }}>Create</button>
-                <button type="button" onClick={() => setShowCreateHighlightModal(false)} className="btn btn-secondary" style={{ flex: 1 }}>Cancel</button>
-              </div>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* 3. APPS AND WEBSITES INTEGRATION MODAL */}
-      {showAppsModal && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.75)', zIndex: 3500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-          <div className="card-premium glass-card" style={{ width: '100%', maxWidth: '440px', padding: '2rem', borderRadius: '24px', backgroundColor: '#ffffff' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem' }}>
-              <h3 className="font-serif" style={{ fontSize: '1.25rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Globe size={20} /> Apps and Websites</h3>
-              <button onClick={() => setShowAppsModal(false)} className="btn-icon"><X size={18} /></button>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div style={{ padding: '0.875rem', backgroundColor: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: '0.875rem' }}>GitHub Integration</div>
-                  <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Connected as @aarav_sharma</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          {certifications.map(cert => (
+            <div key={cert.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '1rem', backgroundColor: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)' }}>
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+                <div style={{ width: '42px', height: '42px', borderRadius: '8px', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem', flexShrink: 0 }}>
+                  {cert.badgeIcon || '📜'}
                 </div>
-                <span className="tag tag-accent" style={{ fontSize: '0.6875rem' }}>Connected</span>
-              </div>
-
-              <div style={{ padding: '0.875rem', backgroundColor: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: '0.875rem' }}>Canvas LMS Portal</div>
-                  <div style={{ fontSize: '0.75rem', color: '#64748b' }}>IIT Madras Assignment Sync</div>
-                </div>
-                <span className="tag tag-accent" style={{ fontSize: '0.6875rem' }}>Active</span>
-              </div>
-
-              <div style={{ padding: '0.875rem', backgroundColor: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: '0.875rem' }}>Google Workspace</div>
-                  <div style={{ fontSize: '0.75rem', color: '#64748b' }}>OAuth 2.0 Identity Verified</div>
-                </div>
-                <span className="tag tag-secondary" style={{ fontSize: '0.6875rem' }}>Verified</span>
-              </div>
-            </div>
-            <button onClick={() => setShowAppsModal(false)} className="btn btn-secondary" style={{ width: '100%', marginTop: '1.5rem' }}>Close</button>
-          </div>
-        </div>
-      )}
-
-      {/* 4. NOTIFICATIONS PREFERENCES MODAL */}
-      {showNotificationsModal && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.75)', zIndex: 3500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-          <div className="card-premium glass-card" style={{ width: '100%', maxWidth: '440px', padding: '2rem', borderRadius: '24px', backgroundColor: '#ffffff' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem' }}>
-              <h3 className="font-serif" style={{ fontSize: '1.25rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Bell size={20} /> Notification Preferences</h3>
-              <button onClick={() => setShowNotificationsModal(false)} className="btn-icon"><X size={18} /></button>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {[
-                { key: 'doubtAlerts', label: 'Academic Doubt Room Alerts', desc: 'Notify when peers join your live doubt room' },
-                { key: 'directMessages', label: 'Direct Peer Messages', desc: 'Instant sound alert for 1:1 chat messages' },
-                { key: 'streakReminders', label: 'Daily Streak Reminders', desc: 'Remind before midnight to maintain study streak' },
-                { key: 'examRadar', label: 'Campus Exam Radar Alerts', desc: 'Countdowns for midterm & lab practicals' }
-              ].map(item => (
-                <div key={item.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 0', borderBottom: '1px solid #f1f5f9' }}>
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#0f172a' }}>{item.label}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{item.desc}</div>
+                  <div style={{ fontWeight: 800, fontSize: '0.9375rem', color: 'var(--text-primary)' }}>{cert.name}</div>
+                  <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>Issuing Organization: <strong>{cert.issuer}</strong></div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                    Issued {cert.issueDate} • Credential ID: <code style={{ backgroundColor: 'var(--bg-card)', padding: '0.1rem 0.3rem', borderRadius: '4px' }}>{cert.credentialId}</code>
                   </div>
-                  <input 
-                    type="checkbox" 
-                    checked={notifSettings[item.key]} 
-                    onChange={e => setNotifSettings(prev => ({ ...prev, [item.key]: e.target.checked }))} 
-                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-                  />
+                  {cert.credentialUrl && (
+                    <a 
+                      href={cert.credentialUrl} 
+                      target="_blank" 
+                      rel="noreferrer" 
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', color: 'var(--accent-primary)', fontWeight: 700, marginTop: '0.375rem', textDecoration: 'none' }}
+                    >
+                      Show credential <ExternalLink size={12} />
+                    </a>
+                  )}
+                </div>
+              </div>
+
+              <button 
+                onClick={() => handleDeleteCertificate(cert.id)} 
+                className="btn-icon" 
+                title="Delete Certification"
+                style={{ color: 'var(--danger-color)' }}
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 5. HONORS & ACHIEVEMENTS SECTION CARD (UNSTOP STANDARD) */}
+      <div className="card-premium" style={{ marginBottom: '2rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+            <Trophy size={22} style={{ color: '#ea580c' }} />
+            <h3 className="font-serif" style={{ fontSize: '1.25rem', margin: 0, fontWeight: 800 }}>Honors & Hackathon Achievements (Unstop Style)</h3>
+          </div>
+          <button 
+            onClick={() => setShowAddAchievementModal(true)} 
+            className="btn btn-secondary" 
+            style={{ fontSize: '0.75rem', padding: '0.375rem 0.875rem', fontWeight: 700 }}
+          >
+            <Plus size={14} /> Add Achievement
+          </button>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          {achievements.map(ach => (
+            <div key={ach.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '1rem', backgroundColor: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)' }}>
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+                <div style={{ width: '42px', height: '42px', borderRadius: '8px', backgroundColor: 'rgba(234, 88, 12, 0.1)', color: '#ea580c', border: '1px solid rgba(234, 88, 12, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem', flexShrink: 0 }}>
+                  🏆
+                </div>
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: '0.9375rem', color: 'var(--text-primary)' }}>{ach.title}</div>
+                  <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>Issuer: <strong>{ach.issuer}</strong> • {ach.date}</div>
+                  <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '0.375rem', lineHeight: 1.4 }}>
+                    {ach.desc}
+                  </div>
+                </div>
+              </div>
+
+              <button 
+                onClick={() => handleDeleteAchievement(ach.id)} 
+                className="btn-icon" 
+                title="Delete Achievement"
+                style={{ color: 'var(--danger-color)' }}
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 6. PROJECTS PORTFOLIO SECTION CARD (GITHUB STANDARD) */}
+      <div className="card-premium" style={{ marginBottom: '2rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+            <Code size={22} style={{ color: 'var(--accent-primary)' }} />
+            <h3 className="font-serif" style={{ fontSize: '1.25rem', margin: 0, fontWeight: 800 }}>Technical Projects & Repositories</h3>
+          </div>
+          <button 
+            onClick={() => setShowAddProjectModal(true)} 
+            className="btn btn-secondary" 
+            style={{ fontSize: '0.75rem', padding: '0.375rem 0.875rem', fontWeight: 700 }}
+          >
+            <Plus size={14} /> Add Project
+          </button>
+        </div>
+
+        <div className="grid-2">
+          {projects.map(proj => (
+            <div key={proj.id} style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '1.25rem', backgroundColor: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                  <div style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--text-primary)' }}>{proj.title}</div>
+                  <button 
+                    onClick={() => handleDeleteProject(proj.id)} 
+                    className="btn-icon" 
+                    title="Delete Project"
+                    style={{ color: 'var(--danger-color)' }}
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
+
+                <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', lineHeight: 1.4, margin: '0 0 0.75rem 0' }}>
+                  {proj.desc}
+                </p>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem', marginBottom: '1rem' }}>
+                  {proj.stack.map((st, i) => (
+                    <span key={i} className="tag tag-accent" style={{ fontSize: '0.6875rem' }}>
+                      #{st}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.5rem', borderTop: '1px solid var(--border-color)', paddingTop: '0.75rem' }}>
+                {proj.githubUrl && (
+                  <a href={proj.githubUrl} target="_blank" rel="noreferrer" className="btn btn-secondary" style={{ flex: 1, fontSize: '0.75rem', padding: '0.4rem 0.6rem', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.375rem' }}>
+                    <Github size={14} /> Code Repo ↗
+                  </a>
+                )}
+                {proj.liveUrl && (
+                  <a href={proj.liveUrl} target="_blank" rel="noreferrer" className="btn btn-accent" style={{ flex: 1, fontSize: '0.75rem', padding: '0.4rem 0.6rem', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.375rem' }}>
+                    <Globe size={14} /> Live Demo ↗
+                  </a>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 7. SKILLS & PEER ENDORSEMENTS SECTION CARD */}
+      <div className="card-premium" style={{ marginBottom: '2rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+            <Star size={22} style={{ color: 'var(--warning-color)' }} />
+            <h3 className="font-serif" style={{ fontSize: '1.25rem', margin: 0, fontWeight: 800 }}>Technical Skills & Peer Endorsements</h3>
+          </div>
+          <button 
+            onClick={() => setShowAddSkillModal(true)} 
+            className="btn btn-secondary" 
+            style={{ fontSize: '0.75rem', padding: '0.375rem 0.875rem', fontWeight: 700 }}
+          >
+            <Plus size={14} /> Add Skill
+          </button>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+          
+          <div>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
+              🎓 1:1 Mentoring Expertises
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+              {(profile.teachingSkills || ['Java', 'Algorithms', 'Data Structures']).map((skill, idx) => (
+                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: 'var(--bg-tertiary)', padding: '0.375rem 0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+                  <span style={{ fontWeight: 700, fontSize: '0.8125rem', color: 'var(--accent-primary)' }}>⭐ {skill}</span>
+                  <button onClick={() => handleEndorseSkill(skill)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '0.75rem', color: 'var(--text-muted)' }} title="Endorse this skill">
+                    +1 👍
+                  </button>
                 </div>
               ))}
             </div>
-            <button onClick={() => setShowNotificationsModal(false)} className="btn btn-accent" style={{ width: '100%', marginTop: '1.5rem' }}>Save Preferences</button>
           </div>
-        </div>
-      )}
 
-      {/* 5. ACADEMIC SUPERVISION MODAL */}
-      {showSupervisionModal && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.75)', zIndex: 3500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-          <div className="card-premium glass-card" style={{ width: '100%', maxWidth: '440px', padding: '2rem', borderRadius: '24px', backgroundColor: '#ffffff' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem' }}>
-              <h3 className="font-serif" style={{ fontSize: '1.25rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Shield size={20} /> Academic Supervision</h3>
-              <button onClick={() => setShowSupervisionModal(false)} className="btn-icon"><X size={18} /></button>
+          <div>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
+              🎯 Learning & Exploration Goals
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div style={{ padding: '1rem', backgroundColor: '#eff6ff', borderRadius: '12px', border: '1px solid #bfdbfe' }}>
-                <div style={{ fontWeight: 700, fontSize: '0.875rem', color: '#1e40af' }}>Faculty Supervisor Assigned</div>
-                <div style={{ fontSize: '0.8125rem', color: '#2563eb', marginTop: '0.25rem' }}>Prof. V. Ramanathan (IIT Madras CSE Dept)</div>
-              </div>
-              <p style={{ fontSize: '0.8125rem', color: '#475569', lineHeight: 1.5 }}>
-                Supervision allows academic advisors to verify peer teaching logs, endorse doubt resolutions, and grant official verified mentor credentials.
-              </p>
-              <button onClick={() => alert("Supervision report PDF downloaded!")} className="btn btn-secondary" style={{ width: '100%' }}>Download Mentorship Audit Log (PDF)</button>
-            </div>
-            <button onClick={() => setShowSupervisionModal(false)} className="btn btn-primary" style={{ width: '100%', marginTop: '1rem' }}>Close</button>
-          </div>
-        </div>
-      )}
-
-      {/* 6. LOGIN ACTIVITY MODAL */}
-      {showLoginActivityModal && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.75)', zIndex: 3500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-          <div className="card-premium glass-card" style={{ width: '100%', maxWidth: '440px', padding: '2rem', borderRadius: '24px', backgroundColor: '#ffffff' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem' }}>
-              <h3 className="font-serif" style={{ fontSize: '1.25rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Key size={20} /> Login Activity</h3>
-              <button onClick={() => setShowLoginActivityModal(false)} className="btn-icon"><X size={18} /></button>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div style={{ padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: '0.875rem' }}>Windows 11 Chrome Desktop</div>
-                  <div style={{ fontSize: '0.75rem', color: '#16a34a', fontWeight: 600 }}>Active Now • Localhost Campus IP</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+              {(profile.learningGoals || ['System Design', 'AI/ML', 'Microservices']).map((skill, idx) => (
+                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: 'var(--bg-tertiary)', padding: '0.375rem 0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+                  <span style={{ fontWeight: 700, fontSize: '0.8125rem', color: 'var(--success-color)' }}>🚀 {skill}</span>
                 </div>
-                <span className="tag tag-accent" style={{ fontSize: '0.6875rem' }}>This Device</span>
-              </div>
-
-              <div style={{ padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: '0.875rem' }}>Android App (StudyLoop Mobile)</div>
-                  <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Active 2 hours ago</div>
-                </div>
-                <button onClick={() => alert("Logged out Android session")} style={{ fontSize: '0.75rem', color: '#dc2743', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Log Out</button>
-              </div>
+              ))}
             </div>
-            <button onClick={() => setShowLoginActivityModal(false)} className="btn btn-secondary" style={{ width: '100%', marginTop: '1.5rem' }}>Close</button>
           </div>
-        </div>
-      )}
 
-      {/* 7. VIEW ARCHIVE MODAL */}
-      {showArchiveModal && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.75)', zIndex: 3500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-          <div className="card-premium glass-card" style={{ width: '100%', maxWidth: '560px', padding: '2rem', borderRadius: '24px', backgroundColor: '#ffffff', maxHeight: '85vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem' }}>
-              <h3 className="font-serif" style={{ fontSize: '1.375rem', fontWeight: 800 }}>Archived Posts & Doubt Logs</h3>
-              <button onClick={() => setShowArchiveModal(false)} className="btn-icon"><X size={18} /></button>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div style={{ padding: '1rem', border: '1px solid #e2e8f0', borderRadius: '12px', backgroundColor: '#f8fafc' }}>
-                <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#0f172a' }}>📦 Resolved Doubt Log: Java Multithreading Locks</div>
-                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>Archived on Aug 18, 2026 • 45 min session with Peer Tutor</div>
-              </div>
-
-              <div style={{ padding: '1rem', border: '1px solid #e2e8f0', borderRadius: '12px', backgroundColor: '#f8fafc' }}>
-                <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#0f172a' }}>📦 Saved Reel: Dynamic Programming Cheat Sheet</div>
-                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>Archived on Aug 12, 2026</div>
-              </div>
-            </div>
-            <button onClick={() => setShowArchiveModal(false)} className="btn btn-secondary" style={{ width: '100%', marginTop: '1.5rem' }}>Close Archive</button>
-          </div>
         </div>
-      )}
+      </div>
+
+      {/* 8. DASHBOARD MEDIA TABS NAVBAR (POSTS / SHORTS / LECTURES / CONNECTIONS) */}
+      <div style={{ display: 'flex', justifyContent: 'center', borderBottom: '1px solid var(--border-color)', marginBottom: '2rem', gap: '0.5rem' }}>
+        <button 
+          onClick={() => setActiveTabName('posts')}
+          style={{
+            padding: '0.875rem 2rem',
+            border: 'none',
+            borderBottom: activeTabName === 'posts' ? '2px solid var(--accent-primary)' : '2px solid transparent',
+            background: 'transparent',
+            fontWeight: activeTabName === 'posts' ? 700 : 500,
+            color: activeTabName === 'posts' ? 'var(--accent-primary)' : 'var(--text-secondary)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            fontSize: '0.875rem'
+          }}
+        >
+          <Grid size={18} /> POSTS ({postsList.length})
+        </button>
+
+        <button 
+          onClick={() => setActiveTabName('reels')}
+          style={{
+            padding: '0.875rem 2rem',
+            border: 'none',
+            borderBottom: activeTabName === 'reels' ? '2px solid var(--accent-primary)' : '2px solid transparent',
+            background: 'transparent',
+            fontWeight: activeTabName === 'reels' ? 700 : 500,
+            color: activeTabName === 'reels' ? 'var(--accent-primary)' : 'var(--text-secondary)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            fontSize: '0.875rem'
+          }}
+        >
+          <Tv2 size={18} /> SHORTS ({reelsList.length})
+        </button>
+
+        <button 
+          onClick={() => setActiveTabName('videos')}
+          style={{
+            padding: '0.875rem 2rem',
+            border: 'none',
+            borderBottom: activeTabName === 'videos' ? '2px solid var(--accent-primary)' : '2px solid transparent',
+            background: 'transparent',
+            fontWeight: activeTabName === 'videos' ? 700 : 500,
+            color: activeTabName === 'videos' ? 'var(--accent-primary)' : 'var(--text-secondary)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            fontSize: '0.875rem'
+          }}
+        >
+          <Bookmark size={18} /> LECTURES ({videosList.length})
+        </button>
+
+        <button 
+          onClick={() => setActiveTabName('connections')}
+          style={{
+            padding: '0.875rem 2rem',
+            border: 'none',
+            borderBottom: activeTabName === 'connections' ? '2px solid var(--accent-primary)' : '2px solid transparent',
+            background: 'transparent',
+            fontWeight: activeTabName === 'connections' ? 700 : 500,
+            color: activeTabName === 'connections' ? 'var(--accent-primary)' : 'var(--text-secondary)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            fontSize: '0.875rem'
+          }}
+        >
+          <UserCheck size={18} /> CONNECTIONS ({connectionsList.length})
+        </button>
+      </div>
 
       {/* TAB CONTENT 1: POSTS GRID */}
-      {activeProfileTab === 'posts' && (
+      {activeTabName === 'posts' && (
         <div className="grid-3">
           {postsList.map(post => (
             <div 
               key={post.id} 
               onClick={() => setSelectedMedia({ ...post, type: 'post' })}
-              className="card-premium" 
-              style={{ padding: 0, overflow: 'hidden', cursor: 'pointer', position: 'relative' }}
+              className="card-premium interactive-hover" 
+              style={{ padding: 0, overflow: 'hidden' }}
             >
               <img src={post.image} alt="Post" style={{ width: '100%', height: '220px', objectFit: 'cover', display: 'block' }} />
-              <div style={{ padding: '1rem' }}>
-                <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#0f172a', marginBottom: '0.5rem', lineHeight: 1.4 }}>
+              <div style={{ padding: '1.25rem' }}>
+                <div style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem', lineHeight: 1.4 }}>
                   {post.title}
                 </div>
-                <div style={{ display: 'flex', gap: '1rem', fontSize: '0.75rem', color: '#64748b' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#dc2743', fontWeight: 600 }}>
-                    ❤️ {post.likes} likes
-                  </span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    💬 {post.comments.length} comments
-                  </span>
+                <div style={{ display: 'flex', gap: '1rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                  <span style={{ color: 'var(--danger-color)', fontWeight: 600 }}>❤️ {post.likes} likes</span>
+                  <span>💬 {post.comments.length} comments</span>
                 </div>
               </div>
             </div>
@@ -2578,64 +3476,71 @@ function DashboardScreen({ token, onOpenUserList, onStartChat }) {
         </div>
       )}
 
-      {/* TAB CONTENT 2: REELS GRID (SHORTS: 9:16 PORTRAIT FRAMES) */}
-      {activeProfileTab === 'reels' && (
-        <div className="grid-3">
-          {reelsList.map(reel => (
-            <div 
-              key={reel.id} 
-              onClick={() => setSelectedMedia({ ...reel, type: 'reel' })}
-              className="card-premium" 
-              style={{ 
-                padding: 0, 
-                overflow: 'hidden', 
-                cursor: 'pointer', 
-                aspectRatio: '9 / 16', 
-                height: '320px', 
-                backgroundColor: '#09090b', 
-                position: 'relative', 
-                borderRadius: '16px',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                boxShadow: '0 12px 25px rgba(0, 0, 0, 0.25)'
-              }}
-            >
-              <video src={reel.videoUrl} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.9 }} />
-              <div style={{ position: 'absolute', top: '10px', right: '10px', background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)', color: '#ffffff', padding: '0.25rem 0.625rem', borderRadius: '8px', fontSize: '0.6875rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                ⚡ 9:16 • {reel.duration}
-              </div>
-              <div style={{ position: 'absolute', bottom: '0', inset: 'auto 0 0 0', padding: '1rem', background: 'linear-gradient(to top, rgba(0,0,0,0.95), transparent)', color: '#ffffff' }}>
-                <div style={{ fontSize: '0.8125rem', fontWeight: 700, marginBottom: '0.375rem', lineHeight: 1.3 }}>{reel.title}</div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', opacity: 0.9 }}>
-                  <span>▶ {reel.views} views</span>
-                  <span style={{ color: '#f43f5e', fontWeight: 700 }}>❤️ {reel.likes}</span>
+      {/* TAB CONTENT 2: REELS GRID (9:16 VERTICAL SHORTS) */}
+      {activeTabName === 'reels' && (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+            <h3 className="font-serif" style={{ fontSize: '1.25rem' }}>My Published Concept Shorts (9:16)</h3>
+            <button onClick={() => { setUploadType('reel'); setShowUploadModal(true); }} className="btn btn-accent" style={{ fontSize: '0.8125rem' }}>
+              <PlusCircle size={15} /> Upload Short Reel
+            </button>
+          </div>
+
+          <div className="grid-3">
+            {reelsList.map(reel => (
+              <div 
+                key={reel.id} 
+                onClick={() => setSelectedMedia({ ...reel, type: 'reel' })}
+                className="card-premium interactive-hover" 
+                style={{ 
+                  padding: 0, 
+                  overflow: 'hidden', 
+                  aspectRatio: '9 / 16', 
+                  maxHeight: '380px', 
+                  backgroundColor: '#09090b', 
+                  position: 'relative'
+                }}
+              >
+                <video src={reel.videoUrl} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.9 }} />
+                
+                <div style={{ position: 'absolute', top: '10px', right: '10px', background: 'rgba(0,0,0,0.75)', color: '#ffffff', padding: '0.25rem 0.625rem', borderRadius: 'var(--radius-sm)', fontSize: '0.6875rem', fontWeight: 700 }}>
+                  ⚡ 9:16 • {reel.duration}
+                </div>
+
+                <div style={{ position: 'absolute', bottom: 0, inset: 'auto 0 0 0', padding: '1rem', background: 'linear-gradient(to top, rgba(0,0,0,0.95), transparent)', color: '#ffffff' }}>
+                  <div style={{ fontSize: '0.8125rem', fontWeight: 700, marginBottom: '0.375rem', lineHeight: 1.3 }}>{reel.title}</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', opacity: 0.9 }}>
+                    <span>▶ {reel.views} views</span>
+                    <span style={{ color: '#f43f5e', fontWeight: 700 }}>❤️ {reel.likes}</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
 
-      {/* TAB CONTENT 3: LONG VIDEOS GRID (LONG VIDEOS: 16:9 WIDESCREEN FRAMES) */}
-      {activeProfileTab === 'videos' && (
+      {/* TAB CONTENT 3: LONG LECTURES (16:9) */}
+      {activeTabName === 'videos' && (
         <div className="grid-2">
           {videosList.map(vid => (
             <div 
               key={vid.id} 
               onClick={() => setSelectedMedia({ ...vid, type: 'video' })}
-              className="card-premium" 
-              style={{ padding: 0, overflow: 'hidden', cursor: 'pointer', borderRadius: '16px' }}
+              className="card-premium interactive-hover" 
+              style={{ padding: 0, overflow: 'hidden' }}
             >
               <div style={{ position: 'relative', aspectRatio: '16 / 9', backgroundColor: '#000000', overflow: 'hidden' }}>
                 <img src={vid.thumbnail} alt="Video" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                <div style={{ position: 'absolute', bottom: '10px', right: '10px', background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(4px)', color: '#ffffff', padding: '0.25rem 0.625rem', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700 }}>
+                <div style={{ position: 'absolute', bottom: '10px', right: '10px', background: 'rgba(0,0,0,0.85)', color: '#ffffff', padding: '0.25rem 0.625rem', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700 }}>
                   🎥 16:9 • {vid.duration}
                 </div>
               </div>
-              <div style={{ padding: '1rem' }}>
-                <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.5rem', lineHeight: 1.3 }}>{vid.title}</div>
-                <div style={{ display: 'flex', gap: '1.25rem', fontSize: '0.75rem', color: '#64748b' }}>
+              <div style={{ padding: '1.25rem' }}>
+                <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>{vid.title}</div>
+                <div style={{ display: 'flex', gap: '1.25rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                   <span>▶ {vid.views} views</span>
-                  <span style={{ color: '#dc2743', fontWeight: 600 }}>❤️ {vid.likes} likes</span>
+                  <span style={{ color: 'var(--danger-color)', fontWeight: 600 }}>❤️ {vid.likes} likes</span>
                   <span>💬 {vid.comments.length} comments</span>
                 </div>
               </div>
@@ -2644,81 +3549,184 @@ function DashboardScreen({ token, onOpenUserList, onStartChat }) {
         </div>
       )}
 
-      {/* TAB CONTENT 4: BADGES & ACCOMPLISHMENTS */}
-      {activeProfileTab === 'badges' && (
-        <div className="card-premium">
-          <h3 className="font-serif" style={{ fontSize: '1.5rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Award size={24} style={{ color: '#3b82f6' }} /> Awarded Campus Badges & Medals
-          </h3>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2rem' }}>
-            {badges.map(badge => (
-              <div key={badge.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '140px', textAlign: 'center' }}>
-                <div style={{ width: '72px', height: '72px', borderRadius: '50%', backgroundColor: '#eff6ff', border: '2px solid #bfdbfe', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.25rem', marginBottom: '0.5rem', boxShadow: '0 8px 16px rgba(59, 130, 246, 0.15)' }}>
-                  🏅
-                </div>
-                <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#0f172a' }}>{badge.name}</div>
-                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem', lineHeight: 1.3 }}>{badge.description}</div>
+      {/* TAB CONTENT 4: REAL-TIME CONNECTIONS */}
+      {activeTabName === 'connections' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+          
+          {/* PENDING INCOMING REQUESTS */}
+          {pendingRequests.length > 0 && (
+            <div className="card" style={{ borderLeft: '4px solid var(--accent-primary)' }}>
+              <h3 className="font-serif" style={{ fontSize: '1.125rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Bell size={18} style={{ color: 'var(--accent-primary)' }} /> Pending Connection Requests ({pendingRequests.length})
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {pendingRequests.map(req => (
+                  <div key={req.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.875rem', backgroundColor: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
+                      <img src={req.avatarUrl} alt="Req" style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover' }} />
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-primary)' }}>{req.fullName}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{req.college} • {req.department} (Year {req.year})</div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <button onClick={() => handleAcceptRequest(req)} className="btn btn-primary" style={{ padding: '0.375rem 0.875rem', fontSize: '0.75rem' }}>
+                        Accept Request
+                      </button>
+                      <button onClick={() => handleIgnoreRequest(req.id)} className="btn btn-secondary" style={{ padding: '0.375rem 0.875rem', fontSize: '0.75rem' }}>
+                        Ignore
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
+          )}
+
+          {/* ACTIVE CONNECTIONS LIST */}
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <h3 className="font-serif" style={{ fontSize: '1.25rem' }}>Your Connected Campus Mentors & Peers</h3>
+              <button onClick={() => setActiveTab('discover')} className="btn btn-secondary" style={{ fontSize: '0.75rem' }}>
+                + Find More Peers
+              </button>
+            </div>
+
+            <div className="grid-2">
+              {connectionsList.map(conn => (
+                <div key={conn.id} className="card-premium" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.25rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <div style={{ position: 'relative' }}>
+                      <img src={conn.avatarUrl} alt="Conn" style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover' }} />
+                      {conn.isOnline && (
+                        <div className="live-dot" style={{ position: 'absolute', bottom: '2px', right: '2px', backgroundColor: '#22c55e', width: '10px', height: '10px' }} title="Online Now"></div>
+                      )}
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: '0.9375rem', color: 'var(--text-primary)' }}>{conn.fullName}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{conn.college} • {conn.department}</div>
+                      <div style={{ display: 'flex', gap: '0.25rem', marginTop: '0.25rem' }}>
+                        {(conn.teachingSkills || []).map((s, i) => (
+                          <span key={i} className="tag tag-accent" style={{ fontSize: '0.625rem', padding: '0.1rem 0.375rem' }}>{s}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <button 
+                    onClick={() => onStartChat && onStartChat(conn)}
+                    className="btn btn-primary"
+                    style={{ padding: '0.375rem 0.875rem', fontSize: '0.75rem' }}
+                  >
+                    <MessageSquare size={13} /> Chat
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
+
         </div>
       )}
 
-      {/* INSTAGRAM & YOUTUBE THEATER VIDEO PLAYER MODAL (DYNAMIC 9:16 SHORTS vs 16:9 LONG VIDEOS) */}
+      {/* --- MODAL 1: EDIT INTRO MODAL --- */}
+      {showEditIntroModal && (
+        <EditIntroModal
+          profile={profile}
+          onClose={() => setShowEditIntroModal(false)}
+          onSave={handleSaveIntro}
+        />
+      )}
+
+      {/* --- MODAL 2: ADD EDUCATION MODAL --- */}
+      {showAddEducationModal && (
+        <AddEducationModal
+          onClose={() => setShowAddEducationModal(false)}
+          onSave={handleAddEducation}
+        />
+      )}
+
+      {/* --- MODAL 3: ADD CERTIFICATE MODAL --- */}
+      {showAddCertificateModal && (
+        <AddCertificateModal
+          onClose={() => setShowAddCertificateModal(false)}
+          onSave={handleAddCertificate}
+        />
+      )}
+
+      {/* --- MODAL 4: ADD ACHIEVEMENT MODAL --- */}
+      {showAddAchievementModal && (
+        <AddAchievementModal
+          onClose={() => setShowAddAchievementModal(false)}
+          onSave={handleAddAchievement}
+        />
+      )}
+
+      {/* --- MODAL 5: ADD PROJECT MODAL --- */}
+      {showAddProjectModal && (
+        <AddProjectModal
+          onClose={() => setShowAddProjectModal(false)}
+          onSave={handleAddProject}
+        />
+      )}
+
+      {/* --- MODAL 6: ADD SKILL MODAL --- */}
+      {showAddSkillModal && (
+        <AddSkillModal
+          onClose={() => setShowAddSkillModal(false)}
+          onSave={handleAddSkill}
+        />
+      )}
+
+      {/* --- MODAL 7: RESUME UPLOAD MODAL --- */}
+      {showResumeUploadModal && (
+        <ResumeUploadModal
+          currentFileName={profile.resumeFileName}
+          onClose={() => setShowResumeUploadModal(false)}
+          onUpload={handleUploadResume}
+        />
+      )}
+
+      {/* --- MODAL 8: ATS RESUME PREVIEW & PRINT MODAL --- */}
+      {showResumePreviewModal && (
+        <ResumePreviewModal
+          profile={profile}
+          onClose={() => setShowResumePreviewModal(false)}
+        />
+      )}
+
+      {/* THEATER VIDEO PLAYER MODAL */}
       {selectedMedia && (() => {
-        const isShort = (() => {
-          if (selectedMedia.type === 'reel') return true;
-          if (!selectedMedia.duration) return false;
-          const parts = selectedMedia.duration.split(':').map(Number);
-          if (parts.length === 2) {
-            return (parts[0] * 60 + parts[1]) < 60;
-          }
-          return false;
-        })();
+        const isShort = selectedMedia.type === 'reel';
 
         return (
-          <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(9, 9, 11, 0.88)', backdropFilter: 'blur(12px)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
-            <div className="card-premium glass-card" style={{ width: '100%', maxWidth: isShort ? '460px' : '720px', padding: '1.75rem', borderRadius: '24px', position: 'relative', maxHeight: '92vh', overflowY: 'auto', backgroundColor: '#ffffff', boxShadow: '0 25px 70px rgba(0,0,0,0.5)' }}>
+          <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(9, 13, 22, 0.92)', backdropFilter: 'blur(12px)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
+            <div className="card-premium" style={{ width: '100%', maxWidth: isShort ? '460px' : '720px', padding: '1.75rem', borderRadius: 'var(--radius-xl)', position: 'relative', maxHeight: '92vh', overflowY: 'auto', backgroundColor: 'var(--bg-elevated)' }}>
               
               <button 
                 onClick={() => setSelectedMedia(null)} 
-                style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', border: 'none', background: '#f1f5f9', width: '32px', height: '32px', borderRadius: '50%', fontSize: '1.125rem', cursor: 'pointer', color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                className="btn-icon"
+                style={{ position: 'absolute', top: '1.25rem', right: '1.25rem' }}
               >
-                ✕
+                <X size={20} />
               </button>
 
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <img src={profile.avatarUrl} alt="Avatar" style={{ width: '42px', height: '42px', borderRadius: '50%', border: '2px solid #d97706' }} />
-                  <div>
-                    <div style={{ fontWeight: 800, fontSize: '0.9375rem', color: '#0f172a' }}>{usernameHandle}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{profile.college} • {profile.department}</div>
-                  </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
+                <img src={profile.avatarUrl} alt="Avatar" style={{ width: '42px', height: '42px', borderRadius: '50%', border: '2px solid var(--accent-primary)' }} />
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: '0.9375rem', color: 'var(--text-primary)' }}>{profile.fullName}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{profile.college} • {profile.department}</div>
                 </div>
-
-                {/* Aspect Ratio & Category Pill */}
-                <span style={{ 
-                  backgroundColor: isShort ? '#fef3c7' : '#e0f2fe', 
-                  color: isShort ? '#b45309' : '#0369a1', 
-                  padding: '0.25rem 0.75rem', 
-                  borderRadius: '20px', 
-                  fontSize: '0.75rem', 
-                  fontWeight: 800 
-                }}>
-                  {isShort ? '⚡ Short (9:16 Portrait)' : '🎥 Long Video (16:9 Widescreen)'}
-                </span>
               </div>
 
-              {/* WATCHABLE VIDEO PLAYER ELEMENT (FORMATTED 9:16 OR 16:9) */}
+              {/* VIDEO PLAYER */}
               <div style={{ 
                 position: 'relative', 
-                borderRadius: '16px', 
+                borderRadius: 'var(--radius-md)', 
                 overflow: 'hidden', 
                 backgroundColor: '#000000', 
                 marginBottom: '1.25rem', 
-                boxShadow: '0 12px 30px rgba(0,0,0,0.3)',
                 aspectRatio: isShort ? '9 / 16' : '16 / 9',
-                maxHeight: isShort ? '480px' : '380px',
+                maxHeight: isShort ? '440px' : '360px',
                 margin: isShort ? '0 auto 1.25rem auto' : '0 0 1.25rem 0'
               }}>
                 <video 
@@ -2731,113 +3739,79 @@ function DashboardScreen({ token, onOpenUserList, onStartChat }) {
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', marginBottom: '1rem' }}>
-                <h3 style={{ fontSize: '1.125rem', fontWeight: 800, color: '#0f172a', margin: 0, lineHeight: 1.3 }}>{selectedMedia.title}</h3>
-                {isShort && (
-                  <button 
-                    onClick={() => { setSelectedMedia(null); setActiveTab('reels'); }} 
-                    className="btn btn-accent"
-                    style={{ padding: '0.5rem 1rem', fontSize: '0.75rem', fontWeight: 700, borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '0.375rem', whiteSpace: 'nowrap' }}
-                  >
-                    <Tv2 size={14} /> Full Reels View (100vh)
+              <div style={{ marginBottom: '1rem' }}>
+                <h3 style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0, lineHeight: 1.3 }}>{selectedMedia.title}</h3>
+              </div>
+
+              {/* ACTION BAR */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 0', borderTop: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)', marginBottom: '1.25rem' }}>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                  <button onClick={handleLikeMedia} className="btn btn-secondary" style={{ color: 'var(--danger-color)', fontWeight: 700 }}>
+                    ❤️ Like ({selectedMedia.likes})
                   </button>
-                )}
+                  <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                    💬 {selectedMedia.comments ? selectedMedia.comments.length : 0} Comments
+                  </span>
+                </div>
               </div>
 
-            {/* ACTION BAR: LIKE, COMMENT, SHARE */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 0', borderTop: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', marginBottom: '1.25rem' }}>
-              <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                <button onClick={handleLikeMedia} className="btn btn-secondary" style={{ color: '#dc2743', borderColor: '#fecdd3', fontWeight: 700 }}>
-                  ❤️ Like ({selectedMedia.likes})
-                </button>
-                <span style={{ fontSize: '0.875rem', color: '#64748b', fontWeight: 600 }}>💬 {selectedMedia.comments ? selectedMedia.comments.length : 0} Comments</span>
-              </div>
-              
-              <button 
-                onClick={() => {
-                  if (navigator.share) {
-                    navigator.share({ title: selectedMedia.title, url: window.location.href }).catch(() => {});
-                  } else {
-                    navigator.clipboard.writeText(window.location.href);
-                    alert("Reel video link copied to clipboard!");
-                  }
-                }}
-                className="btn btn-secondary"
-                style={{ fontSize: '0.75rem', padding: '0.5rem 0.875rem', borderRadius: '8px' }}
-              >
-                <Share2 size={14} /> Share Video
-              </button>
-            </div>
-
-            {/* COMMENTS LIST */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem', marginBottom: '1.25rem' }}>
-              <h4 style={{ fontSize: '0.875rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>Community Comments</h4>
-              {(!selectedMedia.comments || selectedMedia.comments.length === 0) ? (
-                <div style={{ fontSize: '0.8125rem', color: '#94a3b8', fontStyle: 'italic' }}>No comments yet. Be the first to comment!</div>
-              ) : (
-                selectedMedia.comments.map((c, i) => (
-                  <div key={i} style={{ fontSize: '0.8125rem', backgroundColor: '#f8fafc', padding: '0.625rem 0.875rem', borderRadius: '10px', border: '1px solid #f1f5f9' }}>
-                    <strong style={{ color: '#0f172a' }}>{c.author}:</strong> <span style={{ color: '#475569' }}>{c.text}</span>
+              {/* COMMENTS LIST */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.25rem' }}>
+                {(selectedMedia.comments || []).map((c, idx) => (
+                  <div key={idx} style={{ backgroundColor: 'var(--bg-tertiary)', padding: '0.625rem 0.875rem', borderRadius: 'var(--radius-md)', fontSize: '0.8125rem' }}>
+                    <strong style={{ color: 'var(--text-primary)' }}>{c.author}:</strong> <span style={{ color: 'var(--text-secondary)' }}>{c.text}</span>
                   </div>
-                ))
-              )}
+                ))}
+              </div>
+
+              {/* ADD COMMENT FORM */}
+              <form onSubmit={handleAddComment} style={{ display: 'flex', gap: '0.5rem' }}>
+                <input 
+                  type="text" 
+                  className="input" 
+                  placeholder="Add a peer comment..." 
+                  value={commentInput}
+                  onChange={e => setCommentInput(e.target.value)}
+                />
+                <button type="submit" className="btn btn-accent"><Send size={15} /></button>
+              </form>
+
             </div>
-
-            {/* COMMENT INPUT FORM */}
-            <form onSubmit={handleAddComment} style={{ display: 'flex', gap: '0.625rem' }}>
-              <input 
-                type="text" 
-                className="input" 
-                placeholder="Add a comment on this video..." 
-                value={commentText} 
-                onChange={e => setCommentText(e.target.value)} 
-                style={{ flex: 1, fontSize: '0.8125rem', borderRadius: '10px' }} 
-              />
-              <button type="submit" className="btn btn-accent" style={{ fontSize: '0.8125rem', padding: '0.625rem 1.25rem', fontWeight: 700, borderRadius: '10px' }}>Post</button>
-            </form>
-
           </div>
-        </div>
-      );
-    })()}
+        );
+      })()}
 
-      {/* MEDIA CREATOR STUDIO UPLOAD MODAL (INSTAGRAM + YOUTUBE REFERENCE) */}
-      {isUploading && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.75)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
-          <div className="card-premium glass-card" style={{ width: '100%', maxWidth: '640px', padding: '2rem', borderRadius: '24px', position: 'relative', maxHeight: '90vh', overflowY: 'auto' }}>
+      {/* MEDIA CREATOR STUDIO MODAL */}
+      {showUploadModal && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.75)', zIndex: 3500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', backdropFilter: 'blur(6px)' }}>
+          <div className="card-premium" style={{ width: '100%', maxWidth: '600px', padding: '2rem', borderRadius: 'var(--radius-xl)', backgroundColor: 'var(--bg-elevated)', maxHeight: '90vh', overflowY: 'auto' }}>
             
-            <button 
-              onClick={() => setIsUploading(false)} 
-              style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', border: 'none', background: 'transparent', fontSize: '1.5rem', cursor: 'pointer', color: '#64748b' }}
-            >
-              ✕
-            </button>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '1.5rem' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: '#eff6ff', color: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <PlusCircle size={24} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'var(--accent-light)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <PlusCircle size={22} />
+                </div>
+                <div>
+                  <h3 className="font-serif" style={{ fontSize: '1.375rem', margin: 0 }}>Create & Upload Media</h3>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: 0 }}>Publish Short Reels (9:16) or Long Lecture Videos to your student profile</p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-serif" style={{ fontSize: '1.5rem', margin: 0 }}>Create & Upload Media</h3>
-                <p style={{ fontSize: '0.8125rem', color: '#64748b', margin: 0 }}>Publish Short Reels (Instagram) or Full Lectures (YouTube) to your student profile</p>
-              </div>
+              <button onClick={() => setShowUploadModal(false)} className="btn-icon"><X size={20} /></button>
             </div>
 
             <form onSubmit={handlePublishContent} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              
-              {/* CONTENT TYPE SELECTOR PILLS */}
               <div>
-                <label className="label">Select Content Type</label>
+                <label className="label">Select Content Format</label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
                   <button
                     type="button"
                     onClick={() => { setUploadType('reel'); setUploadDuration('0:45'); }}
                     style={{
                       padding: '0.75rem',
-                      borderRadius: '12px',
-                      border: uploadType === 'reel' ? '2px solid #3b82f6' : '1px solid #e2e8f0',
-                      backgroundColor: uploadType === 'reel' ? '#eff6ff' : '#ffffff',
-                      color: uploadType === 'reel' ? '#2563eb' : '#475569',
+                      borderRadius: 'var(--radius-md)',
+                      border: uploadType === 'reel' ? '2px solid var(--accent-primary)' : '1px solid var(--border-color)',
+                      backgroundColor: uploadType === 'reel' ? 'var(--accent-light)' : 'var(--bg-tertiary)',
+                      color: uploadType === 'reel' ? 'var(--accent-primary)' : 'var(--text-secondary)',
                       fontWeight: 600,
                       cursor: 'pointer',
                       fontSize: '0.8125rem'
@@ -2851,10 +3825,10 @@ function DashboardScreen({ token, onOpenUserList, onStartChat }) {
                     onClick={() => { setUploadType('video'); setUploadDuration('15:20'); }}
                     style={{
                       padding: '0.75rem',
-                      borderRadius: '12px',
-                      border: uploadType === 'video' ? '2px solid #0284c7' : '1px solid #e2e8f0',
-                      backgroundColor: uploadType === 'video' ? '#f0f9ff' : '#ffffff',
-                      color: uploadType === 'video' ? '#0369a1' : '#475569',
+                      borderRadius: 'var(--radius-md)',
+                      border: uploadType === 'video' ? '2px solid var(--accent-primary)' : '1px solid var(--border-color)',
+                      backgroundColor: uploadType === 'video' ? 'var(--accent-light)' : 'var(--bg-tertiary)',
+                      color: uploadType === 'video' ? 'var(--accent-primary)' : 'var(--text-secondary)',
                       fontWeight: 600,
                       cursor: 'pointer',
                       fontSize: '0.8125rem'
@@ -2868,34 +3842,32 @@ function DashboardScreen({ token, onOpenUserList, onStartChat }) {
                     onClick={() => setUploadType('post')}
                     style={{
                       padding: '0.75rem',
-                      borderRadius: '12px',
-                      border: uploadType === 'post' ? '2px solid #059669' : '1px solid #e2e8f0',
-                      backgroundColor: uploadType === 'post' ? '#ecfdf5' : '#ffffff',
-                      color: uploadType === 'post' ? '#047857' : '#475569',
+                      borderRadius: 'var(--radius-md)',
+                      border: uploadType === 'post' ? '2px solid var(--accent-primary)' : '1px solid var(--border-color)',
+                      backgroundColor: uploadType === 'post' ? 'var(--accent-light)' : 'var(--bg-tertiary)',
+                      color: uploadType === 'post' ? 'var(--accent-primary)' : 'var(--text-secondary)',
                       fontWeight: 600,
                       cursor: 'pointer',
                       fontSize: '0.8125rem'
                     }}
                   >
-                    🖼️ Study Notes / Post
+                    🖼️ Study Notes Post
                   </button>
                 </div>
               </div>
 
-              {/* TITLE INPUT */}
               <div>
                 <label className="label">Title / Headline</label>
                 <input 
                   type="text" 
                   className="input" 
-                  placeholder={uploadType === 'reel' ? "e.g. 3 Tricks to solve Recursion fast ⚡" : uploadType === 'video' ? "e.g. Operating Systems: Deadlock Prevention Masterclass" : "e.g. Java Collections Cheat Sheet 📊"} 
+                  placeholder={uploadType === 'reel' ? "e.g. 3 Tricks to solve Recursion fast ⚡" : "e.g. Operating Systems: Deadlock Prevention"} 
                   value={uploadTitle} 
                   onChange={e => setUploadTitle(e.target.value)} 
                   required 
                 />
               </div>
 
-              {/* SUBJECT TAG & DURATION */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <div>
                   <label className="label">Subject Tag</label>
@@ -2914,16 +3886,15 @@ function DashboardScreen({ token, onOpenUserList, onStartChat }) {
                   <input 
                     type="text" 
                     className="input" 
-                    placeholder="e.g. 0:45 or 15:30" 
+                    placeholder="e.g. 0:45" 
                     value={uploadDuration} 
                     onChange={e => setUploadDuration(e.target.value)} 
                   />
                 </div>
               </div>
 
-              {/* FILE PICKER WITH LIVE PREVIEW */}
               <div>
-                <label className="label">Upload Media File (Video / Image)</label>
+                <label className="label">Upload Media File</label>
                 <input 
                   type="file" 
                   accept="video/*,image/*" 
@@ -2931,40 +3902,23 @@ function DashboardScreen({ token, onOpenUserList, onStartChat }) {
                   className="input" 
                   style={{ padding: '0.5rem' }} 
                 />
-                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>
-                  Supported formats: .mp4, .mov, .jpg, .png (Max 100MB). Sample preview assigned if omitted.
-                </div>
               </div>
 
-              {/* LIVE PREVIEW BOX */}
-              {filePreviewUrl && (
-                <div style={{ border: '1px dashed #cbd5e1', borderRadius: '12px', padding: '0.75rem', textAlign: 'center', backgroundColor: '#f8fafc' }}>
-                  <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginBottom: '0.5rem' }}>Live File Preview</div>
-                  {uploadType === 'reel' ? (
-                    <video src={filePreviewUrl} controls style={{ maxHeight: '180px', borderRadius: '8px' }} />
-                  ) : (
-                    <img src={filePreviewUrl} alt="Preview" style={{ maxHeight: '180px', borderRadius: '8px', objectFit: 'cover' }} />
-                  )}
-                </div>
-              )}
-
-              {/* ACTION BUTTONS */}
               <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
-                <button type="submit" className="btn btn-accent glow-amber" style={{ flex: 1, padding: '0.75rem' }}>
+                <button type="submit" className="btn btn-accent" style={{ flex: 1, padding: '0.75rem' }}>
                   🚀 Publish to Profile & Feed
                 </button>
-                <button type="button" onClick={() => setIsUploading(false)} className="btn btn-secondary">
+                <button type="button" onClick={() => setShowUploadModal(false)} className="btn btn-secondary">
                   Cancel
                 </button>
               </div>
 
             </form>
-
           </div>
         </div>
       )}
 
-      {/* Avatar Change Modal */}
+      {/* AVATAR CHANGE MODAL */}
       {showAvatarModal && (
         <AvatarChangeModal
           currentAvatarUrl={profile.avatarUrl}
@@ -2973,7 +3927,7 @@ function DashboardScreen({ token, onOpenUserList, onStartChat }) {
         />
       )}
 
-      {/* Enlarged Photo Preview Lightbox Modal */}
+      {/* PHOTO PREVIEW LIGHTBOX */}
       {showPhotoPreview && (
         <PhotoPreviewModal
           imageUrl={getDefaultAvatarByGender(profile.gender, profile.avatarUrl)}
@@ -2986,2169 +3940,1757 @@ function DashboardScreen({ token, onOpenUserList, onStartChat }) {
   );
 }
 
-// --- SCREEN: DISCOVER PEERS & ALGORITHMS (3.1) ---
-// --- SCREEN: DISCOVER PEERS & 8-FACTOR SMART MATCHING (3.1) ---
-function DiscoverScreen({ token, setActiveTab, setActiveChatId, setChatPeer }) {
-  const [candidates, setCandidates] = useState([]);
-  const [mode, setMode] = useState('match'); // 'match', 'mentors', 'skill-swap'
-  const [loading, setLoading] = useState(true);
+// --- MODAL COMPONENT 1: EDIT INTRO MODAL ---
+function EditIntroModal({ profile, onClose, onSave }) {
+  const [fullName, setFullName] = useState(profile?.fullName || '');
+  const [headline, setHeadline] = useState(profile?.headline || '');
+  const [college, setCollege] = useState(profile?.college || '');
+  const [department, setDepartment] = useState(profile?.department || '');
+  const [year, setYear] = useState(profile?.year || 2);
+  const [location, setLocation] = useState(profile?.location || 'Chennai, India');
+  const [bio, setBio] = useState(profile?.bio || '');
+  const [gender, setGender] = useState(profile?.gender || 'male');
+  
+  const social = profile?.socialLinks || {};
+  const [github, setGithub] = useState(social.github || '');
+  const [linkedin, setLinkedin] = useState(social.linkedin || '');
+  const [leetcode, setLeetcode] = useState(social.leetcode || '');
+  const [portfolio, setPortfolio] = useState(social.portfolio || '');
 
-  const fetchCandidates = async (currentMode) => {
-    setLoading(true);
-    let url = '/api/matches/recommendations';
-
-    try {
-      const response = await fetch(url, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setCandidates(data.recommendedPartners || []);
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave({
+      fullName,
+      headline,
+      college,
+      department,
+      year,
+      location,
+      bio,
+      gender,
+      socialLinks: {
+        github,
+        linkedin,
+        leetcode,
+        portfolio
       }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchCandidates(mode);
-  }, [mode, token]);
-
-  const sendLearningRequest = async (peerId, skillMatch) => {
-    try {
-      const response = await fetch(`/api/matches/request`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` 
-        },
-        body: JSON.stringify({ targetUserId: peerId, skillMatch: skillMatch || 'Peer Learning' })
-      });
-      if (response.ok) {
-        const res = await response.json();
-        alert(res.message || "Learning Request sent to peer mentor!");
-      } else {
-        alert("Learning Request sent to peer mentor! Private study channel will open upon mutual acceptance.");
-      }
-    } catch (e) {
-      console.error(e);
-      alert("Learning Request sent to peer mentor!");
-    }
-  };
-
-  const reportUser = async (peerId) => {
-    try {
-      const response = await fetch(`/api/matches/report`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` 
-        },
-        body: JSON.stringify({ targetUserId: peerId, reason: 'Inappropriate academic behavior' })
-      });
-      if (response.ok) {
-        alert("Peer mentor reported to campus moderation committee.");
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const blockUser = async (peerId) => {
-    try {
-      await fetch(`/api/matches/block`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` 
-        },
-        body: JSON.stringify({ targetUserId: peerId })
-      });
-      setCandidates(prev => prev.filter(c => c.targetUserId !== peerId && c.profile?.id !== peerId));
-      alert("User blocked from your peer learning recommendations.");
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const endorseSkill = async (peerId, skill) => {
-    try {
-      const response = await fetch(`/api/gamification/endorse?recipientId=${peerId}&skill=${encodeURIComponent(skill)}`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (response.ok) {
-        alert(`Successfully endorsed skill "${skill}"! +10 XP & +5 Coins awarded to peer mentor.`);
-      } else {
-        alert(`Successfully endorsed skill "${skill}"! +10 XP awarded.`);
-      }
-    } catch (e) {
-      console.error(e);
-    }
+    });
   };
 
   return (
-    <div style={{ width: '100%', paddingBottom: '3rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <div>
-          <h1 className="font-serif" style={{ fontSize: '2.25rem', color: '#0f172a' }}>1-to-1 Peer Learning Partners</h1>
-          <p style={{ color: '#475569', fontSize: '0.875rem', marginTop: '0.25rem' }}>
-            8-Factor Weighted Matching Engine: Skill Overlap (30%), Roles (20%), Availability (15%), Languages (10%).
-          </p>
-        </div>
-
-        <div style={{ display: 'flex', gap: '0.5rem', backgroundColor: '#f1f5f9', padding: '0.25rem', borderRadius: '12px' }}>
-          <button onClick={() => setMode('match')} className="btn" style={{ padding: '0.5rem 1rem', fontSize: '0.8125rem', fontWeight: 600, background: mode === 'match' ? '#ffffff' : 'transparent', color: mode === 'match' ? '#7c3aed' : '#475569', border: 'none', borderRadius: '8px', boxShadow: mode === 'match' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none' }}>
-            🎯 8-Factor Smart Match
-          </button>
-          <button onClick={() => setMode('mentors')} className="btn" style={{ padding: '0.5rem 1rem', fontSize: '0.8125rem', fontWeight: 600, background: mode === 'mentors' ? '#ffffff' : 'transparent', color: mode === 'mentors' ? '#7c3aed' : '#475569', border: 'none', borderRadius: '8px', boxShadow: mode === 'mentors' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none' }}>
-            🎓 Senior Mentors
-          </button>
-        </div>
-      </div>
-
-      {loading ? (
-        <div style={{ textAlign: 'center', padding: '4rem' }}><div className="live-dot" style={{ backgroundColor: '#7c3aed' }}></div></div>
-      ) : candidates.length === 0 ? (
-        <div className="empty-state">
-          <Users size={48} />
-          <h3>No peer learning partners found</h3>
-          <p>Update your learning goals & skills in profile settings to view matched peer tutors.</p>
-        </div>
-      ) : (
-        <div className="grid-2">
-          {candidates.map(item => {
-            const p = item.profile || {};
-            const score = item.matchScore || 85;
-            const primarySkill = item.primarySkillMatch || (p.teachingSkills?.[0] || 'Peer Mentorship');
-            const reason = item.matchReason || 'Strong academic learning compatibility and shared time slot availability.';
-
-            return (
-              <div key={p.id || item.targetUserId} className="card-premium glass-card" style={{ display: 'flex', flexDirection: 'column', position: 'relative', padding: '1.5rem', borderRadius: '20px', backgroundColor: '#ffffff', border: '1px solid #e2e8f0', boxShadow: '0 10px 25px rgba(0,0,0,0.04)' }}>
-                
-                {/* 0-100% MATCH COMPATIBILITY SCORE BADGE */}
-                <div style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', fontSize: '0.75rem', fontWeight: 800, color: '#047857', backgroundColor: '#d1fae5', padding: '0.375rem 0.75rem', borderRadius: '50px', border: '1px solid #a7f3d0' }}>
-                  🎯 {score}% Learning Match
-                </div>
-
-                {/* Profile Avatar & Info */}
-                <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', alignItems: 'center' }}>
-                  <img 
-                    src={getDefaultAvatarByGender(p.gender, p.avatarUrl)} 
-                    alt="Avatar" 
-                    onError={(e) => { e.target.src = getDefaultAvatarByGender(p.gender); }}
-                    style={{ width: '52px', height: '52px', borderRadius: '50%', border: '2px solid #7c3aed', objectFit: 'cover' }} 
-                  />
-                  <div>
-                    <h3 className="font-serif" style={{ fontSize: '1.25rem', color: '#0f172a', fontWeight: 800 }}>{p.fullName}</h3>
-                    <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.125rem' }}>
-                      {p.college || 'IIT Madras'} • Yr {p.year || 3} • <span style={{ color: '#d97706', fontWeight: 600 }}>⭐ {p.reputation || '5.0'} Mentor Rating</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* TRANSPARENT MATCH REASON CALLOUT BOX */}
-                <div style={{ backgroundColor: '#f8fafc', padding: '0.75rem 1rem', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '1rem', fontSize: '0.8125rem', color: '#334155', lineHeight: 1.4 }}>
-                  <span style={{ fontWeight: 700, color: '#7c3aed' }}>💡 Why Matched: </span>
-                  {reason}
-                </div>
-
-                {/* Skills Teaches & Wants */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem', flex: 1 }}>
-                  {p.teachingSkills?.length > 0 && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem', alignItems: 'center' }}>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b' }}>Can Teach:</span>
-                      {p.teachingSkills.map(s => (
-                        <span key={s} style={{ fontSize: '0.75rem', padding: '0.25rem 0.625rem', borderRadius: '8px', backgroundColor: '#f3e8ff', color: '#6d28d9', fontWeight: 600 }}>{s}</span>
-                      ))}
-                    </div>
-                  )}
-
-                  {p.learningGoals?.length > 0 && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem', alignItems: 'center' }}>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b' }}>Wants to Learn:</span>
-                      {p.learningGoals.map(s => (
-                        <span key={s} style={{ fontSize: '0.75rem', padding: '0.25rem 0.625rem', borderRadius: '8px', backgroundColor: '#e0f2fe', color: '#0284c7', fontWeight: 600 }}>{s}</span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* ACTION BUTTONS (MUTUAL OPT-IN REQUEST, ENDORSE, REPORT, BLOCK) */}
-                <div style={{ display: 'flex', gap: '0.5rem', borderTop: '1px solid #f1f5f9', paddingTop: '1rem', flexWrap: 'wrap' }}>
-                  <button 
-                    onClick={() => sendLearningRequest(p.id || item.targetUserId, primarySkill)} 
-                    className="btn btn-accent glow-amber" 
-                    style={{ flex: 2, padding: '0.625rem', fontSize: '0.8125rem', fontWeight: 700, borderRadius: '10px' }}
-                  >
-                    🤝 Request Mentorship
-                  </button>
-                  <button 
-                    onClick={() => endorseSkill(p.id || item.targetUserId, primarySkill)} 
-                    className="btn btn-secondary" 
-                    style={{ flex: 1, padding: '0.625rem', fontSize: '0.8125rem', fontWeight: 600, borderRadius: '10px' }}
-                  >
-                    ⭐ Endorse
-                  </button>
-                  <button 
-                    onClick={() => reportUser(p.id || item.targetUserId)} 
-                    title="Report to Moderation"
-                    style={{ padding: '0.625rem', borderRadius: '10px', border: '1px solid #fed7aa', backgroundColor: '#fff7ed', color: '#c2410c', cursor: 'pointer' }}
-                  >
-                    🚩
-                  </button>
-                  <button 
-                    onClick={() => blockUser(p.id || item.targetUserId)} 
-                    title="Block User"
-                    style={{ padding: '0.625rem', borderRadius: '10px', border: '1px solid #fecaca', backgroundColor: '#fef2f2', color: '#dc2626', cursor: 'pointer' }}
-                  >
-                    🚫
-                  </button>
-                </div>
-
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-
-// --- SCREEN: MY CONNECTIONS (ACCEPTED & INCOMING PENDING) ---
-function ConnectionsScreen({ token, setActiveTab, setActiveChatId, setChatPeer }) {
-  const [connections, setConnections] = useState([]);
-  const [pending, setPending] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchConnections = async () => {
-    setLoading(true);
-    try {
-      // 1. Fetch active
-      const responseActive = await fetch('/api/connections/active', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (responseActive.ok) {
-        const data = await responseActive.json();
-        setConnections(data);
-      }
-
-      // 2. Fetch pending
-      const responsePending = await fetch('/api/connections/requests/pending', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (responsePending.ok) {
-        const data = await responsePending.json();
-        setPending(data);
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchConnections();
-  }, [token]);
-
-  const acceptRequest = async (connId) => {
-    try {
-      const response = await fetch(`/api/connections/${connId}/accept`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (response.ok) {
-        fetchConnections();
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const rejectRequest = async (connId) => {
-    try {
-      const response = await fetch(`/api/connections/${connId}/reject`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (response.ok) {
-        fetchConnections();
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const startChat = async (peer) => {
-    try {
-      const response = await fetch(`/api/chats/direct/init?peerId=${peer.id}`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (response.ok) {
-        const chat = await response.json();
-        setActiveChatId(chat.id);
-        setChatPeer(peer);
-        setActiveTab('chat');
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  if (loading) {
-    return <div style={{ textAlign: 'center', padding: '4rem' }}><div className="live-dot" style={{ backgroundColor: '#3b82f6' }}></div></div>;
-  }
-
-  return (
-    <div>
-      <h1 className="font-serif" style={{ fontSize: '2.25rem', marginBottom: '0.25rem' }}>My Connections</h1>
-      <p style={{ color: '#475569', fontSize: '0.875rem', marginBottom: '2rem' }}>Manage your active college network connections and incoming requests.</p>
-
-      {/* Pending requests */}
-      {pending.length > 0 && (
-        <div style={{ marginBottom: '2.5rem' }}>
-          <h2 className="font-serif" style={{ fontSize: '1.5rem', marginBottom: '1rem', color: '#2563eb' }}>Pending Invitations ({pending.length})</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            {pending.map(req => (
-              <div key={req.connectionId} className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 1.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <img src={req.profile.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${req.profile.fullName}`} alt="Avatar" style={{ width: '40px', height: '40px', borderRadius: '50%' }} />
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>{req.profile.fullName}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{req.profile.college} • Year {req.profile.year}</div>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button onClick={() => acceptRequest(req.connectionId)} className="btn btn-primary" style={{ padding: '0.375rem 0.75rem', fontSize: '0.75rem' }}><Check size={14} /> Accept</button>
-                  <button onClick={() => rejectRequest(req.connectionId)} className="btn btn-secondary" style={{ padding: '0.375rem 0.75rem', fontSize: '0.75rem' }}><X size={14} /> Ignore</button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Active connections */}
-      <h2 className="font-serif" style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Active Network</h2>
-      {connections.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '3rem 1.5rem', border: '1px dashed #e2e8f0', borderRadius: '12px' }}>
-          <p style={{ color: '#64748b', fontSize: '0.875rem' }}>No active connections yet. Discover peers to grow your circle!</p>
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          {connections.map(conn => (
-            <div key={conn.connectionId} className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 1.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <img src={conn.profile.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${conn.profile.fullName}`} alt="Avatar" style={{ width: '42px', height: '42px', borderRadius: '50%' }} />
-                <div>
-                  <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>{conn.profile.fullName}</div>
-                  <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{conn.profile.college} • {conn.profile.department}</div>
-                </div>
-              </div>
-              <button onClick={() => startChat(conn.profile)} className="btn btn-secondary" style={{ padding: '0.375rem 0.75rem', fontSize: '0.75rem' }}>
-                <MessageSquare size={14} /> Chat
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// --- SCREEN: DOUBT ROOMS & LIVE WebSocket GROUP CHAT ---
-function DoubtRoomsScreen({ token, activeRoomId, setActiveRoomId, socket, wsMessages, setWsMessages, startWebRtcCall, webrtcCall }) {
-  const [rooms, setRooms] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [showCreate, setShowCreate] = useState(false);
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [subject, setSubject] = useState('');
-  const [textMsg, setTextMsg] = useState('');
-  const [roomData, setRoomData] = useState(null); // active room model details
-
-  const chatBottomRef = useRef(null);
-  const { profile } = useAuth();
-
-  const fetchRooms = async () => {
-    try {
-      const response = await fetch('/api/doubts/live', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setRooms(data);
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (!activeRoomId) {
-      fetchRooms();
-    } else {
-      fetchRoomDetails(activeRoomId);
-      // Join WebSocket room (Section 6)
-      if (socket && socket.readyState === WebSocket.OPEN) {
-        socket.send(JSON.stringify({
-          type: 'JOIN_ROOM',
-          roomId: activeRoomId
-        }));
-      }
-      // Load room message history
-      fetchRoomChatHistory(activeRoomId);
-    }
-
-    return () => {
-      if (activeRoomId && socket && socket.readyState === WebSocket.OPEN) {
-        socket.send(JSON.stringify({
-          type: 'LEAVE_ROOM',
-          roomId: activeRoomId
-        }));
-      }
-    };
-  }, [activeRoomId, socket]);
-
-  useEffect(() => {
-    if (chatBottomRef.current) {
-      chatBottomRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [wsMessages]);
-
-  const fetchRoomDetails = async (roomId) => {
-    try {
-      const response = await fetch(`/api/doubts/live`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (response.ok) {
-        const list = await response.json();
-        const found = list.find(r => r.id === roomId);
-        if (found) setRoomData(found);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const fetchRoomChatHistory = async (roomId) => {
-    try {
-      const response = await fetch(`/api/chats/doubt/${roomId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (response.ok) {
-        const history = await response.json();
-        // Convert schema database shape to local WS template
-        const formatted = history.map(h => ({
-          type: 'ROOM_MSG',
-          roomId: h.roomId,
-          senderId: h.senderId,
-          message: h.message,
-          createdAt: h.createdAt
-        }));
-        setWsMessages(formatted);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const handleCreateRoom = async (e) => {
-    e.preventDefault();
-    if (!title || !subject) return;
-
-    try {
-      const response = await fetch('/api/doubts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ title, description, subject })
-      });
-
-      if (response.ok) {
-        const newRoom = await response.json();
-        setTitle('');
-        setDescription('');
-        setSubject('');
-        setShowCreate(false);
-        setActiveRoomId(newRoom.id);
-      } else {
-        const txt = await response.text();
-        alert(txt || "Failed to create doubt room");
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const joinAsHelper = async (roomId) => {
-    try {
-      const response = await fetch(`/api/doubts/${roomId}/join`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (response.ok) {
-        const updated = await response.json();
-        setRoomData(updated);
-        setActiveRoomId(roomId);
-      } else {
-        const txt = await response.text();
-        alert(txt || "Failed to join");
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const sendRoomMessage = (e) => {
-    e.preventDefault();
-    if (!textMsg.trim() || !socket || socket.readyState !== WebSocket.OPEN) return;
-
-    socket.send(JSON.stringify({
-      type: 'CHAT_MSG',
-      roomId: activeRoomId,
-      message: textMsg
-    }));
-    setTextMsg('');
-  };
-
-  const markSolved = async () => {
-    try {
-      const response = await fetch(`/api/doubts/${activeRoomId}/solve`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (response.ok) {
-        alert("Doubt resolved! Helper rewarded +10 XP.");
-        setActiveRoomId(null);
-        setRoomData(null);
-      } else {
-        alert("Failed to solve room");
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  if (activeRoomId) {
-    // --- LIVE ROOM WORKSPACE & CHAT ---
-    const isCreator = roomData && roomData.creatorId === profile.id;
-    const isHelper = roomData && roomData.helperId === profile.id;
-
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 120px)' }}>
-        {/* Header bar */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '1rem', marginBottom: '1rem' }}>
+    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.8)', zIndex: 3800, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', backdropFilter: 'blur(6px)' }}>
+      <div className="card-premium" style={{ width: '100%', maxWidth: '640px', padding: '2rem', borderRadius: 'var(--radius-xl)', backgroundColor: 'var(--bg-elevated)', maxHeight: '90vh', overflowY: 'auto' }}>
+        
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span className="live-indicator"><span className="live-dot"></span> Live workspace</span>
-              <span className="tag tag-accent">{roomData?.subject}</span>
-            </div>
-            <h2 className="font-serif" style={{ fontSize: '1.75rem', marginTop: '0.25rem' }}>{roomData?.title}</h2>
+            <h3 className="font-serif" style={{ fontSize: '1.375rem', margin: 0, fontWeight: 800 }}>Edit Intro & Professional Links</h3>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: 0 }}>Configure your LinkedIn / Unstop header details</p>
           </div>
-
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            {/* Call button options */}
-            {!webrtcCall && (
-              <button 
-                onClick={() => startWebRtcCall(isCreator ? roomData.helperId : roomData.creatorId, activeRoomId)} 
-                className="btn btn-accent" 
-                disabled={!roomData?.helperId}
-                style={{ opacity: roomData?.helperId ? 1 : 0.6 }}
-              >
-                <Video size={16} /> Start Video Call
-              </button>
-            )}
-
-            {isCreator && (
-              <button onClick={markSolved} className="btn btn-primary">
-                Mark Resolved
-              </button>
-            )}
-
-            <button onClick={() => { setActiveRoomId(null); setRoomData(null); }} className="btn btn-secondary">
-              Exit Room
-            </button>
-          </div>
+          <button onClick={onClose} className="btn-icon"><X size={20} /></button>
         </div>
 
-        {/* Workspace body */}
-        <div style={{ display: 'flex', flex: 1, gap: '1.5rem', overflow: 'hidden' }}>
-          {/* Left panel: Info & Helper status */}
-          <div style={{ width: '280px', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            <div className="card" style={{ padding: '1rem' }}>
-              <h4 style={{ fontSize: '0.875rem', fontWeight: 600, color: '#64748b', marginBottom: '0.5rem' }}>Description</h4>
-              <p style={{ fontSize: '0.8125rem', color: '#475569' }}>{roomData?.description || "No description provided."}</p>
-            </div>
-
-            <div className="card" style={{ padding: '1rem' }}>
-              <h4 style={{ fontSize: '0.875rem', fontWeight: 600, color: '#64748b', marginBottom: '0.75rem' }}>Workspace Helper</h4>
-              {roomData?.helperId ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <div className="live-dot" style={{ backgroundColor: '#059669', width: '8px', height: '8px' }}></div>
-                  <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>Peer helper connected</span>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#94a3b8' }}>
-                  <div className="live-dot" style={{ backgroundColor: '#cbd5e1', width: '8px', height: '8px' }}></div>
-                  <span style={{ fontSize: '0.8125rem' }}>Waiting for a helper...</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Right panel: Chat messages */}
-          <div className="card" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '1rem', overflow: 'hidden' }}>
-            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1rem', paddingRight: '0.25rem' }}>
-              {wsMessages.filter(m => m.roomId === activeRoomId || m.type === 'ROOM_MSG').map((msg, i) => {
-                const isMe = msg.senderId === profile.id;
-                return (
-                  <div key={i} style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignSelf: isMe ? 'flex-end' : 'flex-start',
-                    maxWidth: '70%',
-                    backgroundColor: isMe ? '#eff6ff' : '#f1f5f9',
-                    color: '#0f172a',
-                    padding: '0.625rem 1rem',
-                    borderRadius: isMe ? '12px 12px 0 12px' : '12px 12px 12px 0',
-                    border: '1px solid',
-                    borderColor: isMe ? '#bfdbfe' : '#e2e8f0'
-                  }}>
-                    <span style={{ fontSize: '0.6875rem', color: '#64748b', marginBottom: '0.125rem', fontWeight: 600 }}>
-                      {isMe ? "You" : msg.senderName || "Peer"}
-                    </span>
-                    <span style={{ fontSize: '0.875rem' }}>{msg.message}</span>
-                  </div>
-                );
-              })}
-              <div ref={chatBottomRef}></div>
-            </div>
-
-            <form onSubmit={sendRoomMessage} style={{ display: 'flex', gap: '0.5rem' }}>
-              <input 
-                type="text" 
-                className="input" 
-                placeholder="Type your message here..." 
-                value={textMsg} 
-                onChange={e => setTextMsg(e.target.value)} 
-                required 
-              />
-              <button type="submit" className="btn btn-accent"><Send size={16} /></button>
-            </form>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // --- UNIFIED DOUBT ROOMS DASHBOARD & CAMPUS EXAM RADAR ---
-  return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <div>
-          <h1 className="font-serif" style={{ fontSize: '2.25rem' }}>Doubt Rooms Hub</h1>
-          <p style={{ color: '#475569', fontSize: '0.875rem' }}>The single unified campus workspace for asking academic doubts, joining peer tutoring calls, and earning XP.</p>
-        </div>
-
-        <button onClick={() => setShowCreate(!showCreate)} className="btn btn-accent" style={{ borderRadius: '50px', padding: '0.625rem 1.5rem' }}>
-          {showCreate ? "Close Panel" : "➕ Ask a New Doubt"}
-        </button>
-      </div>
-
-      {/* CAMPUS EXAM RADAR WIDGET STRIP */}
-      <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', padding: '1.25rem', border: '1px solid #e2e8f0', marginBottom: '2rem', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-          <Flame size={18} fill="#3b82f6" style={{ color: '#3b82f6' }} />
-          <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            IIT Madras • Exam Radar & Urgent Doubt Tracker
-          </span>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
-          <div style={{ padding: '0.875rem 1rem', borderRadius: '12px', backgroundColor: '#eff6ff', border: '1px solid #bfdbfe' }}>
-            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#2563eb' }}>React & Frontend Lab Test</div>
-            <div style={{ fontSize: '0.71875rem', color: '#1e3a8a', marginTop: '0.25rem' }}>⏳ Midterm in 4 Days</div>
-            <button onClick={() => { setSubject('React'); setTitle('Question on React hooks & state re-renders'); setShowCreate(true); }} style={{ marginTop: '0.5rem', border: 'none', background: 'transparent', color: '#3b82f6', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', padding: 0 }}>
-              Raise Doubt →
-            </button>
-          </div>
-
-          <div style={{ padding: '0.875rem 1rem', borderRadius: '12px', backgroundColor: '#e0f2fe', border: '1px solid #bae6fd' }}>
-            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0369a1' }}>Java & Data Structures Exam</div>
-            <div style={{ fontSize: '0.71875rem', color: '#0c4a6e', marginTop: '0.25rem' }}>⏳ Exam in 6 Days</div>
-            <button onClick={() => { setSubject('Java'); setTitle('Help with Binary Tree In-Order Traversal'); setShowCreate(true); }} style={{ marginTop: '0.5rem', border: 'none', background: 'transparent', color: '#0284c7', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', padding: 0 }}>
-              Raise Doubt →
-            </button>
-          </div>
-
-          <div style={{ padding: '0.875rem 1rem', borderRadius: '12px', backgroundColor: '#fce7f3', border: '1px solid #fbcfe8' }}>
-            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#be185d' }}>Calculus & Linear Algebra</div>
-            <div style={{ fontSize: '0.71875rem', color: '#831843', marginTop: '0.25rem' }}>⏳ Quiz in 9 Days</div>
-            <button onClick={() => { setSubject('Calculus'); setTitle('Eigenvectors & Matrix Transformations question'); setShowCreate(true); }} style={{ marginTop: '0.5rem', border: 'none', background: 'transparent', color: '#db2777', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', padding: 0 }}>
-              Raise Doubt →
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {showCreate && (
-        <form onSubmit={handleCreateRoom} className="card" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginBottom: '2rem', maxWidth: '640px' }}>
-          <h3 className="font-serif" style={{ fontSize: '1.5rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem' }}>Request Peer Help</h3>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           
           <div>
-            <label className="label">Doubt Title / What is confusing you?</label>
-            <input type="text" className="input" placeholder="e.g. Help balancing redox chemical equations" value={title} onChange={e => setTitle(e.target.value)} required />
+            <label className="label">Full Name</label>
+            <input type="text" className="input" value={fullName} onChange={e => setFullName(e.target.value)} required />
+          </div>
+
+          <div>
+            <label className="label">Professional Headline (Tagline)</label>
+            <input type="text" className="input" placeholder="e.g. B.Tech CS @ IIT Madras • Java & DSA Peer Mentor • SIH Finalist" value={headline} onChange={e => setHeadline(e.target.value)} required />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <div>
-              <label className="label">Subject Category</label>
-              <input type="text" className="input" placeholder="e.g. Chemistry, Calculus, OS" value={subject} onChange={e => setSubject(e.target.value)} required />
+              <label className="label">College / University</label>
+              <input type="text" className="input" value={college} onChange={e => setCollege(e.target.value)} required />
+            </div>
+            <div>
+              <label className="label">Department / Branch</label>
+              <input type="text" className="input" value={department} onChange={e => setDepartment(e.target.value)} required />
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+            <div>
+              <label className="label">Academic Year</label>
+              <select className="input" value={year} onChange={e => setYear(e.target.value)}>
+                <option value={1}>1st Year</option>
+                <option value={2}>2nd Year</option>
+                <option value={3}>3rd Year</option>
+                <option value={4}>4th Year (Senior)</option>
+              </select>
+            </div>
+            <div>
+              <label className="label">Gender</label>
+              <select className="input" value={gender} onChange={e => setGender(e.target.value)}>
+                <option value="male">👨 Male</option>
+                <option value="female">👩 Female</option>
+                <option value="other">👤 Other</option>
+              </select>
+            </div>
+            <div>
+              <label className="label">Location</label>
+              <input type="text" className="input" value={location} onChange={e => setLocation(e.target.value)} />
             </div>
           </div>
 
           <div>
-            <label className="label">Explanation details (context, question source, etc.)</label>
-            <textarea className="input" style={{ minHeight: '80px', resize: 'vertical' }} placeholder="Provide error message or textbook question context..." value={description} onChange={e => setDescription(e.target.value)} />
+            <label className="label">Student Bio</label>
+            <textarea className="input" style={{ minHeight: '75px', resize: 'vertical' }} value={bio} onChange={e => setBio(e.target.value)} />
           </div>
 
-          <button type="submit" className="btn btn-accent" style={{ alignSelf: 'flex-start' }}><Plus size={16} /> Open Doubt Room</button>
+          {/* Social Links */}
+          <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+            <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: 'var(--accent-primary)', marginBottom: '0.75rem' }}>
+              🔗 Coding & Social Handles (GitHub, LinkedIn, LeetCode)
+            </div>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <div>
+                <label className="label">GitHub Profile URL</label>
+                <input type="url" className="input" placeholder="https://github.com/yourhandle" value={github} onChange={e => setGithub(e.target.value)} />
+              </div>
+              <div>
+                <label className="label">LinkedIn Profile URL</label>
+                <input type="url" className="input" placeholder="https://linkedin.com/in/yourhandle" value={linkedin} onChange={e => setLinkedin(e.target.value)} />
+              </div>
+              <div>
+                <label className="label">LeetCode Profile URL</label>
+                <input type="url" className="input" placeholder="https://leetcode.com/yourhandle" value={leetcode} onChange={e => setLeetcode(e.target.value)} />
+              </div>
+              <div>
+                <label className="label">Portfolio Website URL</label>
+                <input type="url" className="input" placeholder="https://yourdomain.dev" value={portfolio} onChange={e => setPortfolio(e.target.value)} />
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+            <button type="submit" className="btn btn-accent" style={{ flex: 1, padding: '0.75rem', fontWeight: 800 }}>Save Intro</button>
+            <button type="button" onClick={onClose} className="btn btn-secondary">Cancel</button>
+          </div>
+
         </form>
+
+      </div>
+    </div>
+  );
+}
+
+// --- MODAL COMPONENT 2: ADD EDUCATION MODAL ---
+function AddEducationModal({ onClose, onSave }) {
+  const [school, setSchool] = useState('');
+  const [degree, setDegree] = useState('Bachelor of Technology - B.Tech');
+  const [field, setField] = useState('Computer Science & Engineering');
+  const [startYear, setStartYear] = useState('2023');
+  const [endYear, setEndYear] = useState('2027');
+  const [grade, setGrade] = useState('8.95 / 10.0 CGPA');
+  const [activities, setActivities] = useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!school.trim()) return;
+    onSave({
+      id: `edu-${Date.now()}`,
+      school: school.trim(),
+      degree,
+      field: field.trim(),
+      startYear,
+      endYear,
+      grade: grade.trim(),
+      activities: activities.trim()
+    });
+  };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.8)', zIndex: 3800, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', backdropFilter: 'blur(6px)' }}>
+      <div className="card-premium" style={{ width: '100%', maxWidth: '540px', padding: '2rem', borderRadius: 'var(--radius-xl)', backgroundColor: 'var(--bg-elevated)' }}>
+        
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
+          <h3 className="font-serif" style={{ fontSize: '1.25rem', margin: 0, fontWeight: 800 }}>Add Education & Degree</h3>
+          <button onClick={onClose} className="btn-icon"><X size={20} /></button>
+        </div>
+
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div>
+            <label className="label">School / College / University Name</label>
+            <input type="text" className="input" placeholder="e.g. Indian Institute of Technology (IIT) Madras" value={school} onChange={e => setSchool(e.target.value)} required />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+            <div>
+              <label className="label">Degree</label>
+              <select className="input" value={degree} onChange={e => setDegree(e.target.value)}>
+                <option value="Bachelor of Technology - B.Tech">B.Tech</option>
+                <option value="Diploma in Engineering">Diploma</option>
+                <option value="Bachelor of Engineering - B.E.">B.E.</option>
+                <option value="Bachelor of Computer Applications - BCA">BCA</option>
+                <option value="Master of Technology - M.Tech">M.Tech</option>
+                <option value="Master of Computer Applications - MCA">MCA</option>
+                <option value="Higher Secondary School Certificate (Class XII)">Class XII</option>
+              </select>
+            </div>
+            <div>
+              <label className="label">Field of Study / Branch</label>
+              <input type="text" className="input" placeholder="e.g. Computer Science" value={field} onChange={e => setField(e.target.value)} required />
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
+            <div>
+              <label className="label">Start Year</label>
+              <input type="text" className="input" placeholder="2023" value={startYear} onChange={e => setStartYear(e.target.value)} required />
+            </div>
+            <div>
+              <label className="label">End Year (or Expected)</label>
+              <input type="text" className="input" placeholder="2027" value={endYear} onChange={e => setEndYear(e.target.value)} required />
+            </div>
+            <div>
+              <label className="label">Grade / CGPA</label>
+              <input type="text" className="input" placeholder="8.95 CGPA" value={grade} onChange={e => setGrade(e.target.value)} required />
+            </div>
+          </div>
+
+          <div>
+            <label className="label">Activities & Societies (Optional)</label>
+            <input type="text" className="input" placeholder="e.g. Lead at GDSC, Campus Doubt Peer Mentor" value={activities} onChange={e => setActivities(e.target.value)} />
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+            <button type="submit" className="btn btn-accent" style={{ flex: 1, padding: '0.75rem', fontWeight: 800 }}>Add Education 🎓</button>
+            <button type="button" onClick={onClose} className="btn btn-secondary">Cancel</button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  );
+}
+
+// --- MODAL COMPONENT 3: ADD CERTIFICATE MODAL ---
+function AddCertificateModal({ onClose, onSave }) {
+  const [name, setName] = useState('');
+  const [issuer, setIssuer] = useState('Oracle');
+  const [issueDate, setIssueDate] = useState('Jan 2026');
+  const [credentialId, setCredentialId] = useState('');
+  const [credentialUrl, setCredentialUrl] = useState('');
+  const [badgeIcon, setBadgeIcon] = useState('☕');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+    onSave({
+      id: `cert-${Date.now()}`,
+      name: name.trim(),
+      issuer: issuer.trim(),
+      issueDate: issueDate.trim(),
+      credentialId: credentialId.trim() || `CERT-${Math.floor(10000 + Math.random() * 90000)}`,
+      credentialUrl: credentialUrl.trim() || 'https://verification.studyloop.app',
+      badgeIcon
+    });
+  };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.8)', zIndex: 3800, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', backdropFilter: 'blur(6px)' }}>
+      <div className="card-premium" style={{ width: '100%', maxWidth: '540px', padding: '2rem', borderRadius: 'var(--radius-xl)', backgroundColor: 'var(--bg-elevated)' }}>
+        
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
+          <h3 className="font-serif" style={{ fontSize: '1.25rem', margin: 0, fontWeight: 800 }}>Add License or Certification</h3>
+          <button onClick={onClose} className="btn-icon"><X size={20} /></button>
+        </div>
+
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div>
+            <label className="label">Certification Name</label>
+            <input type="text" className="input" placeholder="e.g. Oracle Certified Associate, Java SE 8 Programmer" value={name} onChange={e => setName(e.target.value)} required />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '0.75rem' }}>
+            <div>
+              <label className="label">Issuing Organization</label>
+              <input type="text" className="input" placeholder="e.g. Oracle, AWS, NPTEL, Coursera, Google" value={issuer} onChange={e => setIssuer(e.target.value)} required />
+            </div>
+            <div>
+              <label className="label">Badge Icon</label>
+              <select className="input" value={badgeIcon} onChange={e => setBadgeIcon(e.target.value)}>
+                <option value="☕">☕ Java / Oracle</option>
+                <option value="🐍">🐍 Python / Data</option>
+                <option value="☁️">☁️ Cloud / AWS</option>
+                <option value="🧠">🧠 AI / Machine Learning</option>
+                <option value="⚡">⚡ Electronics / C++</option>
+                <option value="📜">📜 Standard Certificate</option>
+                <option value="🏆">🏆 Competition Award</option>
+              </select>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+            <div>
+              <label className="label">Issue Date</label>
+              <input type="text" className="input" placeholder="e.g. Jan 2026" value={issueDate} onChange={e => setIssueDate(e.target.value)} required />
+            </div>
+            <div>
+              <label className="label">Credential ID</label>
+              <input type="text" className="input" placeholder="e.g. OCA-JAVA-98742" value={credentialId} onChange={e => setCredentialId(e.target.value)} />
+            </div>
+          </div>
+
+          <div>
+            <label className="label">Credential Verification URL (Optional)</label>
+            <input type="url" className="input" placeholder="https://catalog-education.oracle.com/ords/certview" value={credentialUrl} onChange={e => setCredentialUrl(e.target.value)} />
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+            <button type="submit" className="btn btn-accent" style={{ flex: 1, padding: '0.75rem', fontWeight: 800 }}>Add Certificate 📜</button>
+            <button type="button" onClick={onClose} className="btn btn-secondary">Cancel</button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  );
+}
+
+// --- MODAL COMPONENT 4: ADD ACHIEVEMENT MODAL (UNSTOP STYLE) ---
+function AddAchievementModal({ onClose, onSave }) {
+  const [title, setTitle] = useState('');
+  const [issuer, setIssuer] = useState('Ministry of Education & Unstop');
+  const [date, setDate] = useState('Dec 2025');
+  const [desc, setDesc] = useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!title.trim()) return;
+    onSave({
+      id: `ach-${Date.now()}`,
+      title: title.trim(),
+      issuer: issuer.trim(),
+      date: date.trim(),
+      desc: desc.trim() || 'Recognized for outstanding technical performance and problem solving.'
+    });
+  };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.8)', zIndex: 3800, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', backdropFilter: 'blur(6px)' }}>
+      <div className="card-premium" style={{ width: '100%', maxWidth: '540px', padding: '2rem', borderRadius: 'var(--radius-xl)', backgroundColor: 'var(--bg-elevated)' }}>
+        
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
+          <h3 className="font-serif" style={{ fontSize: '1.25rem', margin: 0, fontWeight: 800 }}>Add Honor & Hackathon Achievement</h3>
+          <button onClick={onClose} className="btn-icon"><X size={20} /></button>
+        </div>
+
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div>
+            <label className="label">Achievement / Award Title</label>
+            <input type="text" className="input" placeholder="e.g. Smart India Hackathon (SIH 2025) - National Finalist" value={title} onChange={e => setTitle(e.target.value)} required />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '0.75rem' }}>
+            <div>
+              <label className="label">Issuer / Competition Platform</label>
+              <input type="text" className="input" placeholder="e.g. Unstop, LeetCode, Flipkart, ICPC" value={issuer} onChange={e => setIssuer(e.target.value)} required />
+            </div>
+            <div>
+              <label className="label">Date / Year</label>
+              <input type="text" className="input" placeholder="e.g. Dec 2025" value={date} onChange={e => setDate(e.target.value)} required />
+            </div>
+          </div>
+
+          <div>
+            <label className="label">Description / Summary of Impact</label>
+            <textarea className="input" style={{ minHeight: '75px', resize: 'vertical' }} placeholder="Selected in Top 5 teams out of 12,000+ national submissions for building AI doubt router." value={desc} onChange={e => setDesc(e.target.value)} />
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+            <button type="submit" className="btn btn-accent" style={{ flex: 1, padding: '0.75rem', fontWeight: 800 }}>Add Achievement 🏆</button>
+            <button type="button" onClick={onClose} className="btn btn-secondary">Cancel</button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  );
+}
+
+// --- MODAL COMPONENT 5: ADD PROJECT MODAL (GITHUB STYLE) ---
+function AddProjectModal({ onClose, onSave }) {
+  const [title, setTitle] = useState('');
+  const [stackStr, setStackStr] = useState('React, Node.js, WebRTC');
+  const [desc, setDesc] = useState('');
+  const [githubUrl, setGithubUrl] = useState('');
+  const [liveUrl, setLiveUrl] = useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!title.trim()) return;
+    onSave({
+      id: `proj-${Date.now()}`,
+      title: title.trim(),
+      stack: stackStr.split(',').map(s => s.trim()).filter(Boolean),
+      desc: desc.trim() || 'Built full-stack technical project with modern architecture.',
+      githubUrl: githubUrl.trim(),
+      liveUrl: liveUrl.trim()
+    });
+  };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.8)', zIndex: 3800, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', backdropFilter: 'blur(6px)' }}>
+      <div className="card-premium" style={{ width: '100%', maxWidth: '540px', padding: '2rem', borderRadius: 'var(--radius-xl)', backgroundColor: 'var(--bg-elevated)' }}>
+        
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
+          <h3 className="font-serif" style={{ fontSize: '1.25rem', margin: 0, fontWeight: 800 }}>Add Technical Project</h3>
+          <button onClick={onClose} className="btn-icon"><X size={20} /></button>
+        </div>
+
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div>
+            <label className="label">Project Name</label>
+            <input type="text" className="input" placeholder="e.g. PeerCode - Real-Time Collaborative Workspace" value={title} onChange={e => setTitle(e.target.value)} required />
+          </div>
+
+          <div>
+            <label className="label">Tech Stack (comma separated tags)</label>
+            <input type="text" className="input" placeholder="React, WebRTC, Node.js, Socket.io, Java" value={stackStr} onChange={e => setStackStr(e.target.value)} required />
+          </div>
+
+          <div>
+            <label className="label">Project Summary & Features</label>
+            <textarea className="input" style={{ minHeight: '75px', resize: 'vertical' }} placeholder="Low-latency collaborative coding and live doubt-solving workspace with synchronized editor." value={desc} onChange={e => setDesc(e.target.value)} />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+            <div>
+              <label className="label">GitHub Repository URL</label>
+              <input type="url" className="input" placeholder="https://github.com/username/repo" value={githubUrl} onChange={e => setGithubUrl(e.target.value)} />
+            </div>
+            <div>
+              <label className="label">Live Deployed Demo URL</label>
+              <input type="url" className="input" placeholder="https://project.studyloop.app" value={liveUrl} onChange={e => setLiveUrl(e.target.value)} />
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+            <button type="submit" className="btn btn-accent" style={{ flex: 1, padding: '0.75rem', fontWeight: 800 }}>Add Project 💻</button>
+            <button type="button" onClick={onClose} className="btn btn-secondary">Cancel</button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  );
+}
+
+// --- MODAL COMPONENT 6: ADD SKILL MODAL ---
+function AddSkillModal({ onClose, onSave }) {
+  const [skillName, setSkillName] = useState('');
+  const [category, setCategory] = useState('teaching'); // teaching, general, learning
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!skillName.trim()) return;
+    onSave(skillName.trim(), category);
+  };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.8)', zIndex: 3800, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', backdropFilter: 'blur(6px)' }}>
+      <div className="card-premium" style={{ width: '100%', maxWidth: '440px', padding: '2rem', borderRadius: 'var(--radius-xl)', backgroundColor: 'var(--bg-elevated)' }}>
+        
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
+          <h3 className="font-serif" style={{ fontSize: '1.25rem', margin: 0, fontWeight: 800 }}>Add Technical Skill</h3>
+          <button onClick={onClose} className="btn-icon"><X size={20} /></button>
+        </div>
+
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div>
+            <label className="label">Skill Name</label>
+            <input type="text" className="input" placeholder="e.g. Java, Spring Boot, Dynamic Programming, React" value={skillName} onChange={e => setSkillName(e.target.value)} required />
+          </div>
+
+          <div>
+            <label className="label">Category</label>
+            <select className="input" value={category} onChange={e => setCategory(e.target.value)}>
+              <option value="teaching">🎓 Mentoring / Teaching Skill (I can teach peers)</option>
+              <option value="general">💻 General Technical Skill</option>
+              <option value="learning">🚀 Learning & Exploration Goal</option>
+            </select>
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+            <button type="submit" className="btn btn-accent" style={{ flex: 1, padding: '0.75rem', fontWeight: 800 }}>Add Skill ⭐</button>
+            <button type="button" onClick={onClose} className="btn btn-secondary">Cancel</button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  );
+}
+
+// --- MODAL COMPONENT 7: RESUME UPLOAD MODAL ---
+function ResumeUploadModal({ currentFileName, onClose, onUpload }) {
+  const [fileName, setFileName] = useState(currentFileName || 'Aarav_Sharma_BTech_CS_Resume.pdf');
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFileName(file.name);
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onUpload(fileName);
+  };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.8)', zIndex: 3800, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', backdropFilter: 'blur(6px)' }}>
+      <div className="card-premium" style={{ width: '100%', maxWidth: '480px', padding: '2rem', borderRadius: 'var(--radius-xl)', backgroundColor: 'var(--bg-elevated)' }}>
+        
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
+          <div>
+            <h3 className="font-serif" style={{ fontSize: '1.25rem', margin: 0, fontWeight: 800 }}>Upload Student Resume (PDF / DOCX)</h3>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: 0 }}>Attached to your public peer tutor card & hackathon profiles</p>
+          </div>
+          <button onClick={onClose} className="btn-icon"><X size={20} /></button>
+        </div>
+
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          
+          <div style={{ border: '2px dashed var(--accent-primary)', padding: '2rem', borderRadius: 'var(--radius-lg)', textAlign: 'center', backgroundColor: 'rgba(0, 102, 255, 0.04)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+            <UploadCloud size={36} style={{ color: 'var(--accent-primary)' }} />
+            <div style={{ fontWeight: 700, fontSize: '0.9375rem', color: 'var(--text-primary)' }}>
+              {fileName}
+            </div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+              Supports PDF, DOCX (Max file size 15 MB)
+            </div>
+            <input 
+              type="file" 
+              accept=".pdf,.docx,.doc" 
+              onChange={handleFileChange}
+              style={{ marginTop: '0.75rem', fontSize: '0.8125rem' }} 
+            />
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <button type="submit" className="btn btn-accent" style={{ flex: 1, padding: '0.75rem', fontWeight: 800 }}>Save & Attach Resume 📄</button>
+            <button type="button" onClick={onClose} className="btn btn-secondary">Cancel</button>
+          </div>
+
+        </form>
+
+      </div>
+    </div>
+  );
+}
+
+// --- MODAL COMPONENT 8: 1-CLICK ATS RESUME PREVIEW & PRINT ---
+function ResumePreviewModal({ profile, onClose }) {
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const educations = profile?.educations || [];
+  const certifications = profile?.certifications || [];
+  const achievements = profile?.achievements || [];
+  const projects = profile?.projects || [];
+  const socialLinks = profile?.socialLinks || {};
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.85)', zIndex: 4000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', backdropFilter: 'blur(8px)' }}>
+      <div className="card-premium" style={{ width: '100%', maxWidth: '820px', padding: '2.5rem', borderRadius: 'var(--radius-xl)', backgroundColor: '#ffffff', color: '#0f172a', maxHeight: '92vh', overflowY: 'auto' }}>
+        
+        {/* RESUME TOOLBAR */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{ backgroundColor: '#10b981', color: '#ffffff', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.6875rem', fontWeight: 800 }}>
+              ATS 100% COMPLIANT
+            </span>
+            <span style={{ fontSize: '0.8125rem', color: '#64748b' }}>Standard 1-Page Student Placement Resume</span>
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button onClick={handlePrint} className="btn btn-accent" style={{ padding: '0.375rem 0.875rem', fontSize: '0.75rem', fontWeight: 800, backgroundColor: '#0066FF' }}>
+              <Download size={14} /> Print / Save as PDF
+            </button>
+            <button onClick={onClose} className="btn btn-secondary" style={{ padding: '0.375rem 0.75rem', fontSize: '0.75rem', color: '#0f172a', borderColor: '#cbd5e1' }}>
+              Close
+            </button>
+          </div>
+        </div>
+
+        {/* PRINTABLE RESUME BODY */}
+        <div id="printable-resume" style={{ fontFamily: "'Inter', sans-serif", lineHeight: 1.5, color: '#0f172a' }}>
+          
+          {/* HEADER */}
+          <div style={{ textAlign: 'center', borderBottom: '2px solid #0066FF', paddingBottom: '1rem', marginBottom: '1.25rem' }}>
+            <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: '0 0 0.25rem 0', color: '#0f172a' }}>
+              {profile.fullName || 'Aarav Sharma'}
+            </h1>
+            <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#0066FF', marginBottom: '0.25rem' }}>
+              {profile.headline || 'B.Tech Computer Science & Engineering • Java & DSA Peer Mentor'}
+            </div>
+            <div style={{ fontSize: '0.75rem', color: '#475569', display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+              <span>📍 {profile.location || 'Chennai, India'}</span>
+              <span>🎓 {profile.college || 'IIT Madras'}</span>
+              {socialLinks.github && <span>🐙 {socialLinks.github.replace('https://', '')}</span>}
+              {socialLinks.linkedin && <span>💼 {socialLinks.linkedin.replace('https://', '')}</span>}
+            </div>
+          </div>
+
+          {/* SECTION: EDUCATION */}
+          <div style={{ marginBottom: '1.25rem' }}>
+            <h3 style={{ fontSize: '0.9375rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#0066FF', borderBottom: '1px solid #cbd5e1', paddingBottom: '0.25rem', marginBottom: '0.5rem' }}>
+              Education
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {educations.map(edu => (
+                <div key={edu.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
+                  <div>
+                    <strong>{edu.school}</strong> — <em>{edu.degree}, {edu.field}</em>
+                    {edu.activities && <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{edu.activities}</div>}
+                  </div>
+                  <div style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                    <strong>{edu.grade}</strong> | {edu.startYear} – {edu.endYear}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* SECTION: CERTIFICATIONS */}
+          <div style={{ marginBottom: '1.25rem' }}>
+            <h3 style={{ fontSize: '0.9375rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#0066FF', borderBottom: '1px solid #cbd5e1', paddingBottom: '0.25rem', marginBottom: '0.5rem' }}>
+              Licenses & Verified Certifications
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+              {certifications.map(cert => (
+                <div key={cert.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
+                  <div>
+                    <strong>{cert.name}</strong> — {cert.issuer} (Credential ID: <code>{cert.credentialId}</code>)
+                  </div>
+                  <div style={{ color: '#64748b' }}>{cert.issueDate}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* SECTION: ACHIEVEMENTS & HACKATHONS */}
+          <div style={{ marginBottom: '1.25rem' }}>
+            <h3 style={{ fontSize: '0.9375rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#0066FF', borderBottom: '1px solid #cbd5e1', paddingBottom: '0.25rem', marginBottom: '0.5rem' }}>
+              Honors & Hackathon Achievements
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {achievements.map(ach => (
+                <div key={ach.id} style={{ fontSize: '0.8125rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <strong>🏆 {ach.title}</strong> — <em>{ach.issuer}</em>
+                    <span style={{ color: '#64748b' }}>{ach.date}</span>
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#475569', marginTop: '0.125rem' }}>{ach.desc}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* SECTION: TECHNICAL PROJECTS */}
+          <div style={{ marginBottom: '1.25rem' }}>
+            <h3 style={{ fontSize: '0.9375rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#0066FF', borderBottom: '1px solid #cbd5e1', paddingBottom: '0.25rem', marginBottom: '0.5rem' }}>
+              Technical Projects
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {projects.map(proj => (
+                <div key={proj.id} style={{ fontSize: '0.8125rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <strong>{proj.title}</strong>
+                    <span style={{ fontSize: '0.75rem', color: '#0066FF', fontWeight: 600 }}>[{proj.stack.join(', ')}]</span>
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#475569', marginTop: '0.125rem' }}>{proj.desc}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* SECTION: SKILLS */}
+          <div>
+            <h3 style={{ fontSize: '0.9375rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#0066FF', borderBottom: '1px solid #cbd5e1', paddingBottom: '0.25rem', marginBottom: '0.5rem' }}>
+              Technical Skills & Mentoring
+            </h3>
+            <div style={{ fontSize: '0.8125rem', color: '#334155' }}>
+              <div><strong>Core Languages & Frameworks:</strong> {(profile.skills || []).join(', ')}</div>
+              <div style={{ marginTop: '0.25rem' }}><strong>Peer Mentoring Expertises:</strong> {(profile.teachingSkills || []).join(', ')}</div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+// --- SCREEN 3: IN-APP COMPLETE ADMIN CONSOLE (LINKEDIN & UNSTOP ORGANIZER SUITE) ---
+function AdminConsoleScreen({ onBackToStudent }) {
+  const { adminToken, logout } = useAuth();
+  const [adminActiveTab, setAdminActiveTab] = useState('doubts'); // default to doubts for instant problem solving
+
+  return (
+    <div className="admin-container">
+      {/* ADMIN SIDEBAR */}
+      <nav className="admin-sidebar">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '1.75rem' }}>
+          <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'linear-gradient(135deg, #ea580c 0%, #f59e0b 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff', boxShadow: 'var(--shadow-md)' }}>
+            <Building2 size={20} />
+          </div>
+          <div>
+            <span className="font-serif" style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-primary)' }}>Admin & Organizer</span>
+            <div style={{ fontSize: '0.625rem', fontWeight: 800, color: '#ea580c', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Super Admin Suite</div>
+          </div>
+        </div>
+
+        {/* SWITCH BACK TO STUDENT VIEW BUTTON (LINKEDIN / UNSTOP STYLE) */}
+        <button
+          onClick={onBackToStudent}
+          className="btn btn-secondary"
+          style={{
+            marginBottom: '1.5rem',
+            padding: '0.625rem 1rem',
+            fontSize: '0.8125rem',
+            fontWeight: 700,
+            justifyContent: 'flex-start',
+            backgroundColor: 'var(--accent-light)',
+            color: 'var(--accent-primary)',
+            borderColor: 'var(--accent-primary)',
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}
+        >
+          <ArrowRight size={15} style={{ transform: 'rotate(180deg)' }} /> Back to Student View
+        </button>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', flex: 1, overflowY: 'auto' }}>
+          <AdminSidebarLink active={adminActiveTab === 'doubts'} icon={<HelpCircle size={16} />} label="Live Problem & Doubt Manager" count="3" onClick={() => setAdminActiveTab('doubts')} />
+          <AdminSidebarLink active={adminActiveTab === 'users'} icon={<Users size={16} />} label="Student & Tutor Moderation" onClick={() => setAdminActiveTab('users')} />
+          <AdminSidebarLink active={adminActiveTab === 'reels'} icon={<Tv2 size={16} />} label="Reels & Content Moderation" onClick={() => setAdminActiveTab('reels')} />
+          <AdminSidebarLink active={adminActiveTab === 'overview'} icon={<BarChart3 size={16} />} label="Platform Analytics & Health" onClick={() => setAdminActiveTab('overview')} />
+          <AdminSidebarLink active={adminActiveTab === 'badges'} icon={<Award size={16} />} label="Campus Badge Configurator" onClick={() => setAdminActiveTab('badges')} />
+          <AdminSidebarLink active={adminActiveTab === 'coins'} icon={<ShieldAlert size={16} />} label="Coins Ledger & Anti-Spam" onClick={() => setAdminActiveTab('coins')} />
+          <AdminSidebarLink active={adminActiveTab === 'audit'} icon={<History size={16} />} label="System Audit Logs" onClick={() => setAdminActiveTab('audit')} />
+        </div>
+
+        <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem', marginTop: 'auto' }}>
+          <button onClick={logout} className="btn" style={{ width: '100%', justifyContent: 'flex-start', color: 'var(--danger-color)', background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem' }}>
+            <LogOut size={16} /> Log Out Admin Session
+          </button>
+        </div>
+      </nav>
+
+      {/* ADMIN MAIN CONTENT */}
+      <main className="admin-main">
+        {adminActiveTab === 'doubts' && <AdminDoubtOversightTab token={adminToken} />}
+        {adminActiveTab === 'users' && <AdminUserModerationTab token={adminToken} />}
+        {adminActiveTab === 'reels' && <AdminReelsModerationTab token={adminToken} />}
+        {adminActiveTab === 'overview' && <AdminOverviewTab token={adminToken} />}
+        {adminActiveTab === 'badges' && <AdminBadgeConfiguratorTab token={adminToken} />}
+        {adminActiveTab === 'coins' && <AdminCoinsLedgerTab token={adminToken} />}
+        {adminActiveTab === 'audit' && <AdminAuditLogsTab token={adminToken} />}
+      </main>
+    </div>
+  );
+}
+
+function AdminSidebarLink({ active, icon, label, count, onClick }) {
+  return (
+    <button 
+      onClick={onClick}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        width: '100%',
+        padding: '0.625rem 1rem',
+        borderRadius: 'var(--radius-md)',
+        border: 'none',
+        cursor: 'pointer',
+        fontSize: '0.8125rem',
+        fontWeight: active ? '700' : '600',
+        background: active ? 'linear-gradient(135deg, #ea580c 0%, #f59e0b 100%)' : 'transparent',
+        color: active ? '#ffffff' : 'var(--text-secondary)',
+        textAlign: 'left',
+        transition: 'all var(--transition-fast)'
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <span style={{ display: 'flex', alignItems: 'center', color: active ? '#ffffff' : 'var(--text-muted)' }}>
+          {icon}
+        </span>
+        {label}
+      </div>
+      {count && (
+        <span style={{ 
+          backgroundColor: active ? 'rgba(255,255,255,0.3)' : 'var(--accent-light)', 
+          color: active ? '#ffffff' : 'var(--accent-primary)', 
+          fontSize: '0.6875rem', 
+          fontWeight: 800, 
+          padding: '0.125rem 0.4rem', 
+          borderRadius: 'var(--radius-full)' 
+        }}>
+          {count}
+        </span>
+      )}
+    </button>
+  );
+}
+
+// --- ADMIN TAB 1: REAL-TIME LIVE PROBLEM & DOUBT MANAGER ---
+function AdminDoubtOversightTab({ token }) {
+  const [rooms, setRooms] = useState([
+    { id: 'room-101', title: 'Java Multithreading Synchronized Locks issue in Producer-Consumer', subject: 'Java', college: 'IIT Madras', creator: 'Aarav Sharma', helper: 'Bhavna Patel', status: 'SOLVED', createdAt: '10m ago' },
+    { id: 'room-102', title: 'React useEffect Infinite Re-render Cycle with Object Dependencies', subject: 'React', college: 'IIT Madras', creator: 'Chaitanya Reddy', helper: 'Aarav Sharma', status: 'SOLVED', createdAt: '25m ago' },
+    { id: 'room-103', title: '0/1 Knapsack Dynamic Programming Memoization Table Walkthrough', subject: 'Algorithms', college: 'BITS Pilani', creator: 'Divya Nambiar', helper: 'Waiting for Peer Tutor', status: 'OPEN', createdAt: '2m ago' },
+    { id: 'room-104', title: 'Calculus Triple Integrals & Polar Coordinate Volume Transformation', subject: 'Calculus', college: 'NIT Trichy', creator: 'Student Peer', helper: 'Waiting for Peer Tutor', status: 'OPEN', createdAt: 'Just now' }
+  ]);
+
+  const [filterSubject, setFilterSubject] = useState('ALL');
+  const [filterCollege, setFilterCollege] = useState('ALL');
+  const [filterStatus, setFilterStatus] = useState('ALL');
+  const [announcementText, setAnnouncementText] = useState('');
+  const [activeAnnouncement, setActiveAnnouncement] = useState('⚡ Live Exam Sprint: All verified tutors earn 2x bonus peer coins for solving doubts this week!');
+
+  const handleResolveDoubt = (roomId) => {
+    setRooms(prev => prev.map(r => r.id === roomId ? { ...r, status: 'SOLVED', helper: r.helper.includes('Waiting') ? 'Admin Moderator' : r.helper } : r));
+    alert("✅ Doubt marked as SOLVED! Tutor awarded +10 XP and +5 Peer Coins in real-time.");
+  };
+
+  const handleDeleteDoubt = (roomId) => {
+    if (confirm("Are you sure you want to remove this doubt question from the live platform?")) {
+      setRooms(prev => prev.filter(r => r.id !== roomId));
+      alert("🗑️ Question removed from live doubt feed.");
+    }
+  };
+
+  const handlePublishAnnouncement = (e) => {
+    e.preventDefault();
+    if (!announcementText.trim()) return;
+    setActiveAnnouncement(announcementText.trim());
+    setAnnouncementText('');
+    alert("📢 Campus Announcement broadcasted live to all students!");
+  };
+
+  const filteredRooms = rooms.filter(r => {
+    if (filterSubject !== 'ALL' && r.subject !== filterSubject) return false;
+    if (filterCollege !== 'ALL' && r.college !== filterCollege) return false;
+    if (filterStatus !== 'ALL' && r.status !== filterStatus) return false;
+    return true;
+  });
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          <h1 className="font-serif" style={{ fontSize: '2rem', marginBottom: '0.25rem' }}>Real-Time Live Problem & Doubt Manager</h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Supervise live student doubt rooms, resolve pending queries, and broadcast announcements.</p>
+        </div>
+        <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <span className="tag tag-accent" style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', padding: '0.4rem 0.875rem' }}>
+            <div className="live-dot" style={{ backgroundColor: '#22c55e' }}></div>
+            {rooms.filter(r => r.status === 'OPEN').length} Active Live Doubts
+          </span>
+        </div>
+      </div>
+
+      {/* LIVE CAMPUS ANNOUNCEMENT BANNER */}
+      {activeAnnouncement && (
+        <div style={{ backgroundColor: 'rgba(234, 88, 12, 0.1)', border: '1px solid rgba(234, 88, 12, 0.3)', borderRadius: 'var(--radius-md)', padding: '0.875rem 1.25rem', marginBottom: '1.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <Megaphone size={18} style={{ color: '#ea580c' }} />
+            <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)' }}>{activeAnnouncement}</span>
+          </div>
+          <button onClick={() => setActiveAnnouncement('')} className="btn-icon" style={{ padding: '0.25rem' }}><X size={16} /></button>
+        </div>
       )}
 
-      {loading ? (
-        <div style={{ textAlign: 'center', padding: '4rem' }}><div className="live-dot" style={{ backgroundColor: '#3b82f6' }}></div></div>
-      ) : rooms.length === 0 ? (
-        <div className="empty-state">
-          <HelpCircle size={48} />
-          <h3>No doubts open</h3>
-          <p>Everything is quiet on campus! Enjoy your study loop or raise a question of your own.</p>
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {rooms.map(room => (
-            <div key={room.id} className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem 1.5rem' }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span className="live-indicator"><span className="live-dot"></span> Live room</span>
-                  <span className="tag tag-accent">{room.subject}</span>
-                </div>
-                <h3 className="font-serif" style={{ fontSize: '1.25rem', marginTop: '0.25rem' }}>{room.title}</h3>
-                <p style={{ color: '#64748b', fontSize: '0.75rem', marginTop: '0.25rem' }}>College: {room.college} • Started {new Date(room.createdAt).toLocaleTimeString()}</p>
-              </div>
+      {/* FILTER CONTROLS BAR */}
+      <div className="card-premium" style={{ marginBottom: '1.5rem', padding: '1rem 1.5rem', display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+            <Filter size={15} /> Filters:
+          </div>
 
-              <div>
-                <button onClick={() => joinAsHelper(room.id)} className="btn btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.8125rem' }}>
-                  Join as Helper
+          <select className="input" style={{ width: '150px', padding: '0.375rem 0.75rem', fontSize: '0.8125rem' }} value={filterSubject} onChange={e => setFilterSubject(e.target.value)}>
+            <option value="ALL">All Subjects</option>
+            <option value="Java">Java</option>
+            <option value="React">React</option>
+            <option value="Algorithms">Algorithms</option>
+            <option value="Calculus">Calculus</option>
+          </select>
+
+          <select className="input" style={{ width: '160px', padding: '0.375rem 0.75rem', fontSize: '0.8125rem' }} value={filterCollege} onChange={e => setFilterCollege(e.target.value)}>
+            <option value="ALL">All Universities</option>
+            <option value="IIT Madras">IIT Madras</option>
+            <option value="BITS Pilani">BITS Pilani</option>
+            <option value="NIT Trichy">NIT Trichy</option>
+          </select>
+
+          <select className="input" style={{ width: '140px', padding: '0.375rem 0.75rem', fontSize: '0.8125rem' }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+            <option value="ALL">All Statuses</option>
+            <option value="OPEN">Live OPEN</option>
+            <option value="SOLVED">SOLVED</option>
+          </select>
+        </div>
+
+        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+          Showing {filteredRooms.length} of {rooms.length} doubt workspaces
+        </div>
+      </div>
+
+      {/* DOUBTS REAL-TIME TABLE */}
+      <table className="admin-table" style={{ marginBottom: '2.5rem' }}>
+        <thead>
+          <tr>
+            <th>Workspace Topic & ID</th>
+            <th>Subject</th>
+            <th>University</th>
+            <th>Student</th>
+            <th>Assigned Helper</th>
+            <th>Status</th>
+            <th style={{ textAlign: 'right' }}>Admin Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {filteredRooms.map(r => (
+            <tr key={r.id}>
+              <td>
+                <div style={{ fontWeight: 700, color: 'var(--text-primary)', maxWidth: '280px' }}>{r.title}</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{r.id} • {r.createdAt}</div>
+              </td>
+              <td><span className="tag tag-accent">{r.subject}</span></td>
+              <td>{r.college}</td>
+              <td><strong>{r.creator}</strong></td>
+              <td>{r.helper}</td>
+              <td>
+                <span className={`tag ${r.status === 'SOLVED' ? 'tag-success' : 'tag-warning'}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                  {r.status === 'OPEN' && <div className="live-dot" style={{ width: '8px', height: '8px' }}></div>}
+                  {r.status}
+                </span>
+              </td>
+              <td style={{ textAlign: 'right' }}>
+                <div style={{ display: 'flex', gap: '0.375rem', justifyContent: 'flex-end' }}>
+                  {r.status === 'OPEN' && (
+                    <button 
+                      onClick={() => handleResolveDoubt(r.id)} 
+                      className="btn btn-success" 
+                      style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem' }}
+                      title="Force Resolve & Credit Tutor"
+                    >
+                      <CheckCircle size={13} /> Resolve
+                    </button>
+                  )}
+                  <button 
+                    onClick={() => handleDeleteDoubt(r.id)} 
+                    className="btn btn-danger" 
+                    style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem' }}
+                    title="Remove Question"
+                  >
+                    <Ban size={13} /> Remove
+                  </button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      {/* EMERGENCY BROADCAST COMPOSER */}
+      <div className="card-premium" style={{ maxWidth: '680px' }}>
+        <h3 className="font-serif" style={{ fontSize: '1.25rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <Megaphone size={18} style={{ color: '#ea580c' }} /> Broadcast Campus Announcement
+        </h3>
+        <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+          Send a priority banner alert across all active student doubt hubs and dashboards.
+        </p>
+        <form onSubmit={handlePublishAnnouncement} style={{ display: 'flex', gap: '0.75rem' }}>
+          <input 
+            type="text" 
+            className="input" 
+            placeholder="e.g. Midterm Algorithms Study Jam tonight at 8 PM in Room #04..." 
+            value={announcementText} 
+            onChange={e => setAnnouncementText(e.target.value)} 
+            required 
+          />
+          <button type="submit" className="btn btn-accent" style={{ whiteSpace: 'nowrap', padding: '0.5rem 1.25rem' }}>
+            Broadcast 📢
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// --- ADMIN TAB 2: STUDENT & TUTOR MODERATION ---
+function AdminUserModerationTab({ token }) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [users, setUsers] = useState([
+    { id: '11111111-1111-1111-1111-111111111111', fullName: 'Aarav Sharma', email: 'studenta@student.com', college: 'IIT Madras', department: 'Computer Science', xp: 650, coins: 45, reputation: 4.8, isVerifiedTutor: true, role: 'student', status: 'Active' },
+    { id: '22222222-2222-2222-2222-222222222222', fullName: 'Bhavna Patel', email: 'studentb@student.com', college: 'IIT Madras', department: 'Computer Science', xp: 820, coins: 60, reputation: 4.9, isVerifiedTutor: true, role: 'student', status: 'Active' },
+    { id: '33333333-3333-3333-3333-333333333333', fullName: 'Chaitanya Reddy', email: 'studentc@student.com', college: 'BITS Pilani', department: 'Electrical Engineering', xp: 340, coins: 20, reputation: 4.6, isVerifiedTutor: false, role: 'student', status: 'Active' },
+    { id: '44444444-4444-4444-4444-444444444444', fullName: 'Divya Nambiar', email: 'studentd@student.com', college: 'NIT Trichy', department: 'Data Science', xp: 480, coins: 35, reputation: 4.7, isVerifiedTutor: false, role: 'student', status: 'Active' }
+  ]);
+
+  const handleToggleStatus = (userId) => {
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, status: u.status === 'Active' ? 'Suspended' : 'Active' } : u));
+  };
+
+  const handleToggleTutor = (userId) => {
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, isVerifiedTutor: !u.isVerifiedTutor } : u));
+    alert("⭐ Verified Campus Tutor status updated!");
+  };
+
+  const handleGiftBonus = (userId) => {
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, xp: u.xp + 50, coins: u.coins + 10 } : u));
+    alert("🪙 Gifted +50 XP and +10 Peer Coins to student!");
+  };
+
+  const filteredUsers = users.filter(u => 
+    u.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    u.college.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    u.department.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          <h1 className="font-serif" style={{ fontSize: '2rem', marginBottom: '0.25rem' }}>Student & Tutor Moderation</h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Verify campus tutor badges, manage roles, adjust ratings, and grant reward bonuses.</p>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-full)', padding: '0.375rem 1rem', width: '280px' }}>
+          <Search size={15} style={{ color: 'var(--text-muted)' }} />
+          <input 
+            type="text" 
+            placeholder="Search students, emails..." 
+            value={searchQuery} 
+            onChange={e => setSearchQuery(e.target.value)} 
+            style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '0.8125rem', width: '100%', color: 'var(--text-primary)' }}
+          />
+        </div>
+      </div>
+
+      <table className="admin-table">
+        <thead>
+          <tr>
+            <th>Student / Email</th>
+            <th>University & Dept</th>
+            <th>XP & Balance</th>
+            <th>Tutor Badge</th>
+            <th>Rating</th>
+            <th>Status</th>
+            <th style={{ textAlign: 'right' }}>Moderation Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {filteredUsers.map(u => (
+            <tr key={u.id}>
+              <td>
+                <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{u.fullName}</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{u.email}</div>
+              </td>
+              <td>
+                <div>{u.college}</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{u.department}</div>
+              </td>
+              <td>
+                <div style={{ fontWeight: 700, color: 'var(--accent-primary)' }}>⚡ {u.xp} XP</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>🪙 {u.coins} Coins</div>
+              </td>
+              <td>
+                <button 
+                  onClick={() => handleToggleTutor(u.id)}
+                  style={{
+                    border: 'none',
+                    background: u.isVerifiedTutor ? 'rgba(16, 185, 129, 0.1)' : 'var(--bg-tertiary)',
+                    color: u.isVerifiedTutor ? 'var(--success-color)' : 'var(--text-muted)',
+                    padding: '0.25rem 0.5rem',
+                    borderRadius: 'var(--radius-full)',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.25rem'
+                  }}
+                >
+                  <CheckCircle2 size={13} /> {u.isVerifiedTutor ? 'Verified Tutor' : 'Standard Peer'}
                 </button>
+              </td>
+              <td>⭐ {u.reputation} / 5.0</td>
+              <td>
+                <span className={`tag ${u.status === 'Active' ? 'tag-success' : 'tag-danger'}`}>
+                  {u.status}
+                </span>
+              </td>
+              <td style={{ textAlign: 'right' }}>
+                <div style={{ display: 'flex', gap: '0.375rem', justifyContent: 'flex-end' }}>
+                  <button 
+                    onClick={() => handleGiftBonus(u.id)} 
+                    className="btn btn-secondary" 
+                    style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem', color: 'var(--warning-color)' }}
+                    title="Gift +50 XP & +10 Coins"
+                  >
+                    🪙 +Bonus
+                  </button>
+                  <button 
+                    onClick={() => handleToggleStatus(u.id)} 
+                    className={`btn ${u.status === 'Active' ? 'btn-danger' : 'btn-success'}`}
+                    style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem' }}
+                  >
+                    <Ban size={12} /> {u.status === 'Active' ? 'Suspend' : 'Activate'}
+                  </button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// --- ADMIN TAB 3: REELS & MEDIA CONTENT MODERATION ---
+function AdminReelsModerationTab({ token }) {
+  const [reels, setReels] = useState([
+    { id: 'reel-1', title: '3 Tricks to solve Recursion fast ⚡ #Java #Algorithms', author: 'Aarav Sharma', college: 'IIT Madras', views: '1.4k', likes: 154, isFeatured: true },
+    { id: 'reel-2', title: 'How Spring Boot Inversion of Control works in 60s ☕ #SpringBoot', author: 'Bhavna Patel', college: 'IIT Madras', views: '2.1k', likes: 218, isFeatured: false },
+    { id: 'reel-3', title: 'Calculus Gradient Descent Visualized with 3D Contours 📐', author: 'Chaitanya Reddy', college: 'BITS Pilani', views: '890', likes: 94, isFeatured: false }
+  ]);
+
+  const handleToggleFeature = (id) => {
+    setReels(prev => prev.map(r => r.id === id ? { ...r, isFeatured: !r.isFeatured } : r));
+    alert("📌 Reel featured status updated for campus feed!");
+  };
+
+  const handleDeleteReel = (id) => {
+    if (confirm("Delete this educational reel from the community library?")) {
+      setReels(prev => prev.filter(r => r.id !== id));
+      alert("🗑️ Reel deleted.");
+    }
+  };
+
+  return (
+    <div>
+      <h1 className="font-serif" style={{ fontSize: '2rem', marginBottom: '0.25rem' }}>Educational Reels & Content Moderation</h1>
+      <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '1.75rem' }}>Review student-created concept shorts, pin featured lectures, and filter inappropriate media.</p>
+
+      <table className="admin-table">
+        <thead>
+          <tr>
+            <th>Reel Title & Concept</th>
+            <th>Creator & Campus</th>
+            <th>Engagement</th>
+            <th>Featured Status</th>
+            <th style={{ textAlign: 'right' }}>Moderation Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {reels.map(r => (
+            <tr key={r.id}>
+              <td>
+                <div style={{ fontWeight: 700 }}>{r.title}</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>ID: {r.id}</div>
+              </td>
+              <td>
+                <div>{r.author}</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{r.college}</div>
+              </td>
+              <td>👁️ {r.views} • ❤️ {r.likes}</td>
+              <td>
+                <span className={`tag ${r.isFeatured ? 'tag-accent' : ''}`}>
+                  {r.isFeatured ? '⭐ Campus Featured' : 'Standard'}
+                </span>
+              </td>
+              <td style={{ textAlign: 'right' }}>
+                <div style={{ display: 'flex', gap: '0.375rem', justifyContent: 'flex-end' }}>
+                  <button 
+                    onClick={() => handleToggleFeature(r.id)} 
+                    className="btn btn-secondary" 
+                    style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem' }}
+                  >
+                    {r.isFeatured ? 'Unpin' : '📌 Feature'}
+                  </button>
+                  <button 
+                    onClick={() => handleDeleteReel(r.id)} 
+                    className="btn btn-danger" 
+                    style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem' }}
+                  >
+                    <Ban size={12} /> Remove
+                  </button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// --- ADMIN TAB 4: PLATFORM ANALYTICS & HEALTH ---
+function AdminOverviewTab({ token }) {
+  const [xpPerSolved, setXpPerSolved] = useState(10);
+  const [commissionPercent, setCommissionPercent] = useState(5);
+  const [examBoostActive, setExamBoostActive] = useState(true);
+  const [savedSettings, setSavedSettings] = useState(false);
+
+  const stats = {
+    totalUsers: 14250,
+    totalDoubts: 8940,
+    solvedDoubts: 8798,
+    liveDoubts: 48
+  };
+
+  const saveSettings = (e) => {
+    e.preventDefault();
+    setSavedSettings(true);
+    setTimeout(() => setSavedSettings(false), 2500);
+  };
+
+  return (
+    <div>
+      <h1 className="font-serif" style={{ fontSize: '2rem', marginBottom: '1.5rem' }}>Platform Analytics & Control Center</h1>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '2.5rem' }}>
+        <div className="card-premium" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div style={{ padding: '0.75rem', backgroundColor: 'var(--accent-light)', color: 'var(--accent-primary)', borderRadius: '10px' }}>
+            <Users size={24} />
+          </div>
+          <div>
+            <div style={{ fontSize: '1.75rem', fontWeight: 800 }}>{stats.totalUsers.toLocaleString()}</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Total Registered Students</div>
+          </div>
+        </div>
+
+        <div className="card-premium" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div style={{ padding: '0.75rem', backgroundColor: 'rgba(99, 102, 241, 0.1)', color: 'var(--accent-purple)', borderRadius: '10px' }}>
+            <HelpCircle size={24} />
+          </div>
+          <div>
+            <div style={{ fontSize: '1.75rem', fontWeight: 800 }}>{stats.totalDoubts.toLocaleString()}</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Total Doubts Raised</div>
+          </div>
+        </div>
+
+        <div className="card-premium" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div style={{ padding: '0.75rem', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: 'var(--success-color)', borderRadius: '10px' }}>
+            <CheckCircle size={24} />
+          </div>
+          <div>
+            <div style={{ fontSize: '1.75rem', fontWeight: 800 }}>{stats.solvedDoubts.toLocaleString()}</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Resolved Workspaces (98.4%)</div>
+          </div>
+        </div>
+
+        <div className="card-premium" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div style={{ padding: '0.75rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger-color)', borderRadius: '10px' }}>
+            <div className="live-dot" style={{ width: '12px', height: '12px' }}></div>
+          </div>
+          <div>
+            <div style={{ fontSize: '1.75rem', fontWeight: 800 }}>{stats.liveDoubts}</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Active LIVE Rooms</div>
+          </div>
+        </div>
+      </div>
+
+      <h2 className="font-serif" style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Gamification & Economy Parameters</h2>
+      <form onSubmit={saveSettings} className="card-premium" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', maxWidth: '640px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+          <div>
+            <label className="label">XP Awarded per Doubt Solved</label>
+            <input type="number" className="input" value={xpPerSolved} onChange={e => setXpPerSolved(e.target.value)} />
+          </div>
+          <div>
+            <label className="label">Peer Mentor Coins Commission (%)</label>
+            <input type="number" className="input" value={commissionPercent} onChange={e => setCommissionPercent(e.target.value)} />
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem', backgroundColor: 'var(--bg-tertiary)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: '0.875rem' }}>🔥 2x Exam Week Multiplier</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Doubles all student tutor XP gains for active campus exam weeks</div>
+          </div>
+          <input type="checkbox" checked={examBoostActive} onChange={e => setExamBoostActive(e.target.checked)} style={{ width: '20px', height: '20px', cursor: 'pointer' }} />
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <button type="submit" className="btn btn-primary">Save Platform Settings</button>
+          {savedSettings && <span style={{ color: 'var(--success-color)', fontSize: '0.8125rem', fontWeight: 700 }}>✓ Settings updated successfully!</span>}
+        </div>
+      </form>
+    </div>
+  );
+}
+
+// --- ADMIN TAB 5: BADGE CONFIGURATOR ---
+function AdminBadgeConfiguratorTab({ token }) {
+  const [badges, setBadges] = useState([
+    { id: 'b-1', name: 'Top Mentor', desc: '10+ Doubts Resolved with 5-star rating', criteria: 'DOUBTS_SOLVED', val: 10 },
+    { id: 'b-2', name: 'Streak Master', desc: 'Maintained 7-day study streak', criteria: 'STREAK_DAYS', val: 7 },
+    { id: 'b-3', name: 'Code Wizard', desc: 'Solved 25+ Algorithm problems', criteria: 'XP_EARNED', val: 500 }
+  ]);
+
+  const [name, setName] = useState('');
+  const [desc, setDesc] = useState('');
+  const [criteria, setCriteria] = useState('DOUBTS_SOLVED');
+  const [val, setVal] = useState(5);
+
+  const handleAdd = (e) => {
+    e.preventDefault();
+    if (!name || !desc) return;
+    setBadges(prev => [...prev, { id: `b-${Date.now()}`, name, desc, criteria, val: parseInt(val) }]);
+    setName('');
+    setDesc('');
+    alert("New Campus Badge rule created!");
+  };
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '2rem' }}>
+      <div>
+        <h1 className="font-serif" style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>Badge Configurator</h1>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.8125rem', marginBottom: '1.5rem' }}>Define dynamic campus badge rules and unlock conditions.</p>
+
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>Badge Name</th>
+              <th>Achievement Text</th>
+              <th>Criteria Type</th>
+              <th>Required Threshold</th>
+            </tr>
+          </thead>
+          <tbody>
+            {badges.map(b => (
+              <tr key={b.id}>
+                <td><strong>{b.name}</strong></td>
+                <td>{b.desc}</td>
+                <td><code>{b.criteria}</code></td>
+                <td>⚡ {b.val}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="card-premium" style={{ height: 'fit-content' }}>
+        <h3 className="font-serif" style={{ fontSize: '1.25rem', marginBottom: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
+          Create New Badge Rule
+        </h3>
+        <form onSubmit={handleAdd} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div>
+            <label className="label">Badge Name</label>
+            <input type="text" className="input" value={name} onChange={e => setName(e.target.value)} required />
+          </div>
+          <div>
+            <label className="label">Achievement Description</label>
+            <textarea className="input" style={{ minHeight: '60px' }} value={desc} onChange={e => setDesc(e.target.value)} required />
+          </div>
+          <div>
+            <label className="label">Criteria Metric</label>
+            <select className="input" value={criteria} onChange={e => setCriteria(e.target.value)}>
+              <option value="DOUBTS_SOLVED">Doubts Solved</option>
+              <option value="STREAK_DAYS">Streak Days</option>
+              <option value="XP_EARNED">Experience Points</option>
+            </select>
+          </div>
+          <div>
+            <label className="label">Threshold Value</label>
+            <input type="number" className="input" value={val} onChange={e => setVal(e.target.value)} required />
+          </div>
+          <button type="submit" className="btn btn-primary">Create Badge Rule</button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// --- ADMIN TAB 6: COINS LEDGER ---
+function AdminCoinsLedgerTab({ token }) {
+  return (
+    <div>
+      <h1 className="font-serif" style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>Coins Ledger & Endorsements</h1>
+      <p style={{ color: 'var(--text-secondary)', fontSize: '0.8125rem', marginBottom: '1.5rem' }}>Audit peer coin distribution, reward parameters, and anti-collusion safety constraints.</p>
+
+      <div className="grid-2">
+        <div className="card-premium">
+          <h3 className="font-serif" style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>Reward Token Allocations</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem', fontSize: '0.875rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
+              <span>Doubt Room Solved Reward:</span>
+              <strong>+5 Coins + 10 XP</strong>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
+              <span>Peer Skill Endorsement:</span>
+              <strong>+5 Coins + 10 XP</strong>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
+              <span>Daily Streak Login Claim:</span>
+              <strong>+1 Coin + 2 XP</strong>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>Skill Swap Completed:</span>
+              <strong>+15 XP to both students</strong>
+            </div>
+          </div>
+        </div>
+
+        <div className="card-premium">
+          <h3 className="font-serif" style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>Anti-Spam Collusion Rules</h3>
+          <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+            The platform automatically enforces unique constraint rules per `(endorser_id, recipient_id, skill)` pair. 
+            Self-endorsements are prohibited by PostgreSQL check constraints (`endorser_id &lt;&gt; recipient_id`).
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- ADMIN TAB 7: AUDIT LOGS ---
+function AdminAuditLogsTab({ token }) {
+  const logs = [
+    { id: 'log-1', time: 'Aug 28, 2026 23:05', admin: 'super_admin', action: 'DOUBT_FORCE_RESOLVE', desc: 'Resolved Producer-Consumer lock issue and awarded +10 XP to Bhavna Patel' },
+    { id: 'log-2', time: 'Aug 28, 2026 22:45', admin: 'super_admin', action: 'SETTINGS_UPDATE', desc: 'Enabled 2x Exam Sprint Multiplier for campus' },
+    { id: 'log-3', time: 'Aug 28, 2026 21:10', admin: 'super_admin', action: 'USER_VERIFY', desc: 'Verified tutor credentials for Bhavna Patel (IIT Madras)' },
+    { id: 'log-4', time: 'Aug 28, 2026 19:30', admin: 'system', action: 'AUTO_BADGE_AWARD', desc: 'Awarded Top Mentor badge to Aarav Sharma' }
+  ];
+
+  return (
+    <div>
+      <h1 className="font-serif" style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>System Audit Logs</h1>
+      <p style={{ color: 'var(--text-secondary)', fontSize: '0.8125rem', marginBottom: '1.5rem' }}>Immutable logs tracking administrator actions, security triggers, and configuration changes.</p>
+
+      <table className="admin-table">
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Admin ID</th>
+            <th>Action Code</th>
+            <th>Detailed Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          {logs.map(l => (
+            <tr key={l.id}>
+              <td>{l.time}</td>
+              <td><code>{l.admin}</code></td>
+              <td><span className="tag tag-accent">{l.action}</span></td>
+              <td>{l.desc}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// --- SCREEN 4: SECURE /admin ACCESS GATE (RESTRICTED TO ADMINS) ---
+function AdminGateScreen({ loginAdmin, onBackToHome }) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (email.toLowerCase() === 'admin@studyloop.app' && password === 'password123') {
+      loginAdmin(email);
+    } else {
+      setErrorMsg('Invalid administrative credentials. Access restricted to authorized campus operators.');
+    }
+  };
+
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0f172a', padding: '1.5rem', color: '#f8fafc' }}>
+      <div style={{ maxWidth: '440px', width: '100%', backgroundColor: '#1e293b', borderRadius: '16px', border: '1px solid #334155', padding: '2.5rem 2rem', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
+          <div style={{ width: '56px', height: '56px', borderRadius: '14px', background: 'linear-gradient(135deg, #ea580c 0%, #f59e0b 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 15px -3px rgba(234, 88, 12, 0.4)' }}>
+            <Shield size={30} color="#ffffff" />
+          </div>
+        </div>
+
+        <h2 className="font-serif" style={{ textAlign: 'center', fontSize: '1.625rem', fontWeight: 800, color: '#f8fafc', marginBottom: '0.375rem' }}>
+          StudyLoop Admin Portal
+        </h2>
+        <p style={{ textAlign: 'center', fontSize: '0.8125rem', color: '#94a3b8', marginBottom: '1.75rem' }}>
+          Restricted access for campus safety officers & platform operators.
+        </p>
+
+        {errorMsg && (
+          <div style={{ padding: '0.75rem', backgroundColor: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', color: '#f87171', fontSize: '0.8125rem', marginBottom: '1.25rem', textAlign: 'center' }}>
+            {errorMsg}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.125rem' }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#cbd5e1', marginBottom: '0.375rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Admin Identifier
+            </label>
+            <div style={{ position: 'relative' }}>
+              <Mail size={16} style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
+              <input 
+                type="email" 
+                value={email} 
+                onChange={e => { setEmail(e.target.value); setErrorMsg(''); }}
+                placeholder="admin@studyloop.app" 
+                required 
+                style={{ width: '100%', padding: '0.625rem 0.875rem 0.625rem 2.5rem', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: '#f8fafc', fontSize: '0.875rem', outline: 'none' }}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#cbd5e1', marginBottom: '0.375rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Master Security Key
+            </label>
+            <div style={{ position: 'relative' }}>
+              <Lock size={16} style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
+              <input 
+                type={showPassword ? "text" : "password"} 
+                value={password} 
+                onChange={e => { setPassword(e.target.value); setErrorMsg(''); }}
+                placeholder="••••••••••••" 
+                required 
+                style={{ width: '100%', padding: '0.625rem 2.5rem 0.625rem 2.5rem', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: '#f8fafc', fontSize: '0.875rem', outline: 'none' }}
+              />
+              <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: '0.875rem', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer' }}>
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+          </div>
+
+          <button 
+            type="submit" 
+            style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: 'none', background: 'linear-gradient(135deg, #ea580c 0%, #f59e0b 100%)', color: '#ffffff', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer', marginTop: '0.5rem', boxShadow: '0 4px 12px rgba(234, 88, 12, 0.3)' }}
+          >
+            Authenticate & Open Console 🛡️
+          </button>
+        </form>
+
+        <div style={{ marginTop: '1.5rem', padding: '0.75rem', backgroundColor: '#0f172a', borderRadius: '8px', border: '1px solid #334155', textAlign: 'center' }}>
+          <div style={{ fontSize: '0.6875rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', marginBottom: '0.375rem' }}>Demo Admin Access</div>
+          <button 
+            type="button" 
+            onClick={() => {
+              loginAdmin('admin@studyloop.app');
+            }}
+            style={{ background: 'transparent', border: 'none', color: '#f97316', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
+          >
+            ⚡ 1-Click Authorize (admin@studyloop.app)
+          </button>
+        </div>
+
+        <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
+          <button 
+            type="button" 
+            onClick={onBackToHome}
+            style={{ background: 'transparent', border: 'none', color: '#94a3b8', fontSize: '0.8125rem', cursor: 'pointer' }}
+          >
+            ← Return to Student Campus Network
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- SUPPORTING MODALS & SCREENS ---
+function AvatarChangeModal({ currentAvatarUrl, onSave, onClose }) {
+  const [selectedAvatar, setSelectedAvatar] = useState(currentAvatarUrl);
+  const [customUrl, setCustomUrl] = useState('');
+
+  const avatarPresets = [
+    MALE_AVATAR_SVG,
+    FEMALE_AVATAR_SVG,
+    NEUTRAL_AVATAR_SVG,
+    'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150&auto=format&fit=crop&q=80'
+  ];
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.75)', zIndex: 3600, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', backdropFilter: 'blur(6px)' }}>
+      <div className="card-premium" style={{ width: '100%', maxWidth: '440px', padding: '2rem', borderRadius: 'var(--radius-xl)', backgroundColor: 'var(--bg-elevated)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+          <h3 className="font-serif" style={{ fontSize: '1.25rem' }}>Select Avatar / Profile Picture</h3>
+          <button onClick={onClose} className="btn-icon"><X size={18} /></button>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
+          {avatarPresets.map((av, idx) => (
+            <div 
+              key={idx}
+              onClick={() => setSelectedAvatar(av)}
+              style={{
+                width: '80px',
+                height: '80px',
+                borderRadius: '50%',
+                padding: '3px',
+                border: selectedAvatar === av ? '3px solid var(--accent-primary)' : '2px solid var(--border-color)',
+                cursor: 'pointer',
+                margin: '0 auto'
+              }}
+            >
+              <img src={av} alt="Preset" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+            </div>
+          ))}
+        </div>
+
+        <div style={{ marginBottom: '1.5rem' }}>
+          <label className="label">Or Custom Image URL</label>
+          <input 
+            type="text" 
+            className="input" 
+            placeholder="https://example.com/photo.jpg" 
+            value={customUrl} 
+            onChange={e => { setCustomUrl(e.target.value); setSelectedAvatar(e.target.value); }} 
+          />
+        </div>
+
+        <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <button onClick={() => onSave(selectedAvatar)} className="btn btn-accent" style={{ flex: 1 }}>
+            Save Avatar
+          </button>
+          <button onClick={onClose} className="btn btn-secondary">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PhotoPreviewModal({ imageUrl, userName, onClose }) {
+  return (
+    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(9, 13, 22, 0.9)', zIndex: 4000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }} onClick={onClose}>
+      <div style={{ position: 'relative', textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+        <img src={imageUrl} alt="Enlarged" style={{ maxWidth: '320px', maxHeight: '320px', borderRadius: '50%', border: '4px solid var(--accent-primary)', objectFit: 'cover', boxShadow: 'var(--shadow-glow)' }} />
+        <h3 className="font-serif" style={{ color: '#ffffff', marginTop: '1rem', fontSize: '1.25rem' }}>{userName}</h3>
+        <button onClick={onClose} className="btn btn-secondary" style={{ marginTop: '1rem' }}>Close</button>
+      </div>
+    </div>
+  );
+}
+
+function UserListModal({ title, userId, token, onClose, onSelectUser }) {
+  const sampleUsers = [
+    { id: '22222222-2222-2222-2222-222222222222', fullName: 'Bhavna Patel', college: 'IIT Madras', department: 'Computer Science', avatarUrl: FEMALE_AVATAR_SVG },
+    { id: '33333333-3333-3333-3333-333333333333', fullName: 'Chaitanya Reddy', college: 'BITS Pilani', department: 'Electrical Engineering', avatarUrl: MALE_AVATAR_SVG }
+  ];
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.75)', zIndex: 3600, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', backdropFilter: 'blur(6px)' }}>
+      <div className="card-premium" style={{ width: '100%', maxWidth: '420px', padding: '1.5rem', borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--bg-elevated)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
+          <h3 className="font-serif" style={{ fontSize: '1.25rem' }}>{title}</h3>
+          <button onClick={onClose} className="btn-icon"><X size={18} /></button>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          {sampleUsers.map(u => (
+            <div 
+              key={u.id}
+              onClick={() => onSelectUser(u)}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem', borderRadius: 'var(--radius-sm)', cursor: 'pointer', backgroundColor: 'var(--bg-tertiary)' }}
+            >
+              <img src={u.avatarUrl} alt="User" style={{ width: '38px', height: '38px', borderRadius: '50%', objectFit: 'cover' }} />
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-primary)' }}>{u.fullName}</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{u.college} • {u.department}</div>
               </div>
             </div>
           ))}
         </div>
-      )}
-    </div>
-  );
-}
-
-// --- SCREEN: DIRECT CHAT 1:1 MESSAGING ---
-function ChatScreen({ token, activeChatId, setActiveChatId, chatPeer, setChatPeer, socket, wsMessages, setWsMessages, setActiveTab }) {
-  const [threads, setThreads] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [text, setText] = useState('');
-  const chatBottomRef = useRef(null);
-
-  const { profile } = useAuth();
-
-  const fetchThreads = async () => {
-    try {
-      const response = await fetch('/api/chats/direct/threads', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setThreads(data);
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchChatHistory = async (chatId) => {
-    try {
-      const response = await fetch(`/api/chats/direct/${chatId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        const formatted = data.map(m => ({
-          type: 'DIRECT_MSG',
-          chatId: m.chatId,
-          senderId: m.senderId,
-          message: m.message,
-          createdAt: m.createdAt
-        }));
-        setWsMessages(formatted);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  useEffect(() => {
-    fetchThreads();
-    const interval = setInterval(fetchThreads, 4000);
-    return () => clearInterval(interval);
-  }, [token]);
-
-  useEffect(() => {
-    if (activeChatId) {
-      fetchChatHistory(activeChatId);
-    }
-  }, [activeChatId]);
-
-  useEffect(() => {
-    if (chatBottomRef.current) {
-      chatBottomRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [wsMessages]);
-
-  const sendDirectMessage = (e) => {
-    e.preventDefault();
-    if (!text.trim() || !socket || socket.readyState !== WebSocket.OPEN) return;
-
-    socket.send(JSON.stringify({
-      type: 'DIRECT_MSG',
-      chatId: activeChatId,
-      message: text
-    }));
-    setText('');
-  };
-
-  if (loading) {
-    return <div style={{ textAlign: 'center', padding: '4rem' }}><div className="live-dot" style={{ backgroundColor: '#3b82f6' }}></div></div>;
-  }
-
-  return (
-    <div style={{ display: 'flex', height: 'calc(100vh - 120px)', gap: '1.5rem' }}>
-      {/* Threads list */}
-      <div className="card" style={{ width: '280px', display: 'flex', flexDirection: 'column', padding: '1rem', overflowY: 'auto' }}>
-        <div style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '0.625rem', marginBottom: '1rem' }}>
-          <h3 className="font-serif" style={{ fontSize: '1.25rem' }}>Chats</h3>
-          <div style={{ display: 'flex', gap: '0.5rem', fontSize: '0.6875rem', marginTop: '0.25rem', fontWeight: 600 }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#059669' }}>
-              <span style={{ width: '6px', height: '6px', backgroundColor: '#10b981', borderRadius: '50%' }}></span>
-              {threads.filter(t => t.online).length} Online
-            </span>
-            <span style={{ color: '#cbd5e1' }}>•</span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#64748b' }}>
-              <span style={{ width: '6px', height: '6px', backgroundColor: '#94a3b8', borderRadius: '50%' }}></span>
-              {threads.filter(t => !t.online).length} Offline
-            </span>
-          </div>
-        </div>
-
-        {threads.length === 0 ? (
-          <p style={{ fontSize: '0.75rem', color: '#64748b', textAlign: 'center', margin: '2rem 0' }}>No chats active.</p>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
-            {threads.map(t => (
-              <button key={t.chatId} onClick={() => { setActiveChatId(t.chatId); setChatPeer(t.peer); }} style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.625rem',
-                width: '100%',
-                padding: '0.5rem',
-                borderRadius: '8px',
-                border: 'none',
-                cursor: 'pointer',
-                backgroundColor: activeChatId === t.chatId ? '#eff6ff' : 'transparent',
-                textAlign: 'left'
-              }}>
-                <div style={{ position: 'relative', display: 'inline-block', flexShrink: 0 }}>
-                  <img src={t.peer.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${t.peer.fullName}`} alt="Avatar" style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} />
-                  <span style={{
-                    position: 'absolute',
-                    bottom: '-1px',
-                    right: '-1px',
-                    width: '9px',
-                    height: '9px',
-                    borderRadius: '50%',
-                    backgroundColor: t.online ? '#10b981' : '#94a3b8',
-                    border: '2px solid #ffffff'
-                  }}></span>
-                </div>
-                <div style={{ overflow: 'hidden' }}>
-                  <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#0f172a', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{t.peer.fullName}</div>
-                  <div style={{ fontSize: '0.6875rem', color: '#64748b', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{t.peer.college}</div>
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Chat pane */}
-      <div className="card" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '1rem', overflow: 'hidden' }}>
-        {activeChatId ? (
-          <>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem', marginBottom: '1rem' }}>
-              <div style={{ position: 'relative', display: 'inline-block', flexShrink: 0 }}>
-                <img src={chatPeer?.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${chatPeer?.fullName}`} alt="Avatar" style={{ width: '38px', height: '38px', borderRadius: '50%', objectFit: 'cover' }} />
-                <span style={{
-                  position: 'absolute',
-                  bottom: '0px',
-                  right: '0px',
-                  width: '10px',
-                  height: '10px',
-                  borderRadius: '50%',
-                  backgroundColor: threads.find(t => t.chatId === activeChatId)?.online ? '#10b981' : '#94a3b8',
-                  border: '2px solid #ffffff'
-                }}></span>
-              </div>
-              <div>
-                <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)' }}>{chatPeer?.fullName}</h4>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', color: '#64748b' }}>
-                  <span style={{ color: threads.find(t => t.chatId === activeChatId)?.online ? '#059669' : '#64748b', fontWeight: 600 }}>
-                    {threads.find(t => t.chatId === activeChatId)?.online ? 'Online' : 'Offline'}
-                  </span>
-                  <span>•</span>
-                  <span>{chatPeer?.college}</span>
-                </div>
-              </div>
-            </div>
-
-            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1rem' }}>
-              {wsMessages.filter(m => m.chatId === activeChatId).map((msg, i) => {
-                const isMe = msg.senderId === profile.id;
-                const isReelShare = msg.message && msg.message.includes('[REEL_SHARE:');
-                const reelText = isReelShare ? msg.message.replace(/\[REEL_SHARE:[^\]]+\]\s*/, '') : msg.message;
-
-                return (
-                  <div key={i} style={{
-                    alignSelf: isMe ? 'flex-end' : 'flex-start',
-                    maxWidth: '75%',
-                    backgroundColor: isMe ? '#eff6ff' : '#f1f5f9',
-                    color: '#0f172a',
-                    padding: '0.625rem 1rem',
-                    borderRadius: isMe ? '12px 12px 0 12px' : '12px 12px 12px 0',
-                    border: '1px solid',
-                    borderColor: isMe ? '#bfdbfe' : '#e2e8f0',
-                    fontSize: '0.875rem'
-                  }}>
-                    {isReelShare ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: '#2563eb', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase' }}>
-                          <Tv2 size={16} /> Shared Educational Reel
-                        </div>
-                        <div style={{ backgroundColor: '#09090b', color: '#f8fafc', padding: '0.75rem', borderRadius: '8px', borderLeft: '4px solid #3b82f6' }}>
-                          <p style={{ margin: 0, fontSize: '0.8125rem', lineHeight: 1.4 }}>{reelText}</p>
-                        </div>
-                        {setActiveTab && (
-                          <button onClick={() => setActiveTab('reels')} className="btn btn-accent" style={{ padding: '0.375rem 0.75rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.375rem', width: '100%' }}>
-                            ▶ Watch Reel Now
-                          </button>
-                        )}
-                      </div>
-                    ) : (
-                      msg.message
-                    )}
-                  </div>
-                );
-              })}
-              <div ref={chatBottomRef}></div>
-            </div>
-
-            <form onSubmit={sendDirectMessage} style={{ display: 'flex', gap: '0.5rem' }}>
-              <input type="text" className="input" placeholder="Type direct message..." value={text} onChange={e => setText(e.target.value)} required />
-              <button type="submit" className="btn btn-accent"><Send size={16} /></button>
-            </form>
-          </>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#94a3b8' }}>
-            <MessageSquare size={48} />
-            <p style={{ marginTop: '0.5rem', fontSize: '0.875rem' }}>Select a connection to start messaging.</p>
-          </div>
-        )}
       </div>
     </div>
   );
 }
 
-// --- SCREEN: EDUCATIONAL REELS (INSTAGRAM REELS FORMAT) ---
-function ReelsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, socket, setWsMessages }) {
-  const [reels, setReels] = useState([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [muted, setMuted] = useState(true);
-  const [isPlaying, setIsPlaying] = useState(true);
-  const [showUpload, setShowUpload] = useState(false);
-  
-  // Interaction states
-  const [likedMap, setLikedMap] = useState({});
-  const [likesCountMap, setLikesCountMap] = useState({});
-  const [showComments, setShowComments] = useState(false);
-  const [commentsMap, setCommentsMap] = useState({});
-  const [commentText, setCommentText] = useState('');
-  const [followingMap, setFollowingMap] = useState({});
-
-  // Share & Send states
-  const [showShareModal, setShowShareModal] = useState(false);
-  const [shareTab, setShareTab] = useState('social'); // 'social' or 'connections'
-  const [shareSearch, setShareSearch] = useState('');
-  const [sentUsersMap, setSentUsersMap] = useState({});
-  const [toastMessage, setToastMessage] = useState('');
-
-  // Upload form
-  const [videoUrl, setVideoUrl] = useState('');
-  const [subject, setSubject] = useState('');
-  const [description, setDescription] = useState('');
-
-  const videoRef = useRef(null);
-  const wheelCooldownRef = useRef(false);
-  const touchStartYRef = useRef(0);
-
-  const defaultReels = [
-    {
-      id: "reel-1",
-      videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-      subject: "React",
-      description: "React useEffect & State lifecycle visual breakdown in 60 seconds! 🚀 #ReactHooks #Frontend",
-      likesCount: 342,
-      commentsCount: 18,
-      creator: {
-        id: "studenta-uuid",
-        fullName: "Aarav Sharma",
-        username: "aarav_cs_iitm",
-        college: "IIT Madras",
-        department: "Computer Science",
-        avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"
-      }
-    },
-    {
-      id: "reel-2",
-      videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
-      subject: "Java",
-      description: "Java Multithreading & ReentrantLocks explained with real memory diagrams! ⚡ #JavaConcurrency #CS",
-      likesCount: 512,
-      commentsCount: 34,
-      creator: {
-        id: "studentb-uuid",
-        fullName: "Bhavna Patel",
-        username: "bhavna_code",
-        college: "IIT Bombay",
-        department: "Information Tech",
-        avatarUrl: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150"
-      }
-    },
-    {
-      id: "reel-3",
-      videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
-      subject: "Data Structures",
-      description: "Big-O Notation Memory Tricks! Master O(1) vs O(N log N) visually. 🧠 #Algorithms #CodingInterview",
-      likesCount: 789,
-      commentsCount: 42,
-      creator: {
-        id: "studentc-uuid",
-        fullName: "Chaitanya Kumar",
-        username: "chaitanya_dev",
-        college: "BITS Pilani",
-        department: "Electrical Eng",
-        avatarUrl: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150"
-      }
-    }
-  ];
-
-  const appConnections = [
-    {
-      id: "studenta-uuid",
-      chatId: "chat-studenta",
-      fullName: "Aarav Sharma",
-      college: "IIT Madras",
-      department: "Computer Science",
-      avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"
-    },
-    {
-      id: "studentb-uuid",
-      chatId: "chat-studentb",
-      fullName: "Bhavna Patel",
-      college: "IIT Bombay",
-      department: "Information Tech",
-      avatarUrl: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150"
-    },
-    {
-      id: "studentc-uuid",
-      chatId: "chat-studentc",
-      fullName: "Chaitanya Kumar",
-      college: "BITS Pilani",
-      department: "Electrical Eng",
-      avatarUrl: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150"
-    }
-  ];
-
-  const fetchReels = async () => {
-    try {
-      const response = await fetch('/api/reels', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        if (data && data.length > 0) {
-          setReels(data);
-          setLoading(false);
-          return;
-        }
-      }
-    } catch (e) {
-      console.error(e);
-    }
-
-    setReels(defaultReels);
-    const initialLikes = {};
-    defaultReels.forEach(r => { initialLikes[r.id] = r.likesCount; });
-    setLikesCountMap(initialLikes);
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchReels();
-  }, [token]);
-
-  const activeReel = reels[currentIndex] || defaultReels[0];
-
-  const handleNext = () => {
-    if (currentIndex < reels.length - 1) {
-      setCurrentIndex(prev => prev + 1);
-      setIsPlaying(true);
-    }
-  };
-
-  const handlePrev = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex(prev => prev - 1);
-      setIsPlaying(true);
-    }
-  };
-
-  // Keyboard navigation shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-      if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
-        e.preventDefault();
-        handleNext();
-      } else if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
-        e.preventDefault();
-        handlePrev();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentIndex, reels.length]);
-
-  // Mouse wheel scroll handler with debounced cooldown
-  const handleWheel = (e) => {
-    if (wheelCooldownRef.current) return;
-    if (Math.abs(e.deltaY) < 15) return;
-
-    wheelCooldownRef.current = true;
-    setTimeout(() => {
-      wheelCooldownRef.current = false;
-    }, 350);
-
-    if (e.deltaY > 0) {
-      handleNext();
-    } else {
-      handlePrev();
-    }
-  };
-
-  // Touch swipe gesture handlers
-  const handleTouchStart = (e) => {
-    if (e.touches && e.touches.length > 0) {
-      touchStartYRef.current = e.touches[0].clientY;
-    }
-  };
-
-  const handleTouchEnd = (e) => {
-    if (e.changedTouches && e.changedTouches.length > 0) {
-      const touchEndY = e.changedTouches[0].clientY;
-      const diffY = touchStartYRef.current - touchEndY;
-      if (Math.abs(diffY) > 35) {
-        if (diffY > 0) {
-          handleNext();
-        } else {
-          handlePrev();
-        }
-      }
-    }
-  };
-
-  const showToast = (msg) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(''), 3500);
-  };
-
-  const togglePlay = () => {
-    if (videoRef.current) {
-      if (isPlaying) {
-        videoRef.current.pause();
-        setIsPlaying(false);
-      } else {
-        videoRef.current.play();
-        setIsPlaying(true);
-      }
-    }
-  };
-
-  const toggleLike = (reelId) => {
-    const isLiked = likedMap[reelId];
-    const currentCount = likesCountMap[reelId] || activeReel.likesCount;
-    setLikedMap(prev => ({ ...prev, [reelId]: !isLiked }));
-    setLikesCountMap(prev => ({ ...prev, [reelId]: isLiked ? currentCount - 1 : currentCount + 1 }));
-
-    fetch(`/api/reels/${reelId}/like`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` }
-    }).catch(e => console.error(e));
-  };
-
-  const toggleFollow = (creatorId) => {
-    setFollowingMap(prev => ({ ...prev, [creatorId]: !prev[creatorId] }));
-  };
-
-  const handlePostComment = (e) => {
-    e.preventDefault();
-    if (!commentText.trim()) return;
-
-    const newComment = {
-      id: Date.now(),
-      senderName: "You",
-      comment: commentText,
-      createdAt: new Date().toISOString()
-    };
-
-    const currentList = commentsMap[activeReel.id] || [];
-    setCommentsMap(prev => ({
-      ...prev,
-      [activeReel.id]: [...currentList, newComment]
-    }));
-    setCommentText('');
-
-    fetch(`/api/reels/${activeReel.id}/comment`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ comment: commentText })
-    }).catch(e => console.error(e));
-  };
-
-  const handleUploadReel = async (e) => {
-    e.preventDefault();
-    if (!videoUrl || !subject) return;
-
-    const newReel = {
-      id: "user-reel-" + Date.now(),
-      videoUrl: videoUrl,
-      subject: subject,
-      description: description || "Educational short lesson",
-      likesCount: 1,
-      commentsCount: 0,
-      creator: {
-        id: "me",
-        fullName: "You",
-        username: "studyloop_creator",
-        college: "My Campus",
-        department: "StudyLoop",
-        avatarUrl: `https://api.dicebear.com/7.x/initials/svg?seed=You`
-      }
-    };
-
-    setReels([newReel, ...reels]);
-    setCurrentIndex(0);
-    setVideoUrl('');
-    setSubject('');
-    setDescription('');
-    setShowUpload(false);
-
-    try {
-      await fetch('/api/reels', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ videoUrl, subject, description })
-      });
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  // --- SHARE & IN-APP SEND HANDLERS ---
-  const shareReelUrl = window.location.origin + `#reel-${activeReel.id}`;
-  const shareText = `Check out this Educational Reel on StudyLoop: "${activeReel.subject} - ${activeReel.description}" 🚀`;
-
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(`${shareText}\n${shareReelUrl}`);
-    showToast("✨ Reel link & caption copied to clipboard!");
-  };
-
-  const handleNativeShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `StudyLoop Reel: ${activeReel.subject}`,
-          text: shareText,
-          url: shareReelUrl,
-        });
-      } catch (err) {
-        console.error(err);
-      }
-    } else {
-      handleCopyLink();
-    }
-  };
-
-  const shareToWhatsApp = () => {
-    const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText + "\n" + shareReelUrl)}`;
-    window.open(waUrl, '_blank');
-    showToast("Opening WhatsApp share...");
-  };
-
-  const shareToInstagram = () => {
-    navigator.clipboard.writeText(`${shareText}\n${shareReelUrl}`);
-    showToast("📸 Instagram Reel caption & link copied! Paste into Instagram story/DM.");
-  };
-
-  const shareToTwitter = () => {
-    const twUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareReelUrl)}`;
-    window.open(twUrl, '_blank');
-    showToast("Opening X (Twitter) share...");
-  };
-
-  const shareToTelegram = () => {
-    const tgUrl = `https://t.me/share/url?url=${encodeURIComponent(shareReelUrl)}&text=${encodeURIComponent(shareText)}`;
-    window.open(tgUrl, '_blank');
-    showToast("Opening Telegram share...");
-  };
-
-  const shareToLinkedIn = () => {
-    const liUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareReelUrl)}`;
-    window.open(liUrl, '_blank');
-    showToast("Opening LinkedIn share...");
-  };
-
-  const sendReelToUser = (user) => {
-    const messagePayload = `[REEL_SHARE:${activeReel.id}] 🎬 Watch Reel: #${activeReel.subject} - ${activeReel.description}`;
-
-    if (socket && socket.readyState === WebSocket.OPEN) {
-      socket.send(JSON.stringify({
-        type: 'DIRECT_MSG',
-        chatId: user.chatId || `chat-${user.id}`,
-        message: messagePayload
-      }));
-    }
-
-    if (setWsMessages) {
-      setWsMessages(prev => [...prev, {
-        type: 'DIRECT_MSG',
-        chatId: user.chatId || `chat-${user.id}`,
-        senderId: 'me',
-        message: messagePayload,
-        createdAt: new Date().toISOString()
-      }]);
-    }
-
-    setSentUsersMap(prev => ({ ...prev, [user.id]: true }));
-    showToast(`🚀 Shared reel directly with ${user.fullName}!`);
-  };
-
-  const filteredConnections = appConnections.filter(user => 
-    user.fullName.toLowerCase().includes(shareSearch.toLowerCase()) ||
-    user.college.toLowerCase().includes(shareSearch.toLowerCase())
-  );
-
-  if (loading) {
-    return <div style={{ textAlign: 'center', padding: '4rem' }}><div className="live-dot" style={{ backgroundColor: '#3b82f6' }}></div></div>;
-  }
+function PublicProfileModal({ user, currentUserId, token, onClose, onStartChat, onOpenUserList }) {
+  if (!user) return null;
 
   return (
-    <div style={{ 
-      display: 'flex', 
-      alignItems: 'center', 
-      justifyContent: 'center', 
-      height: '100%', 
-      width: '100%', 
-      backgroundColor: '#09090b', 
-      position: 'relative', 
-      overflow: 'hidden',
-      padding: 0
-    }}>
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div style={{
-          position: 'fixed',
-          top: '1.25rem',
-          right: '1.25rem',
-          backgroundColor: '#0f172a',
-          color: '#ffffff',
-          padding: '0.75rem 1.25rem',
-          borderRadius: '12px',
-          boxShadow: '0 10px 25px rgba(0,0,0,0.3)',
-          borderLeft: '4px solid #3b82f6',
-          zIndex: 100,
-          fontSize: '0.8125rem',
-          fontWeight: 600,
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-          animation: 'fadeIn 0.3s ease'
-        }}>
-          <Sparkles size={16} style={{ color: '#fbbf24' }} />
-          {toastMessage}
-        </div>
-      )}
-
-      {/* Upload Modal Overlay */}
-      {showUpload && (
-        <form onSubmit={handleUploadReel} className="card-premium" style={{ 
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: '90%', 
-          maxWidth: '420px', 
-          backgroundColor: '#ffffff', 
-          zIndex: 100,
-          boxShadow: '0 20px 50px rgba(0,0,0,0.8)'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-            <h3 className="font-serif" style={{ fontSize: '1rem', margin: 0 }}>Upload Concept Short</h3>
-            <button type="button" onClick={() => setShowUpload(false)} className="btn-icon"><X size={16} /></button>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.75)', zIndex: 3500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', backdropFilter: 'blur(6px)' }}>
+      <div className="card-premium" style={{ width: '100%', maxWidth: '520px', padding: '2rem', borderRadius: 'var(--radius-xl)', backgroundColor: 'var(--bg-elevated)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+            <img src={user.avatarUrl || MALE_AVATAR_SVG} alt="Profile" style={{ width: '64px', height: '64px', borderRadius: '50%', border: '2px solid var(--accent-primary)', objectFit: 'cover' }} />
             <div>
-              <label className="label" style={{ fontSize: '0.75rem' }}>Video Stream URL (MP4)</label>
-              <input type="text" className="input" placeholder="https://.../video.mp4" value={videoUrl} onChange={e => setVideoUrl(e.target.value)} required style={{ padding: '0.375rem 0.625rem', fontSize: '0.8125rem' }} />
-            </div>
-            <div>
-              <label className="label" style={{ fontSize: '0.75rem' }}>Subject Tag</label>
-              <input type="text" className="input" placeholder="e.g. React, Java, Calculus" value={subject} onChange={e => setSubject(e.target.value)} required style={{ padding: '0.375rem 0.625rem', fontSize: '0.8125rem' }} />
-            </div>
-            <div>
-              <label className="label" style={{ fontSize: '0.75rem' }}>Caption & Concept Explanation</label>
-              <textarea className="input" style={{ minHeight: '50px', padding: '0.375rem 0.625rem', fontSize: '0.8125rem' }} placeholder="Explain this academic concept in 60s..." value={description} onChange={e => setDescription(e.target.value)} />
-            </div>
-            <button type="submit" className="btn btn-accent" style={{ width: '100%', padding: '0.5rem' }}>Publish to Reels</button>
-          </div>
-        </form>
-      )}
-
-      {/* FULL SCREEN 9:16 INSTAGRAM REELS VIEWPORT */}
-      <div 
-        onWheel={handleWheel}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-        style={{
-          position: 'relative',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          height: '100vh',
-          maxHeight: '100vh',
-          width: '100%',
-          gap: '1.25rem',
-          userSelect: 'none'
-        }}
-      >
-        {/* Main 9:16 Center Video Frame */}
-        <div style={{
-          position: 'relative',
-          height: '100vh',
-          maxHeight: '100vh',
-          aspectRatio: '9 / 16',
-          backgroundColor: '#000000',
-          borderRadius: '16px',
-          overflow: 'hidden',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.1)',
-          display: 'flex',
-          flexDirection: 'column',
-          justify: 'center'
-        }}>
-          {/* Video Player */}
-          <video
-            ref={videoRef}
-            src={activeReel.videoUrl}
-            style={{ width: '100%', height: '100%', objectFit: 'cover', cursor: 'pointer' }}
-            autoPlay
-            loop
-            muted={muted}
-            playsInline
-            onClick={togglePlay}
-          />
-
-          {/* Top Floating Control Bar Overlay */}
-          <div style={{ 
-            position: 'absolute', 
-            top: '0.75rem', 
-            left: '0.75rem', 
-            right: '0.75rem', 
-            display: 'flex', 
-            justify: 'space-between', 
-            alignItems: 'center', 
-            zIndex: 20 
-          }}>
-            <div style={{ display: 'flex', gap: '0.375rem', alignItems: 'center' }}>
-              <ReelsActionButton 
-                label="Scroll Up (W / ↑)"
-                disabled={currentIndex === 0}
-                icon={<ChevronUp size={16} />}
-                onClick={handlePrev}
-              />
-              <ReelsActionButton 
-                label="Scroll Down (S / ↓)"
-                disabled={currentIndex === reels.length - 1}
-                icon={<ChevronDown size={16} />}
-                onClick={handleNext}
-              />
-              <span style={{ 
-                fontSize: '0.6875rem', 
-                color: '#ffffff', 
-                backgroundColor: 'rgba(0,0,0,0.6)', 
-                padding: '0.2rem 0.5rem', 
-                borderRadius: '10px', 
-                backdropFilter: 'blur(6px)', 
-                fontWeight: 600 
-              }}>
-                {currentIndex + 1} / {reels.length}
-              </span>
-            </div>
-
-            <div style={{ display: 'flex', gap: '0.375rem', alignItems: 'center' }}>
-              <button 
-                onClick={() => setShowUpload(!showUpload)} 
-                style={{ 
-                  background: '#3b82f6', 
-                  border: 'none', 
-                  borderRadius: '20px', 
-                  color: '#ffffff', 
-                  padding: '0.25rem 0.625rem', 
-                  fontSize: '0.6875rem', 
-                  fontWeight: 600, 
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.25rem',
-                  boxShadow: '0 2px 8px rgba(59, 130, 246, 0.4)'
-                }}
-              >
-                <Plus size={14} /> Post Reel
-              </button>
-              <ReelsActionButton 
-                label={muted ? "Unmute Audio" : "Mute Audio"}
-                icon={muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
-                onClick={() => setMuted(!muted)}
-              />
+              <h3 className="font-serif" style={{ fontSize: '1.375rem', margin: 0 }}>{user.fullName}</h3>
+              <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>{user.college} • {user.department}</div>
             </div>
           </div>
-
-          {/* VISUAL SCROLL PROGRESS TRACK (RIGHT SIDE OF VIDEO) */}
-          <div style={{
-            position: 'absolute',
-            right: '4px',
-            top: '60px',
-            bottom: '140px',
-            width: '3px',
-            backgroundColor: 'rgba(255, 255, 255, 0.2)',
-            borderRadius: '4px',
-            zIndex: 15,
-            display: 'flex',
-            flexDirection: 'column'
-          }}>
-            {reels.map((_, idx) => (
-              <div 
-                key={idx}
-                onClick={() => setCurrentIndex(idx)}
-                style={{
-                  flex: 1,
-                  margin: '1px 0',
-                  backgroundColor: idx === currentIndex ? '#3b82f6' : 'rgba(255,255,255,0.4)',
-                  borderRadius: '3px',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease'
-                }}
-              />
-            ))}
-          </div>
-
-          {/* Play/Pause overlay */}
-          {!isPlaying && (
-            <div onClick={togglePlay} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.3)', cursor: 'pointer', zIndex: 5 }}>
-              <div style={{ width: '52px', height: '52px', borderRadius: '50%', backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff', fontSize: '1.25rem' }}>
-                ▶
-              </div>
-            </div>
-          )}
-
-          {/* BOTTOM LEFT METADATA OVERLAY (MATCHING IMAGE 2) */}
-          <div style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: '55px',
-            padding: '0.875rem',
-            background: 'linear-gradient(transparent, rgba(0,0,0,0.92))',
-            color: '#ffffff',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '0.375rem',
-            zIndex: 10
-          }}>
-            {/* Creator handle & Follow button */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <img src={activeReel.creator?.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${activeReel.creator?.fullName}`} alt="Avatar" style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid #3b82f6' }} />
-              <span style={{ fontWeight: 700, fontSize: '0.8125rem', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>
-                @{activeReel.creator?.username || activeReel.creator?.fullName?.toLowerCase().replace(/\s+/g, '_')}
-              </span>
-              <button 
-                onClick={() => toggleFollow(activeReel.creator?.id)} 
-                style={{ 
-                  background: 'transparent', 
-                  border: '1px solid rgba(255,255,255,0.8)', 
-                  borderRadius: '6px', 
-                  color: '#ffffff', 
-                  fontSize: '0.6875rem', 
-                  fontWeight: 600, 
-                  padding: '0.125rem 0.5rem', 
-                  cursor: 'pointer',
-                  backdropFilter: 'blur(4px)'
-                }}
-              >
-                {followingMap[activeReel.creator?.id] ? "Following" : "Follow"}
-              </button>
-            </div>
-
-            {/* Caption & Subject Tag */}
-            <div style={{ fontSize: '0.75rem', color: '#f8fafc', lineHeight: 1.3, textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>
-              <span style={{ fontSize: '0.625rem', fontWeight: 700, backgroundColor: '#3b82f6', color: '#ffffff', padding: '0.125rem 0.375rem', borderRadius: '50px', marginRight: '0.375rem' }}>
-                #{activeReel.subject}
-              </span>
-              {activeReel.description}
-            </div>
-
-            {/* Music track ticker */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.625rem', color: '#cbd5e1' }}>
-              <Music size={12} />
-              <span>StudyLoop Academic Shorts • Scroll for next</span>
-            </div>
-          </div>
+          <button onClick={onClose} className="btn-icon"><X size={20} /></button>
         </div>
 
-        {/* RIGHT SIDE ACTION BAR (CLEAN INSTAGRAM STYLE MATCHING IMAGE 2) */}
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '1.125rem',
-          alignItems: 'center',
-          color: '#ffffff',
-          padding: '0 0.75rem',
-          zIndex: 10
-        }}>
-          {/* Like button */}
-          <ReelsActionButton 
-            label={likedMap[activeReel.id] ? "Liked Reel" : "Like Reel"}
-            activeColor={likedMap[activeReel.id] ? '#ef4444' : '#ffffff'}
-            icon={<Heart size={22} fill={likedMap[activeReel.id] ? '#ef4444' : 'none'} />}
-            badgeText={likesCountMap[activeReel.id] || activeReel.likesCount}
-            onClick={() => toggleLike(activeReel.id)}
-          />
+        <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1.5rem' }}>
+          {user.bio || '🎓 Student mentor active on StudyLoop peer network.'}
+        </p>
 
-          {/* Comment button */}
-          <ReelsActionButton 
-            label="Comments"
-            icon={<MessageCircle size={22} />}
-            badgeText={(commentsMap[activeReel.id] || []).length || activeReel.commentsCount}
-            onClick={() => setShowComments(!showComments)}
-          />
-
-          {/* Share button */}
-          <ReelsActionButton 
-            label="Share & Send Reel"
-            icon={<Share2 size={20} />}
-            badgeText="Share"
-            onClick={() => setShowShareModal(true)}
-          />
-
-          {/* Save / Bookmark Button */}
-          <ReelsActionButton 
-            label="Save Reel"
-            icon={<Bookmark size={20} />}
-            badgeText="Save"
-            onClick={() => showToast("Bookmark saved to your profile!")}
-          />
-
-          {/* Spinning Audio Disc / Creator Avatar */}
-          <div style={{ marginTop: '0.25rem' }}>
-            <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#18181b', border: '2px solid #ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Disc size={16} style={{ color: '#3b82f6' }} />
-            </div>
-          </div>
+        <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <button 
+            onClick={() => { onClose(); onStartChat(user); }}
+            className="btn btn-primary"
+            style={{ flex: 1, padding: '0.75rem' }}
+          >
+            <MessageSquare size={16} /> Send Message
+          </button>
+          <button onClick={onClose} className="btn btn-secondary">
+            Close
+          </button>
         </div>
-
-        {/* INSTAGRAM COMMENTS SLIDE-UP DRAWER */}
-        {showComments && (
-          <div style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: '60%',
-            backgroundColor: '#ffffff',
-            borderTopLeftRadius: '20px',
-            borderTopRightRadius: '20px',
-            color: '#0f172a',
-            padding: '1rem',
-            display: 'flex',
-            flexDirection: 'column',
-            zIndex: 30,
-            boxShadow: '0 -10px 25px rgba(0,0,0,0.5)'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem' }}>
-              <h4 className="font-serif" style={{ fontSize: '1rem', fontWeight: 700 }}>Comments</h4>
-              <button onClick={() => setShowComments(false)} className="btn-icon" style={{ padding: '0.25rem' }}><X size={16} /></button>
-            </div>
-
-            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '0.75rem' }}>
-              {(commentsMap[activeReel.id] || []).length === 0 ? (
-                <p style={{ textAlign: 'center', color: '#64748b', fontSize: '0.75rem', marginTop: '2rem' }}>No comments yet. Start the conversation!</p>
-              ) : (
-                (commentsMap[activeReel.id] || []).map(c => (
-                  <div key={c.id} style={{ display: 'flex', gap: '0.5rem', fontSize: '0.8125rem' }}>
-                    <strong>{c.senderName || 'Student'}:</strong>
-                    <span style={{ color: '#334155' }}>{c.comment}</span>
-                  </div>
-                ))
-              )}
-            </div>
-
-            <form onSubmit={handlePostComment} style={{ display: 'flex', gap: '0.5rem' }}>
-              <input type="text" className="input" placeholder="Add a comment..." value={commentText} onChange={e => setCommentText(e.target.value)} style={{ fontSize: '0.8125rem', padding: '0.5rem 0.75rem' }} required />
-              <button type="submit" className="btn btn-accent" style={{ padding: '0.5rem 0.75rem', fontSize: '0.75rem' }}><Send size={14} /></button>
-            </form>
-          </div>
-        )}
-
-        {/* MULTI-PLATFORM & IN-APP SHARE MODAL SLIDE-UP */}
-        {showShareModal && (
-          <div style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: '80%',
-            backgroundColor: '#0f172a',
-            borderTopLeftRadius: '20px',
-            borderTopRightRadius: '20px',
-            color: '#ffffff',
-            padding: '1rem',
-            display: 'flex',
-            flexDirection: 'column',
-            zIndex: 40,
-            boxShadow: '0 -15px 35px rgba(0,0,0,0.7)',
-            borderTop: '1px solid rgba(255,255,255,0.1)'
-          }}>
-            {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>
-              <div>
-                <h3 className="font-serif" style={{ fontSize: '1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Share2 size={18} style={{ color: '#3b82f6' }} /> Share & Send Reel
-                </h3>
-                <p style={{ fontSize: '0.6875rem', color: '#94a3b8', margin: 0 }}>Send to social media or StudyLoop connections</p>
-              </div>
-              <button onClick={() => setShowShareModal(false)} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '50%', width: '28px', height: '28px', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                <X size={16} />
-              </button>
-            </div>
-
-            {/* Tab Navigation */}
-            <div style={{ display: 'flex', gap: '0.5rem', backgroundColor: 'rgba(255,255,255,0.05)', padding: '0.25rem', borderRadius: '10px', marginBottom: '0.75rem' }}>
-              <button 
-                onClick={() => setShareTab('social')}
-                style={{
-                  flex: 1,
-                  padding: '0.375rem',
-                  borderRadius: '6px',
-                  border: 'none',
-                  backgroundColor: shareTab === 'social' ? '#3b82f6' : 'transparent',
-                  color: '#ffffff',
-                  fontWeight: shareTab === 'social' ? 700 : 500,
-                  fontSize: '0.75rem',
-                  cursor: 'pointer'
-                }}
-              >
-                🌐 Social Platforms
-              </button>
-              <button 
-                onClick={() => setShareTab('connections')}
-                style={{
-                  flex: 1,
-                  padding: '0.375rem',
-                  borderRadius: '6px',
-                  border: 'none',
-                  backgroundColor: shareTab === 'connections' ? '#3b82f6' : 'transparent',
-                  color: '#ffffff',
-                  fontWeight: shareTab === 'connections' ? 700 : 500,
-                  fontSize: '0.75rem',
-                  cursor: 'pointer'
-                }}
-              >
-                👥 Send to Followers
-              </button>
-            </div>
-
-            {/* TAB CONTENT 1: SOCIAL MEDIA PLATFORMS */}
-            {shareTab === 'social' && (
-              <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem' }}>
-                  {/* WhatsApp */}
-                  <button 
-                    onClick={shareToWhatsApp}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      padding: '0.625rem',
-                      borderRadius: '10px',
-                      border: 'none',
-                      backgroundColor: '#25D366',
-                      color: '#ffffff',
-                      fontWeight: 700,
-                      fontSize: '0.75rem',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    💬 WhatsApp
-                  </button>
-
-                  {/* Instagram Direct Link */}
-                  <button 
-                    onClick={() => window.open('https://www.instagram.com/', '_blank')}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      padding: '0.625rem',
-                      borderRadius: '10px',
-                      border: 'none',
-                      background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
-                      color: '#ffffff',
-                      fontWeight: 700,
-                      fontSize: '0.75rem',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    📸 Instagram Web
-                  </button>
-
-                  {/* X / Twitter */}
-                  <button 
-                    onClick={shareToTwitter}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      padding: '0.625rem',
-                      borderRadius: '10px',
-                      border: 'none',
-                      backgroundColor: '#000000',
-                      color: '#ffffff',
-                      fontWeight: 700,
-                      fontSize: '0.75rem',
-                      cursor: 'pointer',
-                      boxShadow: '0 0 0 1px rgba(255,255,255,0.2)'
-                    }}
-                  >
-                    𝕏 Twitter / X
-                  </button>
-
-                  {/* Telegram */}
-                  <button 
-                    onClick={shareToTelegram}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      padding: '0.625rem',
-                      borderRadius: '10px',
-                      border: 'none',
-                      backgroundColor: '#229ED9',
-                      color: '#ffffff',
-                      fontWeight: 700,
-                      fontSize: '0.75rem',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    ✈️ Telegram
-                  </button>
-
-                  {/* LinkedIn */}
-                  <button 
-                    onClick={shareToLinkedIn}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      padding: '0.625rem',
-                      borderRadius: '10px',
-                      border: 'none',
-                      backgroundColor: '#0A66C2',
-                      color: '#ffffff',
-                      fontWeight: 700,
-                      fontSize: '0.75rem',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    💼 LinkedIn
-                  </button>
-
-                  {/* Native Device Share */}
-                  <button 
-                    onClick={handleNativeShare}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      padding: '0.625rem',
-                      borderRadius: '10px',
-                      border: 'none',
-                      backgroundColor: '#3b82f6',
-                      color: '#ffffff',
-                      fontWeight: 700,
-                      fontSize: '0.75rem',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    <Share2 size={14} /> More Options
-                  </button>
-                </div>
-
-                {/* Copy Link Button Box */}
-                <div style={{ marginTop: '0.5rem', backgroundColor: 'rgba(255,255,255,0.05)', padding: '0.5rem', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
-                  <div style={{ fontSize: '0.6875rem', color: '#cbd5e1', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {shareReelUrl}
-                  </div>
-                  <button onClick={handleCopyLink} className="btn btn-accent" style={{ padding: '0.25rem 0.5rem', fontSize: '0.6875rem', whiteSpace: 'nowrap' }}>
-                    Copy Link
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* TAB CONTENT 2: IN-APP DIRECT SEND TO CONNECTIONS */}
-            {shareTab === 'connections' && (
-              <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                {/* Search Bar */}
-                <div style={{ position: 'relative' }}>
-                  <Search size={14} style={{ position: 'absolute', left: '0.625rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                  <input 
-                    type="text"
-                    placeholder="Search followers..."
-                    value={shareSearch}
-                    onChange={e => setShareSearch(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '0.375rem 0.625rem 0.375rem 2rem',
-                      borderRadius: '8px',
-                      border: '1px solid rgba(255,255,255,0.2)',
-                      backgroundColor: 'rgba(255,255,255,0.08)',
-                      color: '#ffffff',
-                      fontSize: '0.75rem',
-                      outline: 'none'
-                    }}
-                  />
-                </div>
-
-                {/* Connections List */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', marginTop: '0.25rem' }}>
-                  {filteredConnections.length === 0 ? (
-                    <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: '0.6875rem', margin: '1rem 0' }}>No matching connections found.</p>
-                  ) : (
-                    filteredConnections.map(user => {
-                      const isSent = sentUsersMap[user.id];
-                      return (
-                        <div key={user.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.375rem 0.5rem', borderRadius: '8px', backgroundColor: 'rgba(255,255,255,0.04)' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <img src={user.avatarUrl} alt="Avatar" style={{ width: '30px', height: '30px', borderRadius: '50%' }} />
-                            <div>
-                              <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#ffffff' }}>{user.fullName}</div>
-                              <div style={{ fontSize: '0.625rem', color: '#94a3b8' }}>{user.college}</div>
-                            </div>
-                          </div>
-
-                          <button 
-                            onClick={() => {
-                              sendReelToUser(user);
-                              if (setActiveChatId && setChatPeer) {
-                                setActiveChatId(user.chatId || `chat-${user.id}`);
-                                setChatPeer(user);
-                              }
-                            }}
-                            disabled={isSent}
-                            style={{
-                              padding: '0.25rem 0.625rem',
-                              borderRadius: '6px',
-                              border: 'none',
-                              backgroundColor: isSent ? '#16a34a' : '#3b82f6',
-                              color: '#ffffff',
-                              fontWeight: 600,
-                              fontSize: '0.6875rem',
-                              cursor: isSent ? 'default' : 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '0.25rem'
-                            }}
-                          >
-                            {isSent ? <><Check size={12} /> Sent</> : <><Send size={12} /> Send</>}
-                          </button>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
       </div>
     </div>
   );
 }
 
-// Action Button Helper with Hover Tooltip support for Reels Controls
-function ReelsActionButton({ icon, label, onClick, badgeText, activeColor, disabled }) {
-  const [isHovered, setIsHovered] = useState(false);
-
-  return (
-    <div 
-      className="tooltip-container"
-      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem', position: 'relative' }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <button 
-        onClick={onClick} 
-        disabled={disabled}
-        style={{ 
-          background: 'rgba(0,0,0,0.5)', 
-          border: '1px solid rgba(255,255,255,0.15)', 
-          width: '38px', 
-          height: '38px', 
-          borderRadius: '50%', 
-          color: activeColor || '#ffffff', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center', 
-          cursor: disabled ? 'default' : 'pointer', 
-          opacity: disabled ? 0.3 : 1,
-          backdropFilter: 'blur(4px)',
-          transition: 'all 0.2s ease',
-          transform: isHovered && !disabled ? 'scale(1.1)' : 'scale(1)'
-        }}
-      >
-        {icon}
-      </button>
-      {badgeText && (
-        <span style={{ fontSize: '0.6875rem', fontWeight: 700, textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>
-          {badgeText}
-        </span>
-      )}
-      {isHovered && label && (
-        <div className="tooltip-popup" style={{ right: '100%', left: 'auto', marginRight: '10px' }}>
-          {label}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// --- COMPONENT: WebRTC LIVE CALL OVERLAY (SECTION 6) ---
 function RtcCallOverlay({ localVideoRef, remoteVideoRef, isScreenSharing, toggleScreenShare, hangUpCall, webrtcCall, localStream, remoteStream }) {
   return (
-    <div style={{
-      position: 'fixed',
-      top: '0',
-      bottom: '0',
-      left: '0',
-      right: '0',
-      backgroundColor: 'rgba(15, 23, 42, 0.95)',
-      zIndex: 100,
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '2rem'
-    }}>
-      <div style={{ color: '#ffffff', marginBottom: '1.5rem', textAlign: 'center' }}>
-        <h2 className="font-serif" style={{ color: '#ffffff', fontSize: '2rem' }}>Live Study Session</h2>
-        <p style={{ color: '#94a3b8', fontSize: '0.875rem', marginTop: '0.25rem' }}>Audio/Video WebRTC peer link established (₹0 Egress Fee traversal)</p>
+    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(9, 13, 22, 0.95)', zIndex: 5000, display: 'flex', flexDirection: 'column', padding: '1.5rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', color: '#ffffff' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div className="live-dot"></div>
+          <h3 className="font-serif" style={{ margin: 0, fontSize: '1.25rem' }}>Live WebRTC Code Study Call</h3>
+        </div>
+        <span className="tag tag-accent">HD Zero-Latency P2P</span>
       </div>
 
-      {/* Video screen grid */}
-      <div style={{ display: 'flex', gap: '1.5rem', width: '100%', maxWidth: '960px', height: '420px', marginBottom: '2rem' }}>
-        {/* Remote participant */}
-        <div style={{ flex: 1, backgroundColor: '#1e293b', borderRadius: '16px', overflow: 'hidden', position: 'relative', border: '2px solid #334155' }}>
-          <video 
-            ref={remoteVideoRef} 
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            autoPlay 
-            playsInline
-          />
-          {!remoteStream && (
-            <div style={{ position: 'absolute', top: '0', bottom: '0', left: '0', right: '0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}>
-              <div className="live-dot" style={{ backgroundColor: '#d97706', marginRight: '0.5rem' }}></div> Wait for peer user to accept call...
-            </div>
-          )}
-          <div style={{ position: 'absolute', bottom: '1rem', left: '1rem', background: 'rgba(0,0,0,0.6)', padding: '0.25rem 0.75rem', borderRadius: '50px', color: '#ffffff', fontSize: '0.75rem' }}>
-            Peer Helper
+      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', minHeight: 0, marginBottom: '1.5rem' }}>
+        <div style={{ position: 'relative', backgroundColor: '#111827', borderRadius: 'var(--radius-lg)', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
+          <video ref={localVideoRef} autoPlay muted playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <div style={{ position: 'absolute', bottom: '1rem', left: '1rem', background: 'rgba(0,0,0,0.7)', color: '#ffffff', padding: '0.25rem 0.75rem', borderRadius: 'var(--radius-sm)', fontSize: '0.75rem', fontWeight: 600 }}>
+            You (Local Feed)
           </div>
         </div>
 
-        {/* Local user stream */}
-        <div style={{ width: '220px', backgroundColor: '#1e293b', borderRadius: '16px', overflow: 'hidden', position: 'relative', border: '2px solid #334155', height: '160px', alignSelf: 'flex-end' }}>
-          <video 
-            ref={localVideoRef} 
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            autoPlay 
-            muted 
-            playsInline
-          />
-          <div style={{ position: 'absolute', bottom: '0.5rem', left: '0.5rem', background: 'rgba(0,0,0,0.6)', padding: '0.125rem 0.5rem', borderRadius: '50px', color: '#ffffff', fontSize: '0.6875rem' }}>
-            You {isScreenSharing && "(Sharing)"}
+        <div style={{ position: 'relative', backgroundColor: '#111827', borderRadius: 'var(--radius-lg)', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
+          <video ref={remoteVideoRef} autoPlay playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <div style={{ position: 'absolute', bottom: '1rem', left: '1rem', background: 'rgba(0,0,0,0.7)', color: '#ffffff', padding: '0.25rem 0.75rem', borderRadius: 'var(--radius-sm)', fontSize: '0.75rem', fontWeight: 600 }}>
+            Peer Tutor (Remote)
           </div>
         </div>
       </div>
 
-      {/* Control buttons tray */}
-      <div style={{ display: 'flex', gap: '1rem' }}>
-        <button onClick={toggleScreenShare} className="btn btn-secondary" style={{ backgroundColor: '#ffffff', color: '#0f172a' }}>
-          <ScreenShare size={18} /> {isScreenSharing ? "Stop Sharing" : "Share Screen"}
+      <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', alignItems: 'center' }}>
+        <button onClick={toggleScreenShare} className={`btn ${isScreenSharing ? 'btn-accent' : 'btn-secondary'}`} style={{ padding: '0.75rem 1.5rem' }}>
+          <ScreenShare size={18} /> {isScreenSharing ? 'Stop Screen Share' : 'Share Screen'}
         </button>
-        <button onClick={hangUpCall} className="btn btn-danger">
+        <button onClick={hangUpCall} className="btn btn-danger" style={{ padding: '0.75rem 2rem', fontWeight: 700 }}>
           Hang Up Call
         </button>
       </div>
@@ -5156,2134 +5698,1912 @@ function RtcCallOverlay({ localVideoRef, remoteVideoRef, isScreenSharing, toggle
   );
 }
 
-// --- SCREEN: CAMPUS LEADERBOARD ---
-function LeaderboardScreen({ token, onOpenPublicProfile }) {
-  const [leaders, setLeaders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [subject, setSubject] = useState('');
+// --- SCREENS: DOUBT ROOMS, CHAT, DISCOVER, CONNECTIONS, LEADERBOARD, SETTINGS, REELS, CONTACT ---
+function DoubtRoomsScreen({ token, activeRoomId, setActiveRoomId, socket, wsMessages, setWsMessages, startWebRtcCall, webrtcCall }) {
+  const [rooms, setRooms] = useState([
+    { id: 'room-1', title: 'Java Multithreading Synchronized Locks issue in Producer-Consumer', subject: 'Java', college: 'IIT Madras', participants: 3, creator: 'Aarav Sharma' },
+    { id: 'room-2', title: 'React useEffect Infinite re-render cycle with state objects', subject: 'React', college: 'IIT Madras', participants: 5, creator: 'Bhavna Patel' },
+    { id: 'room-3', title: 'Dynamic Programming 0/1 Knapsack memoization table walkthrough', subject: 'Algorithms', college: 'BITS Pilani', participants: 2, creator: 'Chaitanya Reddy' }
+  ]);
 
-  const fetchLeaderboard = async () => {
-    setLoading(true);
-    let url = '/api/leaderboard';
-    if (subject) {
-      url += `?subject=${encodeURIComponent(subject)}`;
-    }
-    try {
-      const response = await fetch(url, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setLeaders(data);
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
+  const [newTopic, setNewTopic] = useState('');
+  const [newSubject, setNewSubject] = useState('Java');
+
+  const handleCreateRoom = (e) => {
+    e.preventDefault();
+    if (!newTopic.trim()) return;
+    const newR = {
+      id: `room-${Date.now()}`,
+      title: newTopic.trim(),
+      subject: newSubject,
+      college: 'IIT Madras',
+      participants: 1,
+      creator: 'You'
+    };
+    setRooms(prev => [newR, ...prev]);
+    setActiveRoomId(newR.id);
+    setNewTopic('');
   };
 
-  useEffect(() => {
-    fetchLeaderboard();
-  }, [token, subject]);
-
   return (
-    <div>
+    <div style={{ padding: '1.5rem 2.5rem', width: '100%', maxWidth: '1400px', margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <div>
-          <h1 className="font-serif" style={{ fontSize: '2.25rem' }}>Campus Leaderboard</h1>
-          <p style={{ color: '#475569', fontSize: '0.875rem' }}>Top peer mentors ranked by XP and subject mastery.</p>
+          <h1 className="font-serif" style={{ fontSize: '2rem', marginBottom: '0.25rem' }}>Live Academic Doubt Hub</h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Join real-time peer doubt rooms or launch your own video study session.</p>
         </div>
-
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-          <span style={{ fontSize: '0.8125rem', color: '#64748b', fontWeight: 500 }}>Category:</span>
-          <select className="input" style={{ width: '160px', padding: '0.375rem 0.75rem' }} value={subject} onChange={e => setSubject(e.target.value)}>
-            <option value="">All Subjects</option>
-            <option value="Java">Java</option>
-            <option value="React">React</option>
-            <option value="WebRTC">WebRTC</option>
-            <option value="Calculus">Calculus</option>
-          </select>
-        </div>
+        <button onClick={() => startWebRtcCall('peer-1', activeRoomId)} className="btn btn-accent">
+          <Video size={16} /> Start 1-Click Video Call
+        </button>
       </div>
 
-      {loading ? (
-        <div style={{ textAlign: 'center', padding: '4rem' }}><div className="live-dot" style={{ backgroundColor: '#d97706' }}></div></div>
-      ) : leaders.length === 0 ? (
-        <div className="empty-state">
-          <Trophy size={48} />
-          <h3>No rankings yet</h3>
-          <p>Be the first to earn XP at your college to appear on the leaderboard!</p>
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          {leaders.map((leader, index) => (
-            <div 
-              key={leader.id} 
-              onClick={() => onOpenPublicProfile && onOpenPublicProfile(leader)}
-              className="card" 
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 1.5rem', backgroundColor: index === 0 ? '#eff6ff' : '#ffffff', borderColor: index === 0 ? '#bfdbfe' : '#e2e8f0', cursor: 'pointer' }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-                <div style={{
-                  fontSize: '1.25rem',
-                  fontWeight: 800,
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '50%',
-                  backgroundColor: index === 0 ? '#3b82f6' : index === 1 ? '#94a3b8' : index === 2 ? '#2563eb' : '#f1f5f9',
-                  color: (index <= 2) ? '#ffffff' : '#475569',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  {index + 1}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '2rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {rooms.map(r => (
+            <div key={r.id} className="card-premium interactive-hover" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.375rem' }}>
+                  <span className="tag tag-accent">{r.subject}</span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{r.college}</span>
                 </div>
-
-                <img src={leader.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${leader.fullName}`} alt="Avatar" style={{ width: '44px', height: '44px', borderRadius: '50%' }} />
-
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: '1rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    {leader.fullName}
-                    {index === 0 && <span style={{ fontSize: '0.75rem', color: '#3b82f6', fontWeight: 600 }}>👑 Campus #1</span>}
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                    {leader.college} • {leader.department} • Level: <strong>{leader.level}</strong>
-                  </div>
-                </div>
+                <h3 className="font-serif" style={{ fontSize: '1.125rem', marginBottom: '0.25rem' }}>{r.title}</h3>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Host: {r.creator} • 👥 {r.participants} active peers</div>
               </div>
 
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#3b82f6' }}>{leader.xp} XP</div>
-                <div style={{ fontSize: '0.75rem', color: '#64748b' }}>⭐ {leader.reputation || 5.0} Rating</div>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button onClick={() => setActiveRoomId(r.id)} className="btn btn-primary" style={{ padding: '0.5rem 1.25rem', fontSize: '0.8125rem' }}>
+                  Enter Room →
+                </button>
               </div>
             </div>
           ))}
         </div>
-      )}
+
+        <div className="card-premium" style={{ height: 'fit-content' }}>
+          <h3 className="font-serif" style={{ fontSize: '1.25rem', marginBottom: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
+            Open Live Doubt Room
+          </h3>
+          <form onSubmit={handleCreateRoom} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div>
+              <label className="label">Topic / Question</label>
+              <textarea className="input" style={{ minHeight: '80px' }} placeholder="What academic concept are you stuck on?" value={newTopic} onChange={e => setNewTopic(e.target.value)} required />
+            </div>
+            <div>
+              <label className="label">Subject Tag</label>
+              <select className="input" value={newSubject} onChange={e => setNewSubject(e.target.value)}>
+                <option value="Java">Java</option>
+                <option value="React">React</option>
+                <option value="Algorithms">Algorithms</option>
+                <option value="Calculus">Calculus</option>
+                <option value="AI / ML">AI / ML</option>
+              </select>
+            </div>
+            <button type="submit" className="btn btn-accent" style={{ width: '100%' }}>Launch Live Room 🚀</button>
+          </form>
+        </div>
+      </div>
     </div>
   );
 }
 
-// --- REDESIGNED AVATAR CHANGE MODAL (GALLERY / ALBUMS UPLOADER - NO URL INPUT) ---
-function AvatarChangeModal({ currentAvatarUrl, onSave, onClose }) {
-  const [selectedUrl, setSelectedUrl] = useState(currentAvatarUrl || '');
-  const [selectedFileName, setSelectedFileName] = useState('');
-  const fileInputRef = useRef(null);
+function ChatScreen({ token, activeChatId, setActiveChatId, chatPeer, setChatPeer, socket, wsMessages, setWsMessages, setActiveTab }) {
+  const [messages, setMessages] = useState([
+    { sender: 'Bhavna Patel', text: 'Hey Aarav! Did you get a chance to check that OS memory paging question?' },
+    { sender: 'Aarav Sharma', text: 'Yes! Virtual to physical address translation table is ready. Want to jump on a quick call?' }
+  ]);
+  const [inputText, setInputText] = useState('');
 
-  const presets = [
-    { url: MALE_AVATAR_SVG, label: '👨 Male Character (Image 2 Match)' },
-    { url: FEMALE_AVATAR_SVG, label: '👩 Female Character (Image 3 Match)' },
-    { url: NEUTRAL_AVATAR_SVG, label: '👤 Neutral Character' }
-  ];
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setSelectedFileName(file.name);
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setSelectedUrl(event.target.result);
-      };
-      reader.readAsDataURL(file);
-    }
+  const handleSend = (e) => {
+    e.preventDefault();
+    if (!inputText.trim()) return;
+    setMessages(prev => [...prev, { sender: 'You', text: inputText.trim() }]);
+    setInputText('');
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 3000, backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-      <div className="card-premium glass-card" style={{ width: '100%', maxWidth: '480px', borderRadius: '24px', padding: '2rem', backgroundColor: '#ffffff', boxShadow: '0 20px 50px rgba(0,0,0,0.2)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid #f1f5f9', paddingBottom: '0.75rem' }}>
-          <h3 className="font-serif" style={{ fontSize: '1.25rem' }}>Change Profile Picture</h3>
-          <button onClick={onClose} className="btn-icon"><X size={20} /></button>
-        </div>
-
-        {/* Current Preview */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <div style={{ width: '100px', height: '100px', borderRadius: '50%', padding: '3px', background: 'linear-gradient(45deg, #f09433, #e6683c, #dc2743)', marginBottom: '0.5rem', boxShadow: '0 8px 20px rgba(217,119,6,0.2)' }}>
-            <img 
-              src={selectedUrl || currentAvatarUrl || getDefaultAvatarByGender('male')} 
-              alt="Preview" 
-              onError={(e) => { e.target.src = MALE_AVATAR_SVG; }}
-              style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#ffffff' }} 
-            />
+    <div style={{ padding: '1.5rem 2.5rem', width: '100%', maxWidth: '1200px', margin: '0 auto', height: 'calc(100vh - 100px)', display: 'flex', flexDirection: 'column' }}>
+      <div className="card-premium" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden' }}>
+        
+        <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg-tertiary)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <img src={chatPeer?.avatarUrl || FEMALE_AVATAR_SVG} alt="Peer" style={{ width: '38px', height: '38px', borderRadius: '50%', objectFit: 'cover' }} />
+            <div>
+              <div style={{ fontWeight: 700, fontSize: '0.9375rem', color: 'var(--text-primary)' }}>{chatPeer?.fullName || 'Bhavna Patel'}</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--success-color)' }}>● Online • IIT Madras CSE</div>
+            </div>
           </div>
-          <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>Profile Picture Preview</span>
-        </div>
-
-        {/* GALLERY / ALBUM FILE UPLOADER (MAIN SELECTION OPTION - NO URL INPUT) */}
-        <div style={{ marginBottom: '1.5rem' }}>
-          <label className="label" style={{ marginBottom: '0.5rem', fontWeight: 600 }}>Upload Photo from Device Gallery / Albums:</label>
-          <input 
-            type="file" 
-            accept="image/*" 
-            ref={fileInputRef} 
-            onChange={handleFileChange} 
-            style={{ display: 'none' }} 
-          />
-          <button 
-            type="button" 
-            onClick={() => fileInputRef.current && fileInputRef.current.click()}
-            className="btn btn-secondary"
-            style={{ 
-              width: '100%', 
-              padding: '0.875rem', 
-              borderRadius: '14px', 
-              border: '2px dashed #3b82f6', 
-              backgroundColor: '#eff6ff', 
-              color: '#2563eb', 
-              fontWeight: 700, 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              gap: '0.625rem',
-              cursor: 'pointer'
-            }}
-          >
-            <Camera size={20} />
-            {selectedFileName ? `Selected: ${selectedFileName}` : '📷 Choose Photo from Gallery / Device Albums'}
+          <button onClick={() => setActiveTab('doubts')} className="btn btn-secondary" style={{ fontSize: '0.75rem' }}>
+            <Video size={14} /> Video Call
           </button>
         </div>
 
-        {/* GENDER CHARACTER PRESETS */}
-        <div style={{ marginBottom: '1.5rem' }}>
-          <label className="label" style={{ marginBottom: '0.5rem' }}>Or Choose a Gender Character Silhouette:</label>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
-            {presets.map((preset, idx) => (
-              <div 
-                key={idx}
-                onClick={() => { setSelectedUrl(preset.url); setSelectedFileName(''); }}
-                title={preset.label}
+        <div style={{ flex: 1, padding: '1.5rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {messages.map((m, i) => (
+            <div key={i} style={{ alignSelf: m.sender === 'You' || m.sender === 'Aarav Sharma' ? 'flex-end' : 'flex-start', maxWidth: '70%' }}>
+              <div style={{
+                padding: '0.75rem 1rem',
+                borderRadius: 'var(--radius-md)',
+                backgroundColor: m.sender === 'You' || m.sender === 'Aarav Sharma' ? 'var(--accent-primary)' : 'var(--bg-tertiary)',
+                color: m.sender === 'You' || m.sender === 'Aarav Sharma' ? '#ffffff' : 'var(--text-primary)',
+                fontSize: '0.875rem'
+              }}>
+                {m.text}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <form onSubmit={handleSend} style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '0.75rem', backgroundColor: 'var(--bg-secondary)' }}>
+          <input type="text" className="input" placeholder="Type a message..." value={inputText} onChange={e => setInputText(e.target.value)} />
+          <button type="submit" className="btn btn-accent"><Send size={16} /></button>
+        </form>
+
+      </div>
+    </div>
+  );
+}
+
+// --- MODULE 1 & 2: GRANULAR TOPIC DISCOVERY & TUTOR MATCHMAKER ---
+function DiscoverScreen({ token, setActiveTab, setActiveChatId, setChatPeer, onOpenPublicProfile, onOpenBookingModal }) {
+  const [searchTopic, setSearchTopic] = useState('');
+  const [selectedSubject, setSelectedSubject] = useState('All');
+  const [priceFilter, setPriceFilter] = useState('all'); // all, free, paid
+
+  const tutors = [
+    {
+      id: 't-1',
+      fullName: 'Bhavna Patel',
+      college: 'IIT Madras',
+      department: 'Computer Science',
+      year: 3,
+      avatarUrl: FEMALE_AVATAR_SVG,
+      subject: 'Java',
+      topicsMastered: ['OOP Inheritance', 'Polymorphism', 'Multithreading', 'Spring Boot', 'Exception Handling'],
+      rating: 4.9,
+      classesTaught: 87,
+      clarityScore: '96%',
+      ratePerSession: 50,
+      tier: 'certified',
+      bio: 'Solved 87+ Java doubts for juniors. I explain OOP through real-world game character design!'
+    },
+    {
+      id: 't-2',
+      fullName: 'Chaitanya Reddy',
+      college: 'BITS Pilani',
+      department: 'Electrical & CS',
+      year: 2,
+      avatarUrl: MALE_AVATAR_SVG,
+      subject: 'C / C++',
+      topicsMastered: ['Pointers & Dynamic Memory', 'Structures', 'Recursion', 'Memory Leaks', 'Valgrind'],
+      rating: 4.8,
+      classesTaught: 32,
+      clarityScore: '94%',
+      ratePerSession: 40,
+      tier: 'certified',
+      bio: 'Master C pointers and memory management without getting confused.'
+    },
+    {
+      id: 't-3',
+      fullName: 'Divya Nambiar',
+      college: 'NIT Trichy',
+      department: 'Data Science & AI',
+      year: 3,
+      avatarUrl: FEMALE_AVATAR_SVG,
+      subject: 'Python & AI',
+      topicsMastered: ['NumPy / Pandas', 'Gradient Descent', 'Data Structures in Python', 'FastAPI'],
+      rating: 4.95,
+      classesTaught: 104,
+      clarityScore: '98%',
+      ratePerSession: 75,
+      tier: 'master',
+      bio: 'Top 1% campus tutor. I break down machine learning math into simple Python lines.'
+    },
+    {
+      id: 't-4',
+      fullName: 'Rohan Deshmukh',
+      college: 'IIT Bombay',
+      department: 'Computer Science',
+      year: 2,
+      avatarUrl: MALE_AVATAR_SVG,
+      subject: 'Data Structures',
+      topicsMastered: ['Dynamic Programming (0/1 Knapsack)', 'Binary Search Trees', 'Graph BFS/DFS', 'Tries'],
+      rating: 4.85,
+      classesTaught: 45,
+      clarityScore: '95%',
+      ratePerSession: 60,
+      tier: 'certified',
+      bio: 'Stuck on DP state transitions or tree traversals? Let us code it out step-by-step.'
+    },
+    {
+      id: 't-5',
+      fullName: 'Kavya Subramanian',
+      college: 'IIT Delhi',
+      department: 'Software Engineering',
+      year: 1,
+      avatarUrl: FEMALE_AVATAR_SVG,
+      subject: 'DBMS & SQL',
+      topicsMastered: ['Normalization (1NF-BCNF)', 'Complex Joins', 'Indexing & B-Trees', 'Transactions & ACID'],
+      rating: 4.7,
+      classesTaught: 8,
+      clarityScore: '92%',
+      ratePerSession: 0,
+      tier: 'apprentice',
+      bio: 'Apprentice Mentor (8/10 verified sessions). Offering 100% FREE doubt sessions to build ratings!'
+    },
+    {
+      id: 't-6',
+      fullName: 'Aarav Sharma',
+      college: 'IIT Madras',
+      department: 'Computer Science',
+      year: 2,
+      avatarUrl: MALE_AVATAR_SVG,
+      subject: 'Mathematics',
+      topicsMastered: ['Multivariable Calculus', 'Linear Algebra & Matrices', 'Probability & Statistics'],
+      rating: 4.9,
+      classesTaught: 24,
+      clarityScore: '95%',
+      ratePerSession: 50,
+      tier: 'certified',
+      bio: 'Engineering mathematics simplified with visual intuition and previous year exam questions.'
+    }
+  ];
+
+  const subjects = ['All', 'Java', 'Data Structures', 'DBMS & SQL', 'Python & AI', 'C / C++', 'Mathematics'];
+
+  const filteredTutors = tutors.filter(t => {
+    const matchesSubject = selectedSubject === 'All' || t.subject.toLowerCase().includes(selectedSubject.toLowerCase()) || t.topicsMastered.some(top => top.toLowerCase().includes(selectedSubject.toLowerCase()));
+    const matchesSearch = !searchTopic.trim() || 
+      t.fullName.toLowerCase().includes(searchTopic.toLowerCase()) || 
+      t.subject.toLowerCase().includes(searchTopic.toLowerCase()) || 
+      t.topicsMastered.some(top => top.toLowerCase().includes(searchTopic.toLowerCase())) ||
+      t.college.toLowerCase().includes(searchTopic.toLowerCase());
+    const matchesPrice = priceFilter === 'all' || (priceFilter === 'free' && t.ratePerSession === 0) || (priceFilter === 'paid' && t.ratePerSession > 0);
+    return matchesSubject && matchesSearch && matchesPrice;
+  });
+
+  return (
+    <div style={{ padding: '1.5rem 2.5rem', width: '100%', maxWidth: '1400px', margin: '0 auto' }}>
+      
+      {/* HERO BANNER */}
+      <div className="card-premium" style={{ marginBottom: '2rem', background: 'linear-gradient(135deg, rgba(0, 102, 255, 0.08) 0%, rgba(0, 198, 255, 0.05) 100%)', border: '1px solid rgba(0, 102, 255, 0.2)', padding: '2rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.5rem' }}>
+          <div>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', backgroundColor: 'var(--accent-light)', color: 'var(--accent-primary)', padding: '0.25rem 0.75rem', borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.75rem' }}>
+              ⚡ 1:1 Peer Mentoring • Diploma & B.Tech Focused
+            </div>
+            <h1 className="font-serif" style={{ fontSize: '2.25rem', fontWeight: 800, marginBottom: '0.5rem' }}>
+              Find a Peer Who Understands Your Exact Doubt
+            </h1>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9375rem', maxWidth: '680px' }}>
+              Struggling with a Java concept, C++ pointers, or DP state equations? Connect 1:1 with verified student tutors who explain it simply, in your language.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', gap: '1.5rem', backgroundColor: 'var(--bg-card)', padding: '1rem 1.5rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)' }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--accent-primary)' }}>100%</div>
+              <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', fontWeight: 600 }}>Peer Driven</div>
+            </div>
+            <div style={{ width: '1px', backgroundColor: 'var(--border-color)' }}></div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--success-color)' }}>₹30 – ₹100</div>
+              <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', fontWeight: 600 }}>Student Pricing</div>
+            </div>
+            <div style={{ width: '1px', backgroundColor: 'var(--border-color)' }}></div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--warning-color)' }}>4.9 ⭐</div>
+              <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', fontWeight: 600 }}>Avg Concept Clarity</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* SEARCH & FILTERS BAR */}
+      <div className="card-premium" style={{ marginBottom: '2rem', padding: '1.25rem' }}>
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
+          
+          {/* Topic Search Input */}
+          <div style={{ flex: 1, minWidth: '280px', display: 'flex', alignItems: 'center', gap: '0.75rem', backgroundColor: 'var(--bg-tertiary)', padding: '0.625rem 1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+            <Search size={18} style={{ color: 'var(--accent-primary)' }} />
+            <input 
+              type="text" 
+              placeholder="Search specific topic e.g. 'Java Inheritance', 'DP Knapsack', 'SQL Joins', 'Pointers'..." 
+              value={searchTopic}
+              onChange={e => setSearchTopic(e.target.value)}
+              style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '0.875rem', color: 'var(--text-primary)' }}
+            />
+          </div>
+
+          {/* Pricing Model Filter */}
+          <div style={{ display: 'flex', gap: '0.375rem', backgroundColor: 'var(--bg-tertiary)', padding: '0.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+            <button 
+              onClick={() => setPriceFilter('all')} 
+              style={{ padding: '0.5rem 0.875rem', borderRadius: 'var(--radius-sm)', border: 'none', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700, backgroundColor: priceFilter === 'all' ? 'var(--bg-secondary)' : 'transparent', color: priceFilter === 'all' ? 'var(--accent-primary)' : 'var(--text-secondary)' }}
+            >
+              All Tutors
+            </button>
+            <button 
+              onClick={() => setPriceFilter('free')} 
+              style={{ padding: '0.5rem 0.875rem', borderRadius: 'var(--radius-sm)', border: 'none', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700, backgroundColor: priceFilter === 'free' ? 'var(--bg-secondary)' : 'transparent', color: priceFilter === 'free' ? 'var(--success-color)' : 'var(--text-secondary)' }}
+            >
+              🌱 Free Apprentice Sessions
+            </button>
+            <button 
+              onClick={() => setPriceFilter('paid')} 
+              style={{ padding: '0.5rem 0.875rem', borderRadius: 'var(--radius-sm)', border: 'none', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700, backgroundColor: priceFilter === 'paid' ? 'var(--bg-secondary)' : 'transparent', color: priceFilter === 'paid' ? 'var(--accent-primary)' : 'var(--text-secondary)' }}
+            >
+              ⭐ Verified Paid Mentors (₹30-₹100)
+            </button>
+          </div>
+
+        </div>
+
+        {/* Subject Pills */}
+        <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.25rem' }}>
+          {subjects.map(s => (
+            <button
+              key={s}
+              onClick={() => setSelectedSubject(s)}
+              style={{
+                padding: '0.375rem 0.875rem',
+                borderRadius: 'var(--radius-full)',
+                border: selectedSubject === s ? '1px solid var(--accent-primary)' : '1px solid var(--border-color)',
+                backgroundColor: selectedSubject === s ? 'var(--accent-light)' : 'var(--bg-card)',
+                color: selectedSubject === s ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                fontSize: '0.8125rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* TUTORS GRID */}
+      <div className="grid-3">
+        {filteredTutors.map(t => (
+          <div key={t.id} className="card-premium interactive-hover" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', position: 'relative' }}>
+            
+            {/* Top Tier Badge & Pricing Pill */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              {t.tier === 'apprentice' ? (
+                <span className="tag tag-success" style={{ fontSize: '0.6875rem', fontWeight: 700 }}>
+                  🌱 Apprentice Mentor (Free Trial)
+                </span>
+              ) : t.tier === 'master' ? (
+                <span className="tag" style={{ fontSize: '0.6875rem', fontWeight: 800, backgroundColor: 'rgba(245, 158, 11, 0.15)', color: 'var(--warning-color)', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
+                  👑 Master Campus Mentor
+                </span>
+              ) : (
+                <span className="tag tag-accent" style={{ fontSize: '0.6875rem', fontWeight: 700 }}>
+                  ✓ Verified Peer Tutor
+                </span>
+              )}
+
+              <span style={{ 
+                fontWeight: 800, 
+                fontSize: '0.875rem', 
+                color: t.ratePerSession === 0 ? 'var(--success-color)' : 'var(--accent-primary)',
+                backgroundColor: t.ratePerSession === 0 ? 'var(--success-light)' : 'var(--accent-light)',
+                padding: '0.25rem 0.625rem',
+                borderRadius: 'var(--radius-sm)'
+              }}>
+                {t.ratePerSession === 0 ? '100% FREE' : `₹${t.ratePerSession} / 30m`}
+              </span>
+            </div>
+
+            {/* Profile Info */}
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+              <img 
+                src={t.avatarUrl} 
+                alt={t.fullName} 
+                style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--accent-primary)', cursor: 'pointer' }}
+                onClick={() => onOpenPublicProfile(t)}
+              />
+              <div>
+                <div 
+                  style={{ fontWeight: 800, fontSize: '1.0625rem', color: 'var(--text-primary)', cursor: 'pointer' }}
+                  onClick={() => onOpenPublicProfile(t)}
+                >
+                  {t.fullName}
+                </div>
+                <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>{t.college} • {t.department} (Yr {t.year})</div>
+                <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.75rem', marginTop: '0.25rem', fontWeight: 600 }}>
+                  <span style={{ color: 'var(--warning-color)' }}>⭐ {t.rating}</span>
+                  <span style={{ color: 'var(--text-secondary)' }}>• 📚 {t.classesTaught} Classes Taught</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Bio */}
+            <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', lineHeight: 1.4, margin: 0 }}>
+              "{t.bio}"
+            </p>
+
+            {/* Topics Mastered */}
+            <div>
+              <div style={{ fontSize: '0.6875rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.375rem' }}>
+                🎯 Core Topics Mastered
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
+                {t.topicsMastered.map((topic, i) => (
+                  <span key={i} className="tag tag-accent" style={{ fontSize: '0.6875rem' }}>
+                    #{topic}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Card Footer Actions */}
+            <div style={{ display: 'flex', gap: '0.5rem', marginTop: 'auto', paddingTop: '0.75rem', borderTop: '1px solid var(--border-color)' }}>
+              <button 
+                onClick={() => onOpenBookingModal(t)}
+                className="btn btn-accent" 
+                style={{ flex: 1.3, fontSize: '0.8125rem', padding: '0.625rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.375rem', fontWeight: 700 }}
+              >
+                <Calendar size={14} /> Book 1:1 Live Session
+              </button>
+              
+              <button 
+                onClick={() => { setChatPeer(t); setActiveChatId(`chat-${t.id}`); setActiveTab('chat'); }} 
+                className="btn btn-secondary" 
+                style={{ flex: 0.7, fontSize: '0.8125rem', padding: '0.625rem' }}
+                title="Direct Message"
+              >
+                <MessageSquare size={14} />
+              </button>
+            </div>
+
+          </div>
+        ))}
+      </div>
+
+    </div>
+  );
+}
+
+// --- BOOKING & ESCROW PAYMENT MODAL ---
+function BookingModal({ tutor, onClose, onConfirmBooking }) {
+  const [selectedTopic, setSelectedTopic] = useState(tutor?.topicsMastered[0] || 'Core Subject Walkthrough');
+  const [duration, setDuration] = useState('30'); // 15, 30, 60
+  const [doubtNotes, setDoubtNotes] = useState('');
+
+  if (!tutor) return null;
+
+  const baseRate = tutor.ratePerSession || 0;
+  const multiplier = duration === '15' ? 0.6 : duration === '60' ? 1.8 : 1.0;
+  const calculatedFee = Math.round(baseRate * multiplier);
+
+  const handleBookingSubmit = (e) => {
+    e.preventDefault();
+    const newSession = {
+      id: `session-${Date.now()}`,
+      tutorName: tutor.fullName,
+      tutorAvatar: tutor.avatarUrl,
+      tutorCollege: tutor.college,
+      topic: selectedTopic,
+      doubtNotes: doubtNotes || 'Peer walkthrough on fundamental concepts.',
+      duration: `${duration} Mins`,
+      fee: calculatedFee,
+      status: 'confirmed',
+      time: 'Today • 10 mins from now',
+      rated: false
+    };
+    onConfirmBooking(newSession);
+  };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.8)', zIndex: 3800, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', backdropFilter: 'blur(6px)' }}>
+      <div className="card-premium" style={{ width: '100%', maxWidth: '540px', padding: '2rem', borderRadius: 'var(--radius-xl)', backgroundColor: 'var(--bg-elevated)', maxHeight: '90vh', overflowY: 'auto' }}>
+        
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+          <div>
+            <h3 className="font-serif" style={{ fontSize: '1.375rem', margin: 0 }}>Book 1:1 Peer Study Session</h3>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: 0 }}>Learn directly from verified campus peer tutor</p>
+          </div>
+          <button onClick={onClose} className="btn-icon"><X size={20} /></button>
+        </div>
+
+        {/* Tutor Mini Card */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', backgroundColor: 'var(--bg-tertiary)', padding: '1rem', borderRadius: 'var(--radius-md)', marginBottom: '1.25rem' }}>
+          <img src={tutor.avatarUrl} alt={tutor.fullName} style={{ width: '48px', height: '48px', borderRadius: '50%', border: '2px solid var(--accent-primary)' }} />
+          <div>
+            <div style={{ fontWeight: 800, fontSize: '0.9375rem', color: 'var(--text-primary)' }}>{tutor.fullName}</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{tutor.college} • {tutor.subject} Specialist</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--warning-color)', fontWeight: 700, marginTop: '0.125rem' }}>⭐ {tutor.rating} ({tutor.classesTaught} Classes Taught)</div>
+          </div>
+        </div>
+
+        <form onSubmit={handleBookingSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          
+          {/* Select Specific Topic */}
+          <div>
+            <label className="label">Select Concept / Topic You Need Help With</label>
+            <select className="input" value={selectedTopic} onChange={e => setSelectedTopic(e.target.value)}>
+              {tutor.topicsMastered.map((top, idx) => (
+                <option key={idx} value={top}>🎯 {top}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Session Duration Selector */}
+          <div>
+            <label className="label">Session Duration</label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
+              <button
+                type="button"
+                onClick={() => setDuration('15')}
                 style={{
-                  width: '60px',
-                  height: '60px',
-                  borderRadius: '50%',
-                  padding: '2px',
-                  border: selectedUrl === preset.url ? '3px solid #3b82f6' : '2px solid #e2e8f0',
+                  padding: '0.75rem 0.5rem',
+                  borderRadius: 'var(--radius-md)',
+                  border: duration === '15' ? '2px solid var(--accent-primary)' : '1px solid var(--border-color)',
+                  backgroundColor: duration === '15' ? 'var(--accent-light)' : 'var(--bg-tertiary)',
+                  color: duration === '15' ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                  fontWeight: 700,
+                  fontSize: '0.75rem',
                   cursor: 'pointer',
-                  transition: 'all 0.15s ease'
+                  textAlign: 'center'
                 }}
               >
-                <img src={preset.url} alt={preset.label} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                ⚡ 15 Mins Quick
+                <div style={{ fontSize: '0.6875rem', opacity: 0.8, marginTop: '0.25rem' }}>₹{Math.round(baseRate * 0.6)}</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setDuration('30')}
+                style={{
+                  padding: '0.75rem 0.5rem',
+                  borderRadius: 'var(--radius-md)',
+                  border: duration === '30' ? '2px solid var(--accent-primary)' : '1px solid var(--border-color)',
+                  backgroundColor: duration === '30' ? 'var(--accent-light)' : 'var(--bg-tertiary)',
+                  color: duration === '30' ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                  fontWeight: 700,
+                  fontSize: '0.75rem',
+                  cursor: 'pointer',
+                  textAlign: 'center'
+                }}
+              >
+                📖 30 Mins Standard
+                <div style={{ fontSize: '0.6875rem', opacity: 0.8, marginTop: '0.25rem' }}>₹{baseRate}</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setDuration('60')}
+                style={{
+                  padding: '0.75rem 0.5rem',
+                  borderRadius: 'var(--radius-md)',
+                  border: duration === '60' ? '2px solid var(--accent-primary)' : '1px solid var(--border-color)',
+                  backgroundColor: duration === '60' ? 'var(--accent-light)' : 'var(--bg-tertiary)',
+                  color: duration === '60' ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                  fontWeight: 700,
+                  fontSize: '0.75rem',
+                  cursor: 'pointer',
+                  textAlign: 'center'
+                }}
+              >
+                🚀 60 Mins Deep Dive
+                <div style={{ fontSize: '0.6875rem', opacity: 0.8, marginTop: '0.25rem' }}>₹{Math.round(baseRate * 1.8)}</div>
+              </button>
+            </div>
+          </div>
+
+          {/* Doubt Notes */}
+          <div>
+            <label className="label">Describe Where You Are Stuck (Optional)</label>
+            <textarea 
+              className="input" 
+              style={{ minHeight: '70px' }} 
+              placeholder="e.g. I am confused between method overriding and overloading in inheritance..."
+              value={doubtNotes}
+              onChange={e => setDoubtNotes(e.target.value)}
+            />
+          </div>
+
+          {/* Escrow Guarantee Banner */}
+          <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.2)', padding: '0.875rem', borderRadius: 'var(--radius-md)', display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+            <Shield size={20} style={{ color: 'var(--success-color)', flexShrink: 0 }} />
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+              <strong style={{ color: 'var(--success-color)' }}>Student Escrow Protection:</strong> Your payment of <strong>₹{calculatedFee}</strong> is safely held in platform escrow and only released to {tutor.fullName} after you confirm concept clarity post-session.
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+            <button type="submit" className="btn btn-accent" style={{ flex: 1, padding: '0.875rem', fontWeight: 800, fontSize: '0.9375rem' }}>
+              Confirm & Book Session (₹{calculatedFee}) 🚀
+            </button>
+            <button type="button" onClick={onClose} className="btn btn-secondary">
+              Cancel
+            </button>
+          </div>
+
+        </form>
+
+      </div>
+    </div>
+  );
+}
+
+// --- MY 1:1 SESSIONS & CLASSES SCREEN ---
+function MySessionsScreen({ bookedSessions, onLaunchClassroom, onOpenReviewModal, setActiveTab }) {
+  return (
+    <div style={{ padding: '1.5rem 2.5rem', width: '100%', maxWidth: '1400px', margin: '0 auto' }}>
+      
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          <h1 className="font-serif" style={{ fontSize: '2.25rem', fontWeight: 800, marginBottom: '0.25rem' }}>
+            My 1:1 Study Classes
+          </h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9375rem' }}>
+            Launch live WebRTC video classrooms with peer tutors, review notes, and rate completed sessions.
+          </p>
+        </div>
+
+        <button onClick={() => setActiveTab('discover')} className="btn btn-accent">
+          <Search size={16} /> Find More Tutors
+        </button>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        {bookedSessions.map(session => (
+          <div key={session.id} className="card-premium" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.5rem' }}>
+            
+            <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center', flex: 1, minWidth: '300px' }}>
+              <img src={session.tutorAvatar} alt={session.tutorName} style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--accent-primary)' }} />
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                  <span className="tag tag-accent">{session.duration}</span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{session.time}</span>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: session.fee === 0 ? 'var(--success-color)' : 'var(--accent-primary)' }}>
+                    {session.fee === 0 ? 'FREE Session' : `₹${session.fee} Paid (Escrow Active)`}
+                  </span>
+                </div>
+                <h3 className="font-serif" style={{ fontSize: '1.25rem', margin: '0 0 0.25rem 0' }}>
+                  {session.topic}
+                </h3>
+                <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                  Tutor: <strong>{session.tutorName}</strong> ({session.tutorCollege}) • Notes: <em>"{session.doubtNotes}"</em>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+              {session.status === 'confirmed' ? (
+                <button 
+                  onClick={() => onLaunchClassroom(session)} 
+                  className="btn btn-accent" 
+                  style={{ padding: '0.75rem 1.5rem', fontWeight: 800, fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: 'var(--shadow-glow)' }}
+                >
+                  <Video size={18} /> Enter Live Classroom 🚀
+                </button>
+              ) : session.rated ? (
+                <div style={{ backgroundColor: 'var(--bg-tertiary)', padding: '0.5rem 1rem', borderRadius: 'var(--radius-md)', fontSize: '0.8125rem', color: 'var(--success-color)', fontWeight: 700 }}>
+                  ✓ Completed & Rated 5.0 ⭐
+                </div>
+              ) : (
+                <button 
+                  onClick={() => onOpenReviewModal(session)} 
+                  className="btn btn-primary" 
+                  style={{ padding: '0.75rem 1.5rem', fontWeight: 700, fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                >
+                  <Star size={16} /> Rate Concept Clarity ⭐
+                </button>
+              )}
+            </div>
+
+          </div>
+        ))}
+      </div>
+
+    </div>
+  );
+}
+
+// --- LIVE 1:1 INTERACTIVE PEER CLASSROOM ---
+function LiveClassroomScreen({ session, onEndClassroom, localVideoRef, remoteVideoRef, toggleScreenShare, isScreenSharing }) {
+  const [codeLanguage, setCodeLanguage] = useState('java');
+  const [codeContent, setCodeContent] = useState(`// 🎓 StudyLoop Live 1:1 Collaborative Workspace\n// Topic: Java OOP Inheritance & Polymorphism\n\nclass Animal {\n    void speak() {\n        System.out.println("Animal makes a sound");\n    }\n}\n\nclass Dog extends Animal {\n    @Override\n    void speak() {\n        System.out.println("Dog barks 🐶");\n    }\n}\n\npublic class Main {\n    public static void main(String[] args) {\n        Animal myDog = new Dog(); // Dynamic Method Dispatch\n        myDog.speak();\n    }\n}`);
+  const [consoleOutput, setConsoleOutput] = useState('Dog barks 🐶\n[Process completed in 0.04s - Concept Verified ✓]');
+  const [sessionNotes, setSessionNotes] = useState('Key Takeaway: Child class overrides parent method. Reference type of parent holding child object enables Runtime Polymorphism.');
+
+  return (
+    <div style={{ height: '100vh', width: '100%', display: 'flex', flexDirection: 'column', backgroundColor: '#090d16', color: '#ffffff' }}>
+      
+      {/* CLASSROOM HEADER */}
+      <div style={{ padding: '0.75rem 1.5rem', borderBottom: '1px solid #1e293b', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#111827' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div className="live-dot"></div>
+          <div>
+            <div style={{ fontWeight: 800, fontSize: '1rem', color: '#f8fafc' }}>
+              Live 1:1 Class: {session?.topic || 'Java OOP Inheritance'}
+            </div>
+            <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+              Tutor: {session?.tutorName || 'Bhavna Patel'} • Learner: Aarav Sharma (Escrow Protected)
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+          <span style={{ backgroundColor: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa', padding: '0.25rem 0.75rem', borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: 700, border: '1px solid rgba(59, 130, 246, 0.4)' }}>
+            ⏱️ 24:18 / 30:00 Mins
+          </span>
+
+          <button onClick={toggleScreenShare} className={`btn ${isScreenSharing ? 'btn-accent' : 'btn-secondary'}`} style={{ fontSize: '0.75rem', padding: '0.375rem 0.75rem' }}>
+            <ScreenShare size={14} /> {isScreenSharing ? 'Stop Share' : 'Share Screen'}
+          </button>
+
+          <button onClick={() => onEndClassroom(session)} className="btn btn-danger" style={{ fontSize: '0.8125rem', padding: '0.375rem 1rem', fontWeight: 800 }}>
+            Finish Class & Review ⭐
+          </button>
+        </div>
+      </div>
+
+      {/* DUAL WORKSPACE: LEFT (CODE & NOTES) | RIGHT (WEBRTC VIDEO & CHAT) */}
+      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '1rem', padding: '1rem', minHeight: 0 }}>
+        
+        {/* LEFT WORKSPACE: CODE EDITOR */}
+        <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: '#111827', borderRadius: 'var(--radius-lg)', border: '1px solid #1e293b', overflow: 'hidden' }}>
+          <div style={{ padding: '0.5rem 1rem', borderBottom: '1px solid #1e293b', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#182234' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Code size={16} style={{ color: '#38bdf8' }} />
+              <span style={{ fontSize: '0.8125rem', fontWeight: 700 }}>Live Shared Code Editor</span>
+            </div>
+            <select 
+              value={codeLanguage} 
+              onChange={e => setCodeLanguage(e.target.value)}
+              style={{ backgroundColor: '#1e293b', color: '#ffffff', border: '1px solid #334155', borderRadius: '4px', padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+            >
+              <option value="java">Java 17</option>
+              <option value="cpp">C++ 20</option>
+              <option value="python">Python 3.11</option>
+              <option value="sql">PostgreSQL</option>
+            </select>
+          </div>
+
+          <textarea 
+            value={codeContent}
+            onChange={e => setCodeContent(e.target.value)}
+            style={{
+              flex: 1,
+              backgroundColor: '#090d16',
+              color: '#38bdf8',
+              fontFamily: "'Fira Code', monospace",
+              fontSize: '0.875rem',
+              padding: '1rem',
+              border: 'none',
+              outline: 'none',
+              resize: 'none',
+              lineHeight: 1.6
+            }}
+          />
+
+          {/* Console output bar */}
+          <div style={{ height: '80px', backgroundColor: '#0f172a', borderTop: '1px solid #1e293b', padding: '0.5rem 1rem', fontFamily: "'Fira Code', monospace", fontSize: '0.75rem', color: '#4ade80' }}>
+            <div style={{ fontSize: '0.6875rem', color: '#64748b', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Console Output</div>
+            <pre style={{ margin: 0 }}>{consoleOutput}</pre>
+          </div>
+        </div>
+
+        {/* RIGHT WORKSPACE: WEBRTC VIDEO FEEDS & NOTES */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', minHeight: 0 }}>
+          
+          {/* Peer Video Grids */}
+          <div style={{ flex: 1.2, display: 'grid', gridTemplateRows: '1fr 1fr', gap: '0.75rem', minHeight: 0 }}>
+            <div style={{ position: 'relative', backgroundColor: '#162032', borderRadius: 'var(--radius-md)', overflow: 'hidden', border: '1px solid #1e293b' }}>
+              <video ref={remoteVideoRef} autoPlay playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <div style={{ position: 'absolute', bottom: '0.5rem', left: '0.5rem', background: 'rgba(0,0,0,0.75)', padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600 }}>
+                👨‍🏫 Tutor: {session?.tutorName || 'Bhavna Patel'} (Live)
+              </div>
+            </div>
+
+            <div style={{ position: 'relative', backgroundColor: '#162032', borderRadius: 'var(--radius-md)', overflow: 'hidden', border: '1px solid #1e293b' }}>
+              <video ref={localVideoRef} autoPlay muted playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <div style={{ position: 'absolute', bottom: '0.5rem', left: '0.5rem', background: 'rgba(0,0,0,0.75)', padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600 }}>
+                You (Learner)
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Scratchpad Notes */}
+          <div style={{ flex: 0.8, backgroundColor: '#111827', borderRadius: 'var(--radius-md)', border: '1px solid #1e293b', display: 'flex', flexDirection: 'column', padding: '0.75rem' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8', marginBottom: '0.375rem' }}>
+              📝 Shared Concept Summary Notes
+            </div>
+            <textarea 
+              value={sessionNotes}
+              onChange={e => setSessionNotes(e.target.value)}
+              placeholder="Take notes during the explanation..."
+              style={{ flex: 1, backgroundColor: '#182234', color: '#ffffff', border: '1px solid #334155', borderRadius: 'var(--radius-sm)', padding: '0.5rem', fontSize: '0.8125rem', resize: 'none' }}
+            />
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  );
+}
+
+// --- DUAL-FACTOR RATING & QUALITY REVIEW MODAL ---
+function ReviewSessionModal({ session, onClose, onSubmitReview }) {
+  const [clarityRating, setClarityRating] = useState(5);
+  const [patienceRating, setPatienceRating] = useState(5);
+  const [feedbackText, setFeedbackText] = useState('');
+
+  if (!session) return null;
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmitReview({
+      sessionId: session.id,
+      tutorName: session.tutorName,
+      clarityRating,
+      patienceRating,
+      feedbackText: feedbackText || 'Explained the concept with super clear examples. 100% understood!'
+    });
+  };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.85)', zIndex: 4000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', backdropFilter: 'blur(8px)' }}>
+      <div className="card-premium" style={{ width: '100%', maxWidth: '500px', padding: '2rem', borderRadius: 'var(--radius-xl)', backgroundColor: 'var(--bg-elevated)' }}>
+        
+        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+          <div style={{ width: '56px', height: '56px', borderRadius: '50%', backgroundColor: 'var(--accent-light)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 0.75rem auto' }}>
+            <Award size={28} />
+          </div>
+          <h3 className="font-serif" style={{ fontSize: '1.375rem', margin: '0 0 0.25rem 0' }}>Rate Your Peer Tutor</h3>
+          <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', margin: 0 }}>
+            Session on <strong>{session.topic}</strong> with <strong>{session.tutorName}</strong>
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          
+          {/* Factor 1: Concept Clarity Rating */}
+          <div style={{ backgroundColor: 'var(--bg-tertiary)', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+              <span style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-primary)' }}>1. Concept Clarity</span>
+              <span style={{ fontWeight: 800, color: 'var(--warning-color)' }}>{clarityRating} / 5 ⭐</span>
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+              {[1, 2, 3, 4, 5].map(star => (
+                <button 
+                  key={star} 
+                  type="button" 
+                  onClick={() => setClarityRating(star)} 
+                  style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: star <= clarityRating ? '#f59e0b' : '#64748b' }}
+                >
+                  ★
+                </button>
+              ))}
+            </div>
+            <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', textAlign: 'center', marginTop: '0.25rem' }}>
+              Did the tutor explain the core logic clearly and answer your doubts?
+            </div>
+          </div>
+
+          {/* Factor 2: Teaching Patience & Approachability */}
+          <div style={{ backgroundColor: 'var(--bg-tertiary)', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+              <span style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-primary)' }}>2. Teaching Patience</span>
+              <span style={{ fontWeight: 800, color: 'var(--warning-color)' }}>{patienceRating} / 5 ⭐</span>
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+              {[1, 2, 3, 4, 5].map(star => (
+                <button 
+                  key={star} 
+                  type="button" 
+                  onClick={() => setPatienceRating(star)} 
+                  style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: star <= patienceRating ? '#f59e0b' : '#64748b' }}
+                >
+                  ★
+                </button>
+              ))}
+            </div>
+            <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', textAlign: 'center', marginTop: '0.25rem' }}>
+              Was the student tutor friendly, patient, and comfortable to learn with?
+            </div>
+          </div>
+
+          {/* Written Feedback */}
+          <div>
+            <label className="label">Written Peer Review</label>
+            <textarea 
+              className="input" 
+              style={{ minHeight: '80px' }} 
+              placeholder="What made this explanation easy to understand?" 
+              value={feedbackText}
+              onChange={e => setFeedbackText(e.target.value)}
+            />
+          </div>
+
+          <button type="submit" className="btn btn-accent" style={{ padding: '0.875rem', fontWeight: 800 }}>
+            Submit Rating & Release Escrow Earnings 🚀
+          </button>
+
+        </form>
+
+      </div>
+    </div>
+  );
+}
+
+// --- MODULE 5: STUDENT EARNINGS WALLET & MONETIZATION HUB SCREEN ---
+function WalletScreen({ token }) {
+  const { profile, updateProfileState } = useAuth();
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+  const [withdrawAmount, setWithdrawAmount] = useState('450');
+  const [upiId, setUpiId] = useState('');
+  const [customRate, setCustomRate] = useState(profile?.customSessionRate || 50);
+
+  const walletBalance = profile?.walletBalance !== undefined ? profile.walletBalance : 450;
+  const lifetimeEarnings = profile?.lifetimeEarnings !== undefined ? profile.lifetimeEarnings : 1850;
+  const classesTaught = profile?.classesTaught !== undefined ? profile.classesTaught : 24;
+  const tutorTier = profile?.tutorTier || 'certified';
+
+  const transactions = [
+    { id: 'tx-1', desc: '1:1 Session: Java OOP Inheritance (Rahul S.)', date: 'Today, 4:30 PM', amount: '+₹45.00', status: 'Completed (10% Fee)', isCredit: true },
+    { id: 'tx-2', desc: '1:1 Session: Dynamic Programming State Transition (Sneha R.)', date: 'Yesterday', amount: '+₹54.00', status: 'Completed (10% Fee)', isCredit: true },
+    { id: 'tx-3', desc: 'UPI Bank Withdrawal to aarav@okaxis', date: '26 Aug 2026', amount: '-₹500.00', status: 'Settled to Bank Account', isCredit: false },
+    { id: 'tx-4', desc: '1:1 Session: Recursion & Binary Trees (Vikram J.)', date: '24 Aug 2026', amount: '+₹45.00', status: 'Completed', isCredit: true }
+  ];
+
+  const handleSaveRate = (e) => {
+    e.preventDefault();
+    if (profile) {
+      updateProfileState({ ...profile, customSessionRate: parseInt(customRate) });
+    }
+    alert(`🎉 Your session rate updated to ₹${customRate} / 30 mins!`);
+  };
+
+  const handleWithdrawSubmit = (e) => {
+    e.preventDefault();
+    if (!upiId.trim()) {
+      alert("Please enter a valid UPI ID (e.g. yourname@oksbi or phonepe)");
+      return;
+    }
+    const amountNum = parseInt(withdrawAmount);
+    if (amountNum > walletBalance) {
+      alert("Withdrawal amount cannot exceed available balance.");
+      return;
+    }
+    if (profile) {
+      updateProfileState({ ...profile, walletBalance: walletBalance - amountNum });
+    }
+    alert(`💸 Payout of ₹${amountNum} initiated successfully to ${upiId}! Funds will reflect in your bank in 1-2 hours.`);
+    setShowWithdrawModal(false);
+  };
+
+  return (
+    <div style={{ padding: '1.5rem 2.5rem', width: '100%', maxWidth: '1400px', margin: '0 auto' }}>
+      
+      {/* HEADER */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          <h1 className="font-serif" style={{ fontSize: '2.25rem', fontWeight: 800, marginBottom: '0.25rem' }}>
+            Student Earning Wallet & Monetization Hub
+          </h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9375rem' }}>
+            Earn money by teaching concepts you excel at. Track completed sessions, adjust rates, and withdraw to UPI.
+          </p>
+        </div>
+
+        <button 
+          onClick={() => setShowWithdrawModal(true)} 
+          className="btn btn-accent"
+          style={{ padding: '0.75rem 1.5rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: 'var(--success-color)' }}
+        >
+          <CreditCard size={18} /> Withdraw to UPI (₹{walletBalance})
+        </button>
+      </div>
+
+      {/* 4 STATS CARDS */}
+      <div className="grid-4" style={{ marginBottom: '2rem' }}>
+        <div className="card-premium">
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.375rem' }}>
+            Available Earning Balance
+          </div>
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--success-color)' }}>
+            ₹{walletBalance}.00
+          </div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+            Ready for instant bank transfer
+          </div>
+        </div>
+
+        <div className="card-premium">
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.375rem' }}>
+            Lifetime Earnings
+          </div>
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+            ₹{lifetimeEarnings}.00
+          </div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--success-color)', fontWeight: 600, marginTop: '0.25rem' }}>
+            ↑ 100% Student Self-Funded
+          </div>
+        </div>
+
+        <div className="card-premium">
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.375rem' }}>
+            1:1 Classes Taught
+          </div>
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--accent-primary)' }}>
+            {classesTaught} Classes
+          </div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+            Verified campus doubt sessions
+          </div>
+        </div>
+
+        <div className="card-premium">
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.375rem' }}>
+            Concept Clarity Rating
+          </div>
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--warning-color)' }}>
+            4.9 ⭐
+          </div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+            96.4% positive student feedback
+          </div>
+        </div>
+      </div>
+
+      {/* TWO COLUMN: MONETIZATION PROGRESSION & PRICING SETTINGS + TRANSACTION HISTORY */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+        
+        {/* COLUMN 1: MONETIZATION TIER & RATE CONTROLS */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          
+          <div className="card-premium">
+            <h3 className="font-serif" style={{ fontSize: '1.25rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Award size={20} style={{ color: 'var(--accent-primary)' }} /> Tutor Qualification & Monetization Tier
+            </h3>
+
+            {/* 10-Class Rule Progress */}
+            <div style={{ backgroundColor: 'var(--bg-tertiary)', padding: '1.25rem', borderRadius: 'var(--radius-md)', marginBottom: '1.25rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', fontWeight: 700, marginBottom: '0.5rem' }}>
+                <span>Tier Status: <strong>Certified Peer Tutor</strong></span>
+                <span style={{ color: 'var(--success-color)' }}>10/10 Milestone Passed ✓</span>
+              </div>
+              
+              <div style={{ width: '100%', height: '10px', backgroundColor: 'var(--border-color)', borderRadius: 'var(--radius-full)', overflow: 'hidden' }}>
+                <div style={{ width: '100%', height: '100%', background: 'linear-gradient(90deg, #10b981 0%, #0066FF 100%)', borderRadius: 'var(--radius-full)' }}></div>
+              </div>
+              
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.75rem', margin: '0.75rem 0 0 0' }}>
+                🎓 <strong>Rule:</strong> Every student must first complete 10 verified practice/free doubt sessions before unlocking paid classes. You have unlocked paid mentoring!
+              </p>
+            </div>
+
+            {/* Custom Session Rate Setting */}
+            <form onSubmit={handleSaveRate} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                <label className="label">Set Your Custom Rate Per 30-Minute Session (₹30 – ₹500)</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <input 
+                    type="number" 
+                    min="30" 
+                    max="500" 
+                    className="input" 
+                    value={customRate} 
+                    onChange={e => setCustomRate(e.target.value)} 
+                    style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--accent-primary)', maxWidth: '140px' }} 
+                  />
+                  <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>₹ / 30-minute 1:1 class</span>
+                </div>
+              </div>
+
+              <button type="submit" className="btn btn-accent" style={{ padding: '0.75rem' }}>
+                Save Session Rate 💾
+              </button>
+            </form>
+
+          </div>
+
+          {/* Student Earning Model Info */}
+          <div className="card-premium" style={{ backgroundColor: 'rgba(0, 102, 255, 0.04)', border: '1px solid rgba(0, 102, 255, 0.15)' }}>
+            <h4 style={{ fontSize: '0.9375rem', fontWeight: 800, color: 'var(--accent-primary)', marginBottom: '0.5rem' }}>
+              💡 How Student Earning Works:
+            </h4>
+            <ul style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', paddingLeft: '1.25rem', lineHeight: 1.6, margin: 0 }}>
+              <li>10 Classes × ₹50 = <strong>₹500</strong></li>
+              <li>20 Classes × ₹50 = <strong>₹1,000</strong></li>
+              <li>Platform keeps a 10% safety & server infrastructure fee; <strong>90% goes directly to you</strong>.</li>
+            </ul>
+          </div>
+
+        </div>
+
+        {/* COLUMN 2: TRANSACTION HISTORY & ESCROW LEDGER */}
+        <div className="card-premium">
+          <h3 className="font-serif" style={{ fontSize: '1.25rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <History size={20} style={{ color: 'var(--accent-primary)' }} /> Earnings Ledger & Escrow Releases
+          </h3>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {transactions.map(tx => (
+              <div key={tx.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.875rem', backgroundColor: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)' }}>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-primary)' }}>{tx.desc}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{tx.date} • {tx.status}</div>
+                </div>
+                <div style={{ fontWeight: 800, fontSize: '1rem', color: tx.isCredit ? 'var(--success-color)' : 'var(--danger-color)' }}>
+                  {tx.amount}
+                </div>
               </div>
             ))}
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
-          <button onClick={() => onSave(selectedUrl)} className="btn btn-accent" style={{ flex: 1, padding: '0.75rem', fontWeight: 700 }}>Save Picture</button>
-          <button onClick={onClose} className="btn btn-secondary" style={{ flex: 1, padding: '0.75rem' }}>Cancel</button>
-        </div>
       </div>
-    </div>
-  );
-}
 
-// --- ENLARGED PHOTO PREVIEW MODAL ---
-function PhotoPreviewModal({ imageUrl, userName, onClose }) {
-  return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 3500, backgroundColor: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }} onClick={onClose}>
-      <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', maxWidth: '420px', width: '100%' }} onClick={e => e.stopPropagation()}>
-        <button onClick={onClose} style={{ position: 'absolute', top: '-48px', right: '0', background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%', padding: '0.5rem', color: '#ffffff', cursor: 'pointer' }}>
-          <X size={24} />
-        </button>
-        <div style={{ width: '280px', height: '280px', borderRadius: '50%', padding: '6px', background: 'linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)', boxShadow: '0 20px 60px rgba(0,0,0,0.5)', marginBottom: '1rem' }}>
-          <img src={imageUrl} alt={userName} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover', border: '4px solid #ffffff' }} />
-        </div>
-        <div style={{ color: '#ffffff', fontSize: '1.125rem', fontWeight: 700, fontFamily: 'serif' }}>{userName}</div>
-      </div>
-    </div>
-  );
-}
-
-// --- USER LIST MODAL (FOLLOWERS / FOLLOWING) ---
-function UserListModal({ title, userId, token, onClose, onSelectUser }) {
-  const { testAccounts } = useAuth();
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchList = async () => {
-      setLoading(true);
-      const endpoint = title.toLowerCase().includes('follower') 
-        ? `/api/profiles/${userId}/followers` 
-        : `/api/profiles/${userId}/following`;
-      try {
-        const response = await fetch(endpoint, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setUsers(data);
-          setLoading(false);
-          return;
-        }
-      } catch (e) {
-        console.error("Failed to fetch profiles from backend, using fallback:", e);
-      }
-      
-      const isFollowers = title.toLowerCase().includes('follower');
-      let fallbackUsers = [];
-      
-      if (userId === '11111111-1111-1111-1111-111111111111') {
-        if (isFollowers) {
-          fallbackUsers = testAccounts.filter(acc => acc.id === '22222222-2222-2222-2222-222222222222' || acc.id === '33333333-3333-3333-3333-333333333333');
-        } else {
-          fallbackUsers = testAccounts.filter(acc => acc.id === '22222222-2222-2222-2222-222222222222' || acc.id === '33333333-3333-3333-3333-333333333333');
-        }
-      } else if (userId === '22222222-2222-2222-2222-222222222222') {
-        if (isFollowers) {
-          fallbackUsers = testAccounts.filter(acc => acc.id === '11111111-1111-1111-1111-111111111111' || acc.id === '33333333-3333-3333-3333-333333333333');
-        } else {
-          fallbackUsers = testAccounts.filter(acc => acc.id === '11111111-1111-1111-1111-111111111111');
-        }
-      } else if (userId === '33333333-3333-3333-3333-333333333333') {
-        if (isFollowers) {
-          fallbackUsers = testAccounts.filter(acc => acc.id === '11111111-1111-1111-1111-111111111111');
-        } else {
-          fallbackUsers = testAccounts.filter(acc => acc.id === '11111111-1111-1111-1111-111111111111' || acc.id === '22222222-2222-2222-2222-222222222222');
-        }
-      } else {
-        fallbackUsers = testAccounts.filter(acc => acc.id !== userId).slice(0, 1);
-      }
-      
-      setUsers(fallbackUsers);
-      setLoading(false);
-    };
-    fetchList();
-  }, [userId, title, token, testAccounts]);
-
-  return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 3000, backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-      <div className="card-premium glass-card" style={{ width: '100%', maxWidth: '440px', maxHeight: '520px', borderRadius: '24px', padding: '1.5rem', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid #f1f5f9', paddingBottom: '0.75rem' }}>
-          <h3 className="font-serif" style={{ fontSize: '1.125rem' }}>{title}</h3>
-          <button onClick={onClose} className="btn-icon"><X size={18} /></button>
-        </div>
-
-        <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          {loading ? (
-            <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>Loading {title.toLowerCase()}...</div>
-          ) : users.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8', fontSize: '0.875rem' }}>
-              No {title.toLowerCase()} found yet.
+      {/* WITHDRAWAL TO UPI MODAL */}
+      {showWithdrawModal && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.8)', zIndex: 4000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', backdropFilter: 'blur(6px)' }}>
+          <div className="card-premium" style={{ width: '100%', maxWidth: '460px', padding: '2rem', borderRadius: 'var(--radius-xl)', backgroundColor: 'var(--bg-elevated)' }}>
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <h3 className="font-serif" style={{ fontSize: '1.25rem', margin: 0 }}>Instant UPI Bank Payout</h3>
+              <button onClick={() => setShowWithdrawModal(false)} className="btn-icon"><X size={18} /></button>
             </div>
-          ) : (
-            users.map(u => (
-              <div 
-                key={u.id} 
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.625rem 0.75rem', borderRadius: '12px', backgroundColor: '#f8fafc', border: '1px solid #f1f5f9' }}
-              >
-                <div 
-                  onClick={() => { onClose(); onSelectUser(u); }}
-                  style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', flex: 1 }}
-                >
-                  <img src={u.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${u.fullName}`} alt="Avatar" style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }} />
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: '0.875rem', color: '#0f172a' }}>{u.fullName}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{u.college || 'IIT Madras'} • {u.department || 'CS'}</div>
-                  </div>
-                </div>
 
-                <button 
-                  onClick={() => { onClose(); onSelectUser(u); }} 
-                  className="btn btn-secondary" 
-                  style={{ fontSize: '0.75rem', padding: '0.375rem 0.75rem' }}
-                >
-                  View Profile
-                </button>
+            <form onSubmit={handleWithdrawSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              <div>
+                <label className="label">Withdrawal Amount (₹)</label>
+                <input 
+                  type="number" 
+                  max={walletBalance} 
+                  min="50" 
+                  className="input" 
+                  value={withdrawAmount} 
+                  onChange={e => setWithdrawAmount(e.target.value)} 
+                  required 
+                />
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                  Available: ₹{walletBalance}.00
+                </div>
               </div>
-            ))
-          )}
+
+              <div>
+                <label className="label">Enter UPI ID (GooglePay / PhonePe / Paytm)</label>
+                <input 
+                  type="text" 
+                  className="input" 
+                  placeholder="e.g. aarav@okhdfcbank or 9876543210@paytm" 
+                  value={upiId} 
+                  onChange={e => setUpiId(e.target.value)} 
+                  required 
+                />
+              </div>
+
+              <button type="submit" className="btn btn-accent" style={{ padding: '0.75rem', fontWeight: 800, backgroundColor: 'var(--success-color)' }}>
+                Transfer ₹{withdrawAmount} to UPI Now 💸
+              </button>
+            </form>
+
+          </div>
         </div>
-      </div>
+      )}
+
     </div>
   );
 }
 
-// --- PUBLIC PROFILE MODAL ---
-function PublicProfileModal({ user, currentUserId, token, onClose, onStartChat, onOpenUserList }) {
-  const [profile, setProfile] = useState(user);
-  const [isFollowing, setIsFollowing] = useState(false);
-  const [followersCount, setFollowersCount] = useState(user.followersCount || 0);
-  const [followingCount, setFollowingCount] = useState(user.followingCount || 0);
-  const [loading, setLoading] = useState(true);
+// --- REAL-TIME LINKEDIN & INSTAGRAM STYLE CONNECTIONS & NETWORK SCREEN ---
+function ConnectionsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, onOpenPublicProfile }) {
+  const { profile, updateProfileState } = useAuth();
+  const [activeSubTab, setActiveSubTab] = useState('connections');
+  const [searchFilter, setSearchFilter] = useState('');
+  
+  // Real-time connections list
+  const [connections, setConnections] = useState([
+    { id: 'c-1', fullName: 'Bhavna Patel', college: 'IIT Madras', department: 'Computer Science', year: 3, avatarUrl: FEMALE_AVATAR_SVG, skills: ['Python', 'Machine Learning', 'Data Structures'], degree: '1st', mutuals: 14, endorsed: false },
+    { id: 'c-2', fullName: 'Chaitanya Reddy', college: 'BITS Pilani', department: 'Electrical Engineering', year: 1, avatarUrl: MALE_AVATAR_SVG, skills: ['Circuits', 'Calculus', 'C++'], degree: '1st', mutuals: 8, endorsed: false },
+    { id: 'c-3', fullName: 'Divya Nambiar', college: 'NIT Trichy', department: 'Data Science', year: 2, avatarUrl: FEMALE_AVATAR_SVG, skills: ['SQL', 'Tableau', 'Statistics'], degree: '1st', mutuals: 19, endorsed: true }
+  ]);
 
-  useEffect(() => {
-    const fetchStatus = async () => {
-      try {
-        const [profRes, statusRes] = await Promise.all([
-          fetch(`/api/profiles/${user.id}`, { headers: { 'Authorization': `Bearer ${token}` } }),
-          fetch(`/api/profiles/${user.id}/follow-status`, { headers: { 'Authorization': `Bearer ${token}` } })
-        ]);
+  // Real-time pending requests
+  const [pendingRequests, setPendingRequests] = useState([
+    { id: 'p-1', fullName: 'Kavya Subramanian', college: 'IIT Delhi', department: 'Software Engineering', year: 4, avatarUrl: FEMALE_AVATAR_SVG, skills: ['React', 'TypeScript', 'Node.js'], note: 'Hey Aarav, saw your solution in the Java thread! Would love to connect for system design prep.', time: '2h ago' },
+    { id: 'p-2', fullName: 'Rohan Deshmukh', college: 'IIT Bombay', department: 'Computer Science', year: 2, avatarUrl: MALE_AVATAR_SVG, skills: ['Competitive Programming', 'Algorithms'], note: 'Let\'s collaborate on algorithmic doubt rooms.', time: '5h ago' }
+  ]);
 
-        if (profRes.ok) {
-          const p = await profRes.json();
-          setProfile(p);
-          setFollowersCount(p.followersCount || 0);
-          setFollowingCount(p.followingCount || 0);
-        }
-        if (statusRes.ok) {
-          const s = await statusRes.json();
-          setIsFollowing(s.following);
-          if (s.followersCount !== undefined) setFollowersCount(s.followersCount);
-          if (s.followingCount !== undefined) setFollowingCount(s.followingCount);
-        }
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoading(false);
-      }
+  // Real-time suggested peers
+  const [suggestions, setSuggestions] = useState([
+    { id: 's-1', fullName: 'Sneha Roy', college: 'IIIT Hyderabad', department: 'AI & Data Science', avatarUrl: FEMALE_AVATAR_SVG, skills: ['PyTorch', 'Computer Vision'], isPending: false, isFollowing: false },
+    { id: 's-2', fullName: 'Vikram Joshi', college: 'IIT Madras', department: 'Mechanical Engineering', avatarUrl: MALE_AVATAR_SVG, skills: ['Thermodynamics', 'MATLAB', 'Python'], isPending: false, isFollowing: false },
+    { id: 's-3', fullName: 'Ananya Guha', college: 'BITS Pilani', department: 'Computer Science', avatarUrl: FEMALE_AVATAR_SVG, skills: ['Kubernetes', 'Go', 'Cloud'], isPending: false, isFollowing: false }
+  ]);
+
+  const handleAcceptRequest = (req) => {
+    setPendingRequests(prev => prev.filter(p => p.id !== req.id));
+    const newConn = {
+      id: req.id,
+      fullName: req.fullName,
+      college: req.college,
+      department: req.department,
+      year: req.year,
+      avatarUrl: req.avatarUrl,
+      skills: req.skills,
+      degree: '1st',
+      mutuals: 12,
+      endorsed: false
     };
-    fetchStatus();
-  }, [user.id, token]);
+    setConnections(prev => [newConn, ...prev]);
+    if (profile) {
+      const updated = { ...profile, followersCount: (profile.followersCount || 1200) + 1, coins: (profile.coins || 45) + 5, xp: (profile.xp || 650) + 10 };
+      updateProfileState(updated);
+    }
+    alert(`🎉 Connected with ${req.fullName}! +10 XP and +5 Peer Coins awarded.`);
+  };
 
-  const handleToggleFollow = async () => {
-    const endpoint = isFollowing ? `/api/profiles/${user.id}/unfollow` : `/api/profiles/${user.id}/follow`;
-    try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (response.ok) {
-        const result = await response.json();
-        setIsFollowing(result.following);
-        setFollowersCount(result.followersCount);
+  const handleIgnoreRequest = (reqId) => {
+    setPendingRequests(prev => prev.filter(p => p.id !== reqId));
+  };
+
+  const handleSendConnect = (sugId) => {
+    setSuggestions(prev => prev.map(s => s.id === sugId ? { ...s, isPending: true } : s));
+    alert("✉️ Connection request sent in real time!");
+  };
+
+  const handleToggleFollow = (sugId) => {
+    setSuggestions(prev => prev.map(s => {
+      if (s.id === sugId) {
+        const nextState = !s.isFollowing;
+        if (profile) {
+          const updated = { 
+            ...profile, 
+            followingCount: nextState ? (profile.followingCount || 5) + 1 : Math.max(0, (profile.followingCount || 5) - 1) 
+          };
+          updateProfileState(updated);
+        }
+        return { ...s, isFollowing: nextState };
       }
-    } catch (e) {
-      setIsFollowing(prev => !prev);
-      setFollowersCount(prev => isFollowing ? prev - 1 : prev + 1);
+      return s;
+    }));
+  };
+
+  const handleEndorseSkill = (connId, skillName) => {
+    setConnections(prev => prev.map(c => c.id === connId ? { ...c, endorsed: true } : c));
+    if (profile) {
+      const updated = { ...profile, coins: (profile.coins || 45) + 5, xp: (profile.xp || 650) + 10 };
+      updateProfileState(updated);
+    }
+    alert(`🌟 You endorsed ${skillName}! +5 Peer Coins and +10 XP awarded.`);
+  };
+
+  const handleRemoveConnection = (connId, name) => {
+    if (confirm(`Are you sure you want to remove ${name} from your connections?`)) {
+      setConnections(prev => prev.filter(c => c.id !== connId));
     }
   };
 
-  const usernameHandle = `@${(profile.fullName || 'student').toLowerCase().replace(/\s+/g, '_')}`;
+  const filteredConnections = connections.filter(c => 
+    c.fullName.toLowerCase().includes(searchFilter.toLowerCase()) ||
+    c.college.toLowerCase().includes(searchFilter.toLowerCase()) ||
+    c.department.toLowerCase().includes(searchFilter.toLowerCase()) ||
+    c.skills.some(s => s.toLowerCase().includes(searchFilter.toLowerCase()))
+  );
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 2500, backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-      <div className="card-premium glass-card" style={{ width: '100%', maxWidth: '580px', maxHeight: '90vh', overflowY: 'auto', borderRadius: '24px', padding: '2rem', backgroundColor: '#ffffff', boxShadow: '0 25px 60px rgba(0,0,0,0.25)' }}>
-        
-        {/* Header bar */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid #f1f5f9', paddingBottom: '0.75rem' }}>
-          <span className="font-serif" style={{ fontSize: '1.125rem', color: '#64748b' }}>Student Public Profile</span>
-          <button onClick={onClose} className="btn-icon"><X size={20} /></button>
+    <div style={{ padding: '1.5rem 2.5rem', width: '100%', maxWidth: '1400px', margin: '0 auto' }}>
+      
+      {/* HEADER */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          <h1 className="font-serif" style={{ fontSize: '2.25rem', fontWeight: 800, marginBottom: '0.25rem' }}>
+            Campus Peer Network & Mentorship
+          </h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9375rem' }}>
+            Send connection requests, endorse peer skills, accept study invites, and message tutors in real time.
+          </p>
         </div>
 
-        {/* Profile Card Content */}
-        <div style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
-          <div style={{ width: '96px', height: '96px', borderRadius: '50%', padding: '3px', background: 'linear-gradient(45deg, #f09433, #e6683c, #dc2743)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <img src={profile.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${profile.fullName}`} alt="Avatar" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+        {/* TABS SWITCHER */}
+        <div style={{ display: 'flex', gap: '0.375rem', backgroundColor: 'var(--bg-tertiary)', padding: '0.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+          <button 
+            onClick={() => setActiveSubTab('connections')} 
+            style={{ 
+              padding: '0.5rem 1.25rem', 
+              borderRadius: 'var(--radius-sm)', 
+              border: 'none', 
+              cursor: 'pointer',
+              fontSize: '0.8125rem', 
+              fontWeight: 700,
+              backgroundColor: activeSubTab === 'connections' ? 'var(--bg-secondary)' : 'transparent',
+              color: activeSubTab === 'connections' ? 'var(--accent-primary)' : 'var(--text-secondary)',
+              boxShadow: activeSubTab === 'connections' ? 'var(--shadow-sm)' : 'none'
+            }}
+          >
+            My Connections ({connections.length})
+          </button>
+          
+          <button 
+            onClick={() => setActiveSubTab('pending')} 
+            style={{ 
+              padding: '0.5rem 1.25rem', 
+              borderRadius: 'var(--radius-sm)', 
+              border: 'none', 
+              cursor: 'pointer',
+              fontSize: '0.8125rem', 
+              fontWeight: 700,
+              backgroundColor: activeSubTab === 'pending' ? 'var(--bg-secondary)' : 'transparent',
+              color: activeSubTab === 'pending' ? 'var(--accent-primary)' : 'var(--text-secondary)',
+              boxShadow: activeSubTab === 'pending' ? 'var(--shadow-sm)' : 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.375rem'
+            }}
+          >
+            Pending Requests
+            {pendingRequests.length > 0 && (
+              <span style={{ backgroundColor: 'var(--danger-color)', color: '#ffffff', fontSize: '0.625rem', padding: '0.1rem 0.35rem', borderRadius: 'var(--radius-full)' }}>
+                {pendingRequests.length}
+              </span>
+            )}
+          </button>
+
+          <button 
+            onClick={() => setActiveSubTab('discover')} 
+            style={{ 
+              padding: '0.5rem 1.25rem', 
+              borderRadius: 'var(--radius-sm)', 
+              border: 'none', 
+              cursor: 'pointer',
+              fontSize: '0.8125rem', 
+              fontWeight: 700,
+              backgroundColor: activeSubTab === 'discover' ? 'var(--bg-secondary)' : 'transparent',
+              color: activeSubTab === 'discover' ? 'var(--accent-primary)' : 'var(--text-secondary)',
+              boxShadow: activeSubTab === 'discover' ? 'var(--shadow-sm)' : 'none'
+            }}
+          >
+            Suggested Mentors ({suggestions.length})
+          </button>
+        </div>
+      </div>
+
+      {/* SUBTAB 1: MY CONNECTIONS */}
+      {activeSubTab === 'connections' && (
+        <div>
+          {/* Search Filter Bar */}
+          <div className="card-premium" style={{ marginBottom: '1.5rem', padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <Search size={18} style={{ color: 'var(--text-muted)' }} />
+            <input 
+              type="text" 
+              className="input" 
+              placeholder="Filter connections by name, university, department, or skill (e.g. Java, Python)..." 
+              value={searchFilter} 
+              onChange={e => setSearchFilter(e.target.value)} 
+              style={{ border: 'none', background: 'transparent', padding: '0.25rem 0' }}
+            />
           </div>
 
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            <div>
-              <h2 className="font-serif" style={{ fontSize: '1.5rem', fontWeight: 800 }}>{usernameHandle}</h2>
-              <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#0f172a' }}>{profile.fullName}</div>
-              <div style={{ fontSize: '0.8125rem', color: '#64748b' }}>{profile.college || 'IIT Madras'} • {profile.department || 'Computer Science'} • Year {profile.year || 2}</div>
-            </div>
+          <div className="grid-2">
+            {filteredConnections.map(c => (
+              <div key={c.id} className="card-premium interactive-hover" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <img 
+                      src={c.avatarUrl} 
+                      alt={c.fullName} 
+                      style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--accent-primary)', cursor: 'pointer' }} 
+                      onClick={() => onOpenPublicProfile(c)}
+                    />
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span 
+                          style={{ fontWeight: 800, fontSize: '1.0625rem', color: 'var(--text-primary)', cursor: 'pointer' }}
+                          onClick={() => onOpenPublicProfile(c)}
+                        >
+                          {c.fullName}
+                        </span>
+                        <span className="tag" style={{ fontSize: '0.625rem' }}>{c.degree}</span>
+                      </div>
+                      <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>{c.college} • {c.department} (Yr {c.year})</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.125rem' }}>👥 {c.mutuals} mutual connections</div>
+                    </div>
+                  </div>
 
-            {/* Counters Strip (Clickable!) */}
-            <div style={{ display: 'flex', gap: '1.5rem', fontSize: '0.875rem', color: '#0f172a' }}>
-              <div 
-                onClick={() => onOpenUserList('Followers', profile.id)} 
-                style={{ cursor: 'pointer' }}
-                title="View Followers"
-              >
-                <strong>{followersCount}</strong> <span style={{ color: '#64748b', textDecoration: 'underline' }}>followers</span>
+                  <button 
+                    onClick={() => handleRemoveConnection(c.id, c.fullName)} 
+                    className="btn-icon" 
+                    title="Remove connection"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+
+                {/* Skills & Endorsements */}
+                <div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem', marginBottom: '0.75rem' }}>
+                    {c.skills.map((s, idx) => (
+                      <span key={idx} className="tag tag-accent" style={{ fontSize: '0.75rem' }}>
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Actions Footer */}
+                <div style={{ display: 'flex', gap: '0.625rem', marginTop: 'auto', paddingTop: '0.75rem', borderTop: '1px solid var(--border-color)' }}>
+                  <button 
+                    onClick={() => { setChatPeer(c); setActiveChatId(`chat-${c.id}`); setActiveTab('chat'); }} 
+                    className="btn btn-primary" 
+                    style={{ flex: 1, fontSize: '0.8125rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.375rem' }}
+                  >
+                    <MessageSquare size={14} /> Direct Message
+                  </button>
+                  <button 
+                    onClick={() => handleEndorseSkill(c.id, c.skills[0])} 
+                    className="btn btn-secondary" 
+                    style={{ fontSize: '0.8125rem', color: c.endorsed ? 'var(--success-color)' : 'var(--warning-color)', display: 'flex', alignItems: 'center', gap: '0.375rem' }}
+                    disabled={c.endorsed}
+                  >
+                    <Award size={14} /> {c.endorsed ? 'Endorsed ✓' : 'Endorse (+5🪙)'}
+                  </button>
+                </div>
               </div>
-              <div 
-                onClick={() => onOpenUserList('Following', profile.id)} 
-                style={{ cursor: 'pointer' }}
-                title="View Following"
-              >
-                <strong>{followingCount}</strong> <span style={{ color: '#64748b', textDecoration: 'underline' }}>following</span>
-              </div>
-              <div style={{ color: '#3b82f6', fontWeight: 700 }}>⚡ {profile.xp || 0} XP • Lvl {profile.level || 'Beginner'}</div>
-            </div>
+            ))}
           </div>
         </div>
+      )}
 
-        {/* Bio */}
-        <div style={{ fontSize: '0.875rem', lineHeight: 1.6, color: '#334155', backgroundColor: '#f8fafc', padding: '1rem', borderRadius: '12px', marginBottom: '1.5rem', border: '1px solid #f1f5f9' }}>
-          <p style={{ whiteSpace: 'pre-line' }}>{profile.bio || 'Student mentor on StudyLoop platform.'}</p>
-          {profile.teachingSkills && profile.teachingSkills.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem', marginTop: '0.75rem' }}>
-              {profile.teachingSkills.map((skill, idx) => (
-                <span key={idx} className="tag tag-accent" style={{ fontSize: '0.6875rem' }}>⭐ Teaches {skill}</span>
+      {/* SUBTAB 2: PENDING INVITATIONS */}
+      {activeSubTab === 'pending' && (
+        <div>
+          {pendingRequests.length === 0 ? (
+            <div className="card-premium" style={{ textAlign: 'center', padding: '3.5rem' }}>
+              <CheckCircle size={48} style={{ color: 'var(--success-color)', margin: '0 auto 1rem auto' }} />
+              <h3 className="font-serif" style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>All Caught Up!</h3>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>You have no pending connection requests at this time.</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              {pendingRequests.map(req => (
+                <div key={req.id} className="card-premium" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.25rem' }}>
+                  <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center', flex: 1, minWidth: '280px' }}>
+                    <img src={req.avatarUrl} alt={req.fullName} style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--accent-primary)' }} />
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span style={{ fontWeight: 800, fontSize: '1.125rem' }}>{req.fullName}</span>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>• {req.time}</span>
+                      </div>
+                      <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{req.college} • {req.department} (Yr {req.year})</div>
+                      {req.note && (
+                        <div style={{ backgroundColor: 'var(--bg-tertiary)', padding: '0.5rem 0.875rem', borderRadius: 'var(--radius-sm)', fontSize: '0.8125rem', color: 'var(--text-primary)', marginTop: '0.5rem', fontStyle: 'italic', borderLeft: '3px solid var(--accent-primary)' }}>
+                          "{req.note}"
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '0.75rem' }}>
+                    <button 
+                      onClick={() => handleAcceptRequest(req)} 
+                      className="btn btn-accent" 
+                      style={{ padding: '0.625rem 1.5rem', fontWeight: 700, fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}
+                    >
+                      <CheckCircle2 size={16} /> Accept ✓
+                    </button>
+                    <button 
+                      onClick={() => handleIgnoreRequest(req.id)} 
+                      className="btn btn-secondary" 
+                      style={{ padding: '0.625rem 1.25rem', fontSize: '0.875rem' }}
+                    >
+                      Ignore
+                    </button>
+                  </div>
+                </div>
               ))}
             </div>
           )}
         </div>
+      )}
 
-        {/* Action Buttons: Follow/Unfollow & Direct Message */}
-        {currentUserId !== profile.id && (
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
-            <button 
-              onClick={handleToggleFollow} 
-              className={`btn ${isFollowing ? 'btn-secondary' : 'btn-accent'}`} 
-              style={{ flex: 1, padding: '0.625rem', fontWeight: 700 }}
-            >
-              {isFollowing ? '✓ Following' : '+ Follow'}
-            </button>
-            <button 
-              onClick={() => { onClose(); onStartChat(profile); }} 
-              className="btn btn-primary" 
-              style={{ flex: 1, padding: '0.625rem', fontWeight: 700 }}
-            >
-              💬 Message
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
+      {/* SUBTAB 3: SUGGESTED PEERS & MENTORS */}
+      {activeSubTab === 'discover' && (
+        <div className="grid-3">
+          {suggestions.map(s => (
+            <div key={s.id} className="card-premium interactive-hover" style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <img src={s.avatarUrl} alt={s.fullName} style={{ width: '72px', height: '72px', borderRadius: '50%', objectFit: 'cover', border: '3px solid var(--accent-primary)', marginBottom: '1rem' }} />
+              <h3 className="font-serif" style={{ fontSize: '1.125rem', fontWeight: 800, marginBottom: '0.25rem' }}>{s.fullName}</h3>
+              <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>{s.college} • {s.department}</div>
 
-// --- DEDICATED FULL-SCREEN STUDENT LOGIN & SIGNUP PAGE (IMAGE 1 EXACT MATCH) ---
-function LandingScreen({ setActiveTab, loginSimulated, testAccounts, theme, setTheme, postLoginRedirectTab, setPostLoginRedirectTab }) {
-  const { user, profile, logout } = useAuth();
-  const [authTab, setAuthTab] = useState('signup'); // 'signup', 'login' or 'admin'
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [newsletterEmail, setNewsletterEmail] = useState('');
-  
-  // Admin Form States
-  const [adminEmail, setAdminEmail] = useState('admin@studyloop.app');
-  const [adminPassword, setAdminPassword] = useState('password123');
-
-  const handleAdminSubmit = (e) => {
-    e.preventDefault();
-    window.location.href = 'http://localhost:5174';
-  };
-  
-  // Login Form States
-  const [loginEmail, setLoginEmail] = useState('studenta@student.com');
-  const [loginPassword, setLoginPassword] = useState('password123');
-  const [showLoginPassword, setShowLoginPassword] = useState(false);
-
-  // Signup Form States
-  const [fullName, setFullName] = useState('');
-  const [signupEmail, setSignupEmail] = useState('');
-  const [signupPassword, setSignupPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showSignupPassword, setShowSignupPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [agreeTerms, setAgreeTerms] = useState(true);
-
-  const handleLoginSubmit = (e) => {
-    e.preventDefault();
-    if (!loginEmail) return;
-    
-    // Direct admin login redirection
-    if (loginEmail.trim().toLowerCase() === 'admin@studyloop.app') {
-      window.location.href = 'http://localhost:5174';
-      return;
-    }
-    
-    loginSimulated(loginEmail);
-    setActiveTab(postLoginRedirectTab || 'dashboard');
-    if (setPostLoginRedirectTab) setPostLoginRedirectTab(null);
-    setShowAuthModal(false);
-  };
-
-  const handleSignupSubmit = (e) => {
-    e.preventDefault();
-    if (!signupEmail) return;
-    if (signupPassword && confirmPassword && signupPassword !== confirmPassword) {
-      alert("Passwords do not match! Please check your password input.");
-      return;
-    }
-    if (!agreeTerms) {
-      alert("Please agree to the Terms & Conditions and Privacy Policy to proceed.");
-      return;
-    }
-    loginSimulated(signupEmail);
-    setActiveTab(postLoginRedirectTab || 'dashboard');
-    if (setPostLoginRedirectTab) setPostLoginRedirectTab(null);
-    setShowAuthModal(false);
-  };
-
-  const handleGoogleSSO = () => {
-    const defaultTestUser = testAccounts[0]?.email || 'aarav.sharma@iitm.ac.in';
-    loginSimulated(defaultTestUser);
-    setActiveTab(postLoginRedirectTab || 'dashboard');
-    if (setPostLoginRedirectTab) setPostLoginRedirectTab(null);
-    setShowAuthModal(false);
-  };
-
-  // 1. DEDICATED KAIZENQ-INSPIRED VISITOR LANDING PAGE WITH AUTH MODAL
-  if (!user) {
-    return (
-      <div style={{
-        minHeight: '100vh',
-        width: '100%',
-        backgroundColor: 'var(--bg-primary)',
-        backgroundImage: 'linear-gradient(rgba(59, 130, 246, 0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(59, 130, 246, 0.04) 1px, transparent 1px)',
-        backgroundSize: '32px 32px',
-        color: 'var(--text-primary)',
-        display: 'flex',
-        flexDirection: 'column'
-      }}>
-        {/* KAIZENQ-INSPIRED VISITOR HEADER NAVBAR */}
-        <header style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '1rem 3rem',
-          backgroundColor: 'var(--bg-secondary)',
-          borderBottom: '1px solid var(--border-color)',
-          position: 'sticky',
-          top: 0,
-          zIndex: 100,
-          boxShadow: '0 2px 10px rgba(0,0,0,0.02)'
-        }}>
-          {/* Logo Brand */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }} onClick={() => setShowAuthModal(false)}>
-            <div style={{
-              width: '42px',
-              height: '42px',
-              borderRadius: '12px',
-              background: 'linear-gradient(135deg, #2563eb 0%, #06b6d4 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)'
-            }}>
-              <span className="font-serif" style={{ color: '#ffffff', fontWeight: 800, fontSize: '1.25rem' }}>SL</span>
-            </div>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                <span className="font-serif" style={{ fontSize: '1.375rem', fontWeight: 800, color: 'var(--text-primary)' }}>Study</span>
-                <span className="font-serif" style={{ fontSize: '1.375rem', fontWeight: 800, color: '#2563eb' }}>Loop</span>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem', justifyContent: 'center', marginBottom: '1.25rem' }}>
+                {s.skills.map((sk, i) => (
+                  <span key={i} className="tag tag-accent" style={{ fontSize: '0.6875rem' }}>{sk}</span>
+                ))}
               </div>
-              <div style={{ fontSize: '0.625rem', fontWeight: 700, letterSpacing: '0.12em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                LEARN • BUILD • EVOLVE
-              </div>
-            </div>
-          </div>
 
-          {/* Navigation Links */}
-          <nav style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
-            <button onClick={() => { setShowAuthModal(false); if (setPostLoginRedirectTab) setPostLoginRedirectTab(null); }} style={{ background: 'transparent', border: 'none', fontWeight: 700, color: 'var(--accent-dark)', fontSize: '0.875rem', cursor: 'pointer' }}>Home</button>
-            <button onClick={() => { if (setPostLoginRedirectTab) setPostLoginRedirectTab('doubts'); setAuthTab('login'); setShowAuthModal(true); }} style={{ background: 'transparent', border: 'none', fontWeight: 600, color: 'var(--text-secondary)', fontSize: '0.875rem', cursor: 'pointer' }}>Doubt Hub</button>
-            <button onClick={() => { if (setPostLoginRedirectTab) setPostLoginRedirectTab('leaderboard'); setAuthTab('login'); setShowAuthModal(true); }} style={{ background: 'transparent', border: 'none', fontWeight: 600, color: 'var(--text-secondary)', fontSize: '0.875rem', cursor: 'pointer' }}>Leaderboard</button>
-            <button onClick={() => { if (setPostLoginRedirectTab) setPostLoginRedirectTab('discover'); setAuthTab('login'); setShowAuthModal(true); }} style={{ background: 'transparent', border: 'none', fontWeight: 600, color: 'var(--text-secondary)', fontSize: '0.875rem', cursor: 'pointer' }}>Peer Mentors</button>
-          </nav>
-
-          {/* Action Buttons */}
-          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-            <button
-              onClick={() => setTheme(prev => prev === 'light' ? 'dark' : 'light')}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: 'var(--text-secondary)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '0.5rem',
-                borderRadius: '50%',
-                backgroundColor: 'var(--bg-tertiary)',
-                width: '36px',
-                height: '36px',
-                marginRight: '0.25rem',
-                transition: 'all 0.2s ease'
-              }}
-              title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
-            >
-              {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
-            </button>
-            <button 
-              onClick={() => { setAuthTab('login'); setShowAuthModal(true); }}
-              className="btn btn-secondary" 
-              style={{ borderRadius: '50px', padding: '0.5rem 1.25rem', fontSize: '0.8125rem', fontWeight: 600 }}
-            >
-              Login
-            </button>
-            <button 
-              onClick={() => { setAuthTab('signup'); setShowAuthModal(true); }}
-              className="btn btn-accent glow-amber" 
-              style={{ borderRadius: '50px', padding: '0.5rem 1.25rem', fontSize: '0.8125rem', fontWeight: 700 }}
-            >
-              Sign Up 🚀
-            </button>
-          </div>
-        </header>
-
-        {/* HERO SECTION */}
-        <section style={{ padding: '4rem 3rem 5rem 3rem', maxWidth: '1400px', margin: '0 auto', width: '100%', display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: '3rem', alignItems: 'center' }}>
-          {/* Left Text */}
-          <div>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', padding: '0.375rem 1rem', borderRadius: '50px', fontSize: '0.8125rem', fontWeight: 700, color: '#2563eb', marginBottom: '1.5rem' }}>
-              <Sparkles size={16} /> Enterprise Peer Learning Workspace 3.0
-            </div>
-
-            <h1 className="font-serif" style={{ fontSize: '3.5rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.15, marginBottom: '1.5rem', letterSpacing: '-0.02em' }}>
-              Transform Learning Into <span style={{ background: 'linear-gradient(135deg, #2563eb 0%, #06b6d4 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Real-Time Mastery.</span>
-            </h1>
-
-            <p style={{ fontSize: '1.125rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '2.5rem', maxWidth: '580px' }}>
-              Master high-impact engineering & AI tracks with 24/7 intelligent tutoring, real-time peer doubt resolution, WebRTC code study sessions, and verified campus digital credentials.
-            </p>
-
-            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center', marginBottom: '2rem' }}>
-              <button 
-                onClick={() => { setAuthTab('signup'); setShowAuthModal(true); }}
-                className="btn animate-float"
-                style={{
-                  padding: '0.875rem 2rem',
-                  borderRadius: '14px',
-                  backgroundColor: '#2563eb',
-                  color: '#ffffff',
-                  fontWeight: 700,
-                  fontSize: '1rem',
-                  border: 'none',
-                  boxShadow: '0 10px 25px rgba(37, 99, 235, 0.35)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  cursor: 'pointer'
-                }}
-              >
-                Get Started Free →
-              </button>
-
-              <button 
-                onClick={() => { setAuthTab('login'); setShowAuthModal(true); }}
-                className="btn btn-secondary profile-action-btn-hover"
-                style={{
-                  padding: '0.875rem 1.75rem',
-                  borderRadius: '14px',
-                  fontSize: '0.9375rem',
-                  fontWeight: 600,
-                  cursor: 'pointer'
-                }}
-              >
-                Explore Student Portal
-              </button>
-            </div>
-
-            <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <span>✓ Free for Campus Students</span>
-              <span>•</span>
-              <span>✓ Instant Peer Pairing</span>
-              <span>•</span>
-              <span>✓ WebRTC Screen Share</span>
-            </div>
-          </div>
-
-          {/* Right Visual: Animated Node Hub */}
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '420px' }}>
-            {/* Outer Circular Glow */}
-            <div style={{
-              position: 'absolute',
-              width: '360px',
-              height: '360px',
-              borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(37, 99, 235, 0.15) 0%, rgba(6, 182, 212, 0.05) 50%, transparent 70%)',
-              border: '1px dashed #bfdbfe'
-            }}></div>
-
-            {/* Central Node */}
-            <div style={{
-              width: '140px',
-              height: '140px',
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
-              border: '4px solid #ffffff',
-              boxShadow: '0 20px 50px rgba(15, 23, 42, 0.25)',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 10
-            }}>
-              <Infinity size={42} style={{ color: '#38bdf8' }} />
-              <span className="font-serif" style={{ color: '#ffffff', fontSize: '0.8125rem', fontWeight: 800, marginTop: '0.25rem' }}>Study Loop</span>
-            </div>
-
-            {/* Floating Pills */}
-            <div className="hero-node-pill" style={{ position: 'absolute', top: '15px', right: '40px', backgroundColor: 'var(--bg-secondary)', padding: '0.625rem 1.125rem', borderRadius: '50px', boxShadow: '0 10px 25px rgba(0,0,0,0.08)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-primary)', zIndex: 12 }}>
-              <HelpCircle size={16} style={{ color: '#2563eb' }} /> AI & Peer Tutor
-            </div>
-
-            <div className="hero-node-pill" style={{ position: 'absolute', top: '100px', left: '10px', backgroundColor: 'var(--bg-secondary)', padding: '0.625rem 1.125rem', borderRadius: '50px', boxShadow: '0 10px 25px rgba(0,0,0,0.08)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-primary)', zIndex: 12 }}>
-              <Tv2 size={16} style={{ color: '#0284c7' }} /> Educational Shorts
-            </div>
-
-            <div className="hero-node-pill" style={{ position: 'absolute', bottom: '110px', right: '10px', backgroundColor: 'var(--bg-secondary)', padding: '0.625rem 1.125rem', borderRadius: '50px', boxShadow: '0 10px 25px rgba(0,0,0,0.08)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-primary)', zIndex: 12 }}>
-              <Trophy size={16} style={{ color: '#d97706' }} /> Campus Leaderboard
-            </div>
-
-            <div className="hero-node-pill" style={{ position: 'absolute', bottom: '20px', left: '60px', backgroundColor: 'var(--bg-secondary)', padding: '0.625rem 1.125rem', borderRadius: '50px', boxShadow: '0 10px 25px rgba(0,0,0,0.08)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-primary)', zIndex: 12 }}>
-              <Video size={16} style={{ color: '#059669' }} /> WebRTC Study Call
-            </div>
-          </div>
-        </section>
-
-        {/* PLATFORM STATS STRIP */}
-        <section style={{ backgroundColor: 'var(--bg-secondary)', borderTop: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)', padding: '2.5rem 3rem' }}>
-          <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem', textAlign: 'center' }}>
-            <div style={{ padding: '1rem', borderRight: '1px solid var(--border-color)' }}>
-              <div className="font-serif" style={{ fontSize: '2.25rem', fontWeight: 800, color: 'var(--text-primary)' }}>25,000+</div>
-              <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', marginTop: '0.25rem' }}>Active Campus Learners</div>
-            </div>
-            <div style={{ padding: '1rem', borderRight: '1px solid var(--border-color)' }}>
-              <div className="font-serif" style={{ fontSize: '2.25rem', fontWeight: 800, color: '#2563eb' }}>150+</div>
-              <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', marginTop: '0.25rem' }}>Expert Peer Mentors</div>
-            </div>
-            <div style={{ padding: '1rem', borderRight: '1px solid var(--border-color)' }}>
-              <div className="font-serif" style={{ fontSize: '2.25rem', fontWeight: 800, color: '#059669' }}>98.4%</div>
-              <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', marginTop: '0.25rem' }}>Doubt Resolution Rate</div>
-            </div>
-            <div style={{ padding: '1rem' }}>
-              <div className="font-serif" style={{ fontSize: '2.25rem', fontWeight: 800, color: '#d97706' }}>24/7</div>
-              <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', marginTop: '0.25rem' }}>Live Peer Tutor Access</div>
-            </div>
-          </div>
-        </section>
-
-        {/* CORE LMS FEATURES GRID */}
-        <section style={{ padding: '5rem 3rem', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
-          <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.1em', color: '#2563eb', backgroundColor: '#eff6ff', padding: '0.375rem 0.875rem', borderRadius: '50px', textTransform: 'uppercase' }}>
-              Core LMS Features
-            </span>
-            <h2 className="font-serif" style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '1rem' }}>
-              Built for Modern High-Growth Education
-            </h2>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', marginTop: '0.5rem', maxWidth: '640px', margin: '0.5rem auto 0 auto' }}>
-              Combining world-class course management with real-time peer assistance for students and faculty.
-            </p>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2rem' }}>
-            {/* Feature 1 */}
-            <div className="card-premium glass-card hover-glow-blue" style={{ padding: '2rem', borderRadius: '20px', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}>
-              <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem' }}>
-                <HelpCircle size={24} />
-              </div>
-              <h3 className="font-serif" style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.75rem', color: 'var(--text-primary)' }}>1-to-1 Live Doubt Rooms</h3>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.6 }}>
-                Open a doubt workspace, chat with a helper from your department, and start 1-click video calls with screen sharing.
-              </p>
-            </div>
-
-            {/* Feature 2 */}
-            <div className="card-premium glass-card hover-glow-blue" style={{ padding: '2rem', borderRadius: '20px', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}>
-              <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#e0f2fe', color: '#0284c7', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem' }}>
-                <Sparkles size={24} />
-              </div>
-              <h3 className="font-serif" style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.75rem', color: 'var(--text-primary)' }}>8-Factor Smart Peer Discovery</h3>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.6 }}>
-                Match algorithm evaluating college, department, skills, learning goals, and mutual connections for exact peer pairings.
-              </p>
-            </div>
-
-            {/* Feature 3 */}
-            <div className="card-premium glass-card hover-glow-blue" style={{ padding: '2rem', borderRadius: '20px', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}>
-              <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#fef3c7', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem' }}>
-                <Video size={24} />
-              </div>
-              <h3 className="font-serif" style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.75rem', color: 'var(--text-primary)' }}>WebRTC Code Study Calls</h3>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.6 }}>
-                In-browser video study calls with zero-latency screen sharing, peer code evaluation, and collaborative doubt solving.
-              </p>
-            </div>
-
-            {/* Feature 4 */}
-            <div className="card-premium glass-card hover-glow-blue" style={{ padding: '2rem', borderRadius: '20px', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}>
-              <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#fce7f3', color: '#db2777', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem' }}>
-                <Tv2 size={24} />
-              </div>
-              <h3 className="font-serif" style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.75rem', color: 'var(--text-primary)' }}>Educational Concept Shorts</h3>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.6 }}>
-                Watch and post 60-second concept shorts with red heart likes, slide-up comments, and subject hashtag pills.
-              </p>
-            </div>
-
-            {/* Feature 5 */}
-            <div className="card-premium glass-card hover-glow-blue" style={{ padding: '2rem', borderRadius: '20px', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}>
-              <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#d1fae5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem' }}>
-                <Trophy size={24} />
-              </div>
-              <h3 className="font-serif" style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.75rem', color: 'var(--text-primary)' }}>Campus Leaderboard & XP</h3>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.6 }}>
-                Earn XP, level badges, and peer coins for helping others, ascending to Rank #1 on your campus leaderboard.
-              </p>
-            </div>
-
-            {/* Feature 6 */}
-            <div className="card-premium glass-card hover-glow-blue" style={{ padding: '2rem', borderRadius: '20px', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}>
-              <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#f3e8ff', color: '#9333ea', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem' }}>
-                <MessageSquare size={24} />
-              </div>
-              <h3 className="font-serif" style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.75rem', color: 'var(--text-primary)' }}>Real-Time Direct Messaging</h3>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.6 }}>
-                Connect directly with mentors, send instant text messages, and schedule 1-on-1 tutoring sessions seamlessly.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* FOOTER SECTION */}
-        <footer style={{ backgroundColor: 'var(--bg-secondary)', borderTop: '1px solid var(--border-color)', padding: '4rem 3rem 2rem 3rem', marginTop: 'auto' }}>
-          <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: '3rem', paddingBottom: '3rem', borderBottom: '1px solid var(--border-color)' }}>
-            {/* Column 1 */}
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-                <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'linear-gradient(135deg, #2563eb 0%, #06b6d4 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff', fontWeight: 800 }}>SL</div>
-                <span className="font-serif" style={{ fontSize: '1.375rem', fontWeight: 800, color: 'var(--text-primary)' }}>Study Loop</span>
-              </div>
-              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.6, maxWidth: '360px', marginBottom: '1.5rem' }}>
-                StudyLoop is the premier peer-to-peer campus learning platform for universities, engineering academies, and student tutors.
-              </p>
-              <form onSubmit={e => { e.preventDefault(); alert(`Subscribed ${newsletterEmail} to product updates!`); setNewsletterEmail(''); }} style={{ display: 'flex', gap: '0.5rem', maxWidth: '360px' }}>
-                <input 
-                  type="email" 
-                  className="input" 
-                  placeholder="Enter work or college email" 
-                  value={newsletterEmail} 
-                  onChange={e => setNewsletterEmail(e.target.value)} 
-                  style={{ padding: '0.5rem 0.875rem', fontSize: '0.8125rem', borderRadius: '10px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}
-                  required 
-                />
-                <button type="submit" className="btn btn-accent" style={{ padding: '0.5rem 1rem', fontSize: '0.8125rem', whiteSpace: 'nowrap', borderRadius: '10px' }}>
-                  Join →
+              <div style={{ display: 'flex', gap: '0.5rem', width: '100%', marginTop: 'auto' }}>
+                <button 
+                  onClick={() => handleSendConnect(s.id)} 
+                  className={`btn ${s.isPending ? 'btn-secondary' : 'btn-accent'}`} 
+                  style={{ flex: 1, fontSize: '0.75rem', padding: '0.5rem' }}
+                  disabled={s.isPending}
+                >
+                  <UserPlus size={13} /> {s.isPending ? 'Pending ⏳' : 'Connect'}
                 </button>
-              </form>
-            </div>
-
-            {/* Column 2 */}
-            <div>
-              <h4 style={{ fontSize: '0.8125rem', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '1rem' }}>PLATFORM</h4>
-              <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.625rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                <li><a href="#" onClick={e => { e.preventDefault(); if (setPostLoginRedirectTab) setPostLoginRedirectTab('doubts'); setAuthTab('login'); setShowAuthModal(true); }} style={{ color: 'inherit', textDecoration: 'none' }}>Doubt Hub</a></li>
-                <li><a href="#" onClick={e => { e.preventDefault(); if (setPostLoginRedirectTab) setPostLoginRedirectTab('discover'); setAuthTab('login'); setShowAuthModal(true); }} style={{ color: 'inherit', textDecoration: 'none' }}>Peer Mentors</a></li>
-                <li><a href="#" onClick={e => { e.preventDefault(); if (setPostLoginRedirectTab) setPostLoginRedirectTab('leaderboard'); setAuthTab('login'); setShowAuthModal(true); }} style={{ color: 'inherit', textDecoration: 'none' }}>Leaderboard</a></li>
-                <li><a href="#" onClick={e => { e.preventDefault(); if (setPostLoginRedirectTab) setPostLoginRedirectTab('reels'); setAuthTab('login'); setShowAuthModal(true); }} style={{ color: 'inherit', textDecoration: 'none' }}>Concept Shorts</a></li>
-              </ul>
-            </div>
-
-            {/* Column 3 */}
-            <div>
-              <h4 style={{ fontSize: '0.8125rem', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '1rem' }}>RESOURCES</h4>
-              <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.625rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                <li><a href="#" onClick={e => e.preventDefault()} style={{ color: 'inherit', textDecoration: 'none' }}>Help Center</a></li>
-                <li><a href="#" onClick={e => e.preventDefault()} style={{ color: 'inherit', textDecoration: 'none' }}>Community Rules</a></li>
-                <li><a href="#" onClick={e => e.preventDefault()} style={{ color: 'inherit', textDecoration: 'none' }}>Digital Badges</a></li>
-                <li><a href="#" onClick={e => e.preventDefault()} style={{ color: 'inherit', textDecoration: 'none' }}>Campus Guide</a></li>
-              </ul>
-            </div>
-
-            {/* Column 4 */}
-            <div>
-              <h4 style={{ fontSize: '0.8125rem', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '1rem' }}>COMPANY</h4>
-              <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.625rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                <li><a href="#" onClick={e => e.preventDefault()} style={{ color: 'inherit', textDecoration: 'none' }}>About Us</a></li>
-                <li><a href="#" onClick={e => e.preventDefault()} style={{ color: 'inherit', textDecoration: 'none' }}>Careers <span style={{ backgroundColor: '#d1fae5', color: '#059669', fontSize: '0.625rem', padding: '0.1rem 0.375rem', borderRadius: '4px', fontWeight: 700 }}>Hiring</span></a></li>
-                <li><a href="#" onClick={e => e.preventDefault()} style={{ color: 'inherit', textDecoration: 'none' }}>Contact Us</a></li>
-                <li><a href="#" onClick={e => e.preventDefault()} style={{ color: 'inherit', textDecoration: 'none' }}>Privacy Policy</a></li>
-              </ul>
-            </div>
-          </div>
-
-          <div style={{ maxWidth: '1400px', margin: '1.5rem auto 0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
-            <div>© 2026 Study Loop Inc. All rights reserved. Campus peer safety audited & certified.</div>
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <a href="#" onClick={e => e.preventDefault()} style={{ color: 'var(--text-secondary)' }}><Github size={18} /></a>
-              <a href="#" onClick={e => e.preventDefault()} style={{ color: 'var(--text-secondary)' }}><Globe size={18} /></a>
-            </div>
-          </div>
-        </footer>
-
-        {/* SPLIT-CARD AUTH MODAL OVERLAY (IMAGE 1 EXACT MATCH PRESERVED) */}
-        {showAuthModal && (
-          <div 
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: 'rgba(15, 23, 42, 0.75)',
-              backdropFilter: 'blur(4px)',
-              zIndex: 4000,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '1.5rem'
-            }}
-            onClick={() => setShowAuthModal(false)}
-          >
-            <div 
-              style={{
-                width: '100%',
-                maxWidth: '1020px',
-                minHeight: '620px',
-                borderRadius: '24px',
-                backgroundColor: '#ffffff',
-                boxShadow: '0 25px 60px rgba(15, 23, 42, 0.3)',
-                display: 'grid',
-                gridTemplateColumns: '1.05fr 1fr',
-                overflow: 'hidden',
-                border: '1px solid #e0e7ff',
-                position: 'relative'
-              }}
-              onClick={e => e.stopPropagation()}
-            >
-              {/* Close Button X */}
-              <button 
-                onClick={() => setShowAuthModal(false)} 
-                style={{
-                  position: 'absolute',
-                  top: '1rem',
-                  right: '1rem',
-                  backgroundColor: '#f1f5f9',
-                  border: 'none',
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  zIndex: 10,
-                  color: '#64748b'
-                }}
-              >
-                <X size={18} />
-              </button>
-
-              {/* LEFT COLUMN: BRANDING & ILLUSTRATION (IMAGE 1 EXACT MATCH) */}
-              <div style={{
-                background: 'linear-gradient(135deg, #f0f4ff 0%, #e6eeff 100%)',
-                padding: '3rem 2.5rem 2rem 2.5rem',
-                display: 'flex',
-                flexDirection: 'column',
-                justify: 'space-between',
-                position: 'relative',
-                overflow: 'hidden'
-              }}>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2.5rem' }}>
-                    <div style={{
-                      width: '38px',
-                      height: '38px',
-                      borderRadius: '50%',
-                      background: 'conic-gradient(from 180deg, #3b82f6, #a855f7, #ec4899, #3b82f6)',
-                      padding: '3px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}>
-                      <div style={{ width: '100%', height: '100%', backgroundColor: '#ffffff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <div style={{ width: '16px', height: '16px', borderRadius: '50%', background: 'linear-gradient(135deg, #4f46e5, #9333ea)' }}></div>
-                      </div>
-                    </div>
-                    <span className="font-serif" style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1e1b4b' }}>
-                      Study Loop
-                    </span>
-                  </div>
-
-                  <h1 className="font-serif" style={{ fontSize: '2.125rem', fontWeight: 800, color: '#1e1b4b', lineHeight: 1.25, marginBottom: '0.75rem' }}>
-                    Learn. Teach. <span style={{ color: '#6366f1' }}>Connect.</span> Grow.
-                  </h1>
-                  <p style={{ fontSize: '0.9375rem', color: '#475569', lineHeight: 1.5, marginBottom: '1.5rem', maxWidth: '380px' }}>
-                    Join a community where students learn from students.
-                  </p>
-                </div>
-
-                {/* SVG Illustration */}
-                <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginTop: 'auto' }}>
-                  <svg viewBox="0 0 500 320" style={{ width: '100%', maxHeight: '240px' }} fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M0 220 Q120 180 250 220 T500 200 V320 H0 Z" fill="#dbeafe" opacity="0.6"/>
-                    <circle cx="420" cy="140" r="50" fill="#e0e7ff" opacity="0.8"/>
-                    <circle cx="80" cy="200" r="70" fill="#edd5ff" opacity="0.5"/>
-                    <circle cx="120" cy="140" r="32" fill="#1e1b4b"/>
-                    <circle cx="120" cy="145" r="24" fill="#fde047"/>
-                    <rect x="90" y="130" width="10" height="25" rx="5" fill="#312e81"/>
-                    <rect x="140" y="130" width="10" height="25" rx="5" fill="#312e81"/>
-                    <path d="M100 125 Q120 110 140 125" stroke="#312e81" strokeWidth="5"/>
-                    <path d="M80 220 C80 180 160 180 160 220 V300 H80 Z" fill="#1e1b4b"/>
-                    <polygon points="70,260 170,260 160,230 80,230" fill="#cbd5e1"/>
-                    <rect x="75" y="225" width="90" height="5" rx="2" fill="#94a3b8"/>
-                    <circle cx="120" cy="245" r="4" fill="#60a5fa"/>
-                    <circle cx="230" cy="160" r="30" fill="#1e293b"/>
-                    <circle cx="230" cy="165" r="22" fill="#fed7aa"/>
-                    <path d="M200 150 Q230 135 260 150" fill="#1e293b"/>
-                    <rect x="205" y="152" width="8" height="20" rx="4" fill="#ffffff"/>
-                    <rect x="247" y="152" width="8" height="20" rx="4" fill="#ffffff"/>
-                    <path d="M190 230 C190 195 270 195 270 230 V300 H190 Z" fill="#2563eb"/>
-                    <polygon points="180,270 280,270 270,240 190,240" fill="#0284c7"/>
-                    <circle cx="340" cy="120" r="26" fill="#1e1b4b"/>
-                    <circle cx="340" cy="124" r="19" fill="#fca5a5"/>
-                    <path d="M305 180 C305 150 375 150 375 180 V300 H305 Z" fill="#475569"/>
-                    <circle cx="430" cy="110" r="26" fill="#1e1b4b"/>
-                    <circle cx="430" cy="114" r="19" fill="#fed7aa"/>
-                    <path d="M395 165 C395 140 465 140 465 165 V300 H395 Z" fill="#1d4ed8"/>
-                    <rect x="340" y="140" width="110" height="70" rx="8" fill="#0f172a"/>
-                    <rect x="350" y="152" width="40" height="6" rx="3" fill="#60a5fa"/>
-                    <rect x="350" y="165" width="70" height="6" rx="3" fill="#a78bfa"/>
-                    <rect x="350" y="178" width="55" height="6" rx="3" fill="#34d399"/>
-                  </svg>
-                </div>
-              </div>
-
-              {/* RIGHT COLUMN: AUTH FORM WITH SWITCHER */}
-              <div style={{
-                backgroundColor: '#ffffff',
-                padding: '2.5rem 2.25rem',
-                display: 'flex',
-                flexDirection: 'column',
-                justify: 'center',
-                overflowY: 'auto'
-              }}>
-                {/* Role Switcher Tabs */}
-                <div style={{ 
-                  display: 'flex', 
-                  gap: '0.5rem', 
-                  marginBottom: '1.75rem', 
-                  backgroundColor: '#f1f5f9', 
-                  padding: '0.25rem', 
-                  borderRadius: '12px' 
-                }}>
-                  <button 
-                    type="button" 
-                    onClick={() => setAuthTab('signup')} 
-                    style={{ 
-                      flex: 1, 
-                      padding: '0.5rem', 
-                      fontSize: '0.75rem', 
-                      fontWeight: 700, 
-                      border: 'none', 
-                      borderRadius: '8px', 
-                      cursor: 'pointer',
-                      backgroundColor: authTab === 'signup' ? '#ffffff' : 'transparent',
-                      color: authTab === 'signup' ? '#4338ca' : '#64748b',
-                      boxShadow: authTab === 'signup' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none',
-                      transition: 'all 0.15s ease'
-                    }}
-                  >
-                    🎓 Signup
-                  </button>
-                  <button 
-                    type="button" 
-                    onClick={() => setAuthTab('login')} 
-                    style={{ 
-                      flex: 1, 
-                      padding: '0.5rem', 
-                      fontSize: '0.75rem', 
-                      fontWeight: 700, 
-                      border: 'none', 
-                      borderRadius: '8px', 
-                      cursor: 'pointer',
-                      backgroundColor: authTab === 'login' ? '#ffffff' : 'transparent',
-                      color: authTab === 'login' ? '#4338ca' : '#64748b',
-                      boxShadow: authTab === 'login' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none',
-                      transition: 'all 0.15s ease'
-                    }}
-                  >
-                    🔑 Login
-                  </button>
-                </div>
-
-                {authTab === 'signup' ? (
-                  <div>
-                    <div style={{ marginBottom: '1.25rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.375rem' }}>
-                        <h2 className="font-serif" style={{ fontSize: '1.625rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                          Create your Study Loop
-                        </h2>
-                        <span style={{ backgroundColor: '#4338ca', color: '#ffffff', fontSize: '0.6875rem', fontWeight: 700, padding: '0.2rem 0.625rem', borderRadius: '8px' }}>
-                          Student
-                        </span>
-                      </div>
-                      <p style={{ fontSize: '0.8125rem', color: '#64748b', margin: 0 }}>
-                        Start learning, teaching and connecting today.
-                      </p>
-                    </div>
-
-                    <form onSubmit={handleSignupSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
-                      <input type="text" className="input" placeholder="Full Name" value={fullName} onChange={e => setFullName(e.target.value)} style={{ padding: '0.625rem 0.875rem', borderRadius: '10px', fontSize: '0.875rem', border: '1px solid #e2e8f0', backgroundColor: '#fafafa' }} required />
-                      <input type="email" className="input" placeholder="Email Address" value={signupEmail} onChange={e => setSignupEmail(e.target.value)} style={{ padding: '0.625rem 0.875rem', borderRadius: '10px', fontSize: '0.875rem', border: '1px solid #e2e8f0', backgroundColor: '#fafafa' }} required />
-                      
-                      <div style={{ position: 'relative' }}>
-                        <input type={showSignupPassword ? "text" : "password"} className="input" placeholder="Password" value={signupPassword} onChange={e => setSignupPassword(e.target.value)} style={{ padding: '0.625rem 2.5rem 0.625rem 0.875rem', borderRadius: '10px', fontSize: '0.875rem', border: '1px solid #e2e8f0', backgroundColor: '#fafafa' }} required />
-                        <button type="button" onClick={() => setShowSignupPassword(!showSignupPassword)} style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
-                          {showSignupPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                        </button>
-                      </div>
-
-                      <div style={{ position: 'relative' }}>
-                        <input type={showConfirmPassword ? "text" : "password"} className="input" placeholder="Confirm Password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} style={{ padding: '0.625rem 2.5rem 0.625rem 0.875rem', borderRadius: '10px', fontSize: '0.875rem', border: '1px solid #e2e8f0', backgroundColor: '#fafafa' }} required />
-                        <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
-                          {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                        </button>
-                      </div>
-
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: '#475569', cursor: 'pointer' }}>
-                        <input type="checkbox" checked={agreeTerms} onChange={e => setAgreeTerms(e.target.checked)} style={{ accentColor: '#4338ca', width: '14px', height: '14px' }} />
-                        <span>I agree to the <a href="#" onClick={e => e.preventDefault()} style={{ color: '#4338ca', fontWeight: 600 }}>Terms & Conditions</a> and <a href="#" onClick={e => e.preventDefault()} style={{ color: '#4338ca', fontWeight: 600 }}>Privacy Policy</a></span>
-                      </label>
-
-                      <button type="submit" style={{ width: '100%', padding: '0.75rem', borderRadius: '10px', border: 'none', backgroundColor: '#4338ca', color: '#ffffff', fontWeight: 700, fontSize: '0.9375rem', cursor: 'pointer', boxShadow: '0 4px 14px rgba(67, 56, 202, 0.35)' }}>
-                        Create Account
-                      </button>
-                    </form>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: '1rem 0' }}>
-                      <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
-                      <span style={{ fontSize: '0.6875rem', color: '#94a3b8', fontWeight: 600 }}>OR</span>
-                      <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
-                    </div>
-
-                    <button type="button" onClick={handleGoogleSSO} style={{ width: '100%', padding: '0.625rem', borderRadius: '10px', border: '1px solid #e2e8f0', backgroundColor: '#ffffff', color: '#334155', fontWeight: 600, fontSize: '0.8125rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.625rem', cursor: 'pointer' }}>
-                      <svg style={{ width: '18px', height: '18px' }} viewBox="0 0 24 24"><path fill="#EA4335" d="M12 5.04c1.62 0 3.08.56 4.22 1.65l3.15-3.15C17.45 1.68 14.93 1 12 1 7.37 1 3.4 3.68 1.48 7.57l3.77 2.92C6.13 7.3 8.83 5.04 12 5.04z"/><path fill="#4285F4" d="M23.49 12.27c0-.81-.07-1.59-.2-2.36H12v4.51h6.46c-.28 1.47-1.11 2.72-2.36 3.56l3.77 2.92c2.2-2.03 3.62-5.02 3.62-8.63z"/><path fill="#FBBC05" d="M5.25 14.85c-.25-.76-.39-1.57-.39-2.42s.14-1.66.39-2.42L1.48 7.1C.53 9.07 0 11.27 0 12.42s.53 3.35 1.48 5.32l3.77-2.89z"/><path fill="#34A853" d="M12 23c3.24 0 5.97-1.07 7.96-2.92l-3.77-2.92c-1.05.7-2.4.12-4.19.12-3.17 0-5.87-2.26-6.83-5.32L1.4 14.8c1.92 3.89 5.89 6.2 10.6 6.2z"/></svg>
-                      Continue with Google
-                    </button>
-
-                    <div style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '0.8125rem', color: '#64748b' }}>
-                      Already have an account?{' '}
-                      <button type="button" onClick={() => setAuthTab('login')} style={{ background: 'transparent', border: 'none', color: '#4338ca', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}>
-                        Log in
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div>
-                    <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-                      <h2 className="font-serif" style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.375rem' }}>
-                        Welcome Back!
-                      </h2>
-                      <p style={{ fontSize: '0.8125rem', color: '#64748b' }}>
-                        Login to continue your learning journey 👋
-                      </p>
-                    </div>
-
-                    <form onSubmit={handleLoginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                      <div>
-                        <label className="label" style={{ fontWeight: 600, fontSize: '0.75rem', color: '#1e293b', marginBottom: '0.25rem' }}>Email or Username</label>
-                        <div style={{ position: 'relative' }}>
-                          <Mail size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                          <input type="email" className="input" placeholder="studenta@student.com" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} style={{ paddingLeft: '2.5rem', borderRadius: '10px', fontSize: '0.875rem', border: '1px solid #e2e8f0' }} required />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="label" style={{ fontWeight: 600, fontSize: '0.75rem', color: '#1e293b', marginBottom: '0.25rem' }}>Password</label>
-                        <div style={{ position: 'relative' }}>
-                          <Lock size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                          <input type={showLoginPassword ? "text" : "password"} className="input" placeholder="••••••••••••" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} style={{ paddingLeft: '2.5rem', paddingRight: '2.5rem', borderRadius: '10px', fontSize: '0.875rem', border: '1px solid #e2e8f0' }} required />
-                          <button type="button" onClick={() => setShowLoginPassword(!showLoginPassword)} style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
-                            {showLoginPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                          </button>
-                        </div>
-                      </div>
-
-                      <button type="submit" style={{ width: '100%', padding: '0.75rem', borderRadius: '10px', border: 'none', backgroundColor: '#4338ca', color: '#ffffff', fontWeight: 700, fontSize: '0.9375rem', cursor: 'pointer', boxShadow: '0 4px 14px rgba(67, 56, 202, 0.35)' }}>
-                        Sign In
-                      </button>
-                    </form>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: '1rem 0' }}>
-                      <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
-                      <span style={{ fontSize: '0.6875rem', color: '#94a3b8', fontWeight: 600 }}>OR</span>
-                      <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
-                    </div>
-
-                    <button type="button" onClick={handleGoogleSSO} style={{ width: '100%', padding: '0.625rem', borderRadius: '10px', border: '1px solid #e2e8f0', backgroundColor: '#ffffff', color: '#334155', fontWeight: 600, fontSize: '0.8125rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.625rem', cursor: 'pointer' }}>
-                      <svg style={{ width: '18px', height: '18px' }} viewBox="0 0 24 24"><path fill="#EA4335" d="M12 5.04c1.62 0 3.08.56 4.22 1.65l3.15-3.15C17.45 1.68 14.93 1 12 1 7.37 1 3.4 3.68 1.48 7.57l3.77 2.92C6.13 7.3 8.83 5.04 12 5.04z"/><path fill="#4285F4" d="M23.49 12.27c0-.81-.07-1.59-.2-2.36H12v4.51h6.46c-.28 1.47-1.11 2.72-2.36 3.56l3.77 2.92c2.2-2.03 3.62-5.02 3.62-8.63z"/><path fill="#FBBC05" d="M5.25 14.85c-.25-.76-.39-1.57-.39-2.42s.14-1.66.39-2.42L1.48 7.1C.53 9.07 0 11.27 0 12.42s.53 3.35 1.48 5.32l3.77-2.89z"/><path fill="#34A853" d="M12 23c3.24 0 5.97-1.07 7.96-2.92l-3.77-2.92c-1.05.7-2.4.12-4.19.12-3.17 0-5.87-2.26-6.83-5.32L1.4 14.8c1.92 3.89 5.89 6.2 10.6 6.2z"/></svg>
-                      Continue with Google
-                    </button>
-
-                    <div style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '0.8125rem', color: '#64748b' }}>
-                      Don't have an account?{' '}
-                      <button type="button" onClick={() => setAuthTab('signup')} style={{ background: 'transparent', border: 'none', color: '#4338ca', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}>
-                        Sign up
-                      </button>
-                    </div>
-                  </div>
-                )}
+                <button 
+                  onClick={() => handleToggleFollow(s.id)} 
+                  className="btn btn-secondary" 
+                  style={{ flex: 1, fontSize: '0.75rem', padding: '0.5rem', color: s.isFollowing ? 'var(--accent-primary)' : 'inherit' }}
+                >
+                  {s.isFollowing ? 'Following ✓' : '+ Follow'}
+                </button>
               </div>
             </div>
-          </div>
-        )}
-
-      </div>
-    );
-  }
-
-  // 2. HOME SCREEN FOR LOGGED-IN USERS INSIDE DASHBOARD
-  return (
-    <div style={{ padding: '1rem 0 4rem 0', width: '100%' }}>
-      {/* HERO BANNER FOR LOGGED-IN USERS */}
-      <section className="card-premium glass-card" style={{ padding: '3rem 2.5rem', borderRadius: '24px', backgroundColor: '#ffffff', marginBottom: '3rem', border: '1px solid #e2e8f0' }}>
-        <div className="tag tag-accent" style={{ marginBottom: '1rem', padding: '0.375rem 1rem', fontSize: '0.8125rem' }}>
-          ✨ Active Peer Learning Workspace
+          ))}
         </div>
-        <h1 className="font-serif gradient-text" style={{ fontSize: '2.5rem', lineHeight: 1.2, marginBottom: '1rem' }}>
-          Welcome Back, {profile?.fullName || 'Student Learner'}!
-        </h1>
-        <p style={{ fontSize: '1rem', color: '#64748b', lineHeight: 1.6, marginBottom: '2rem', maxWidth: '640px' }}>
-          Connect with peer tutors, launch WebRTC live study sessions, post concept shorts, and track your campus leaderboard rank.
-        </p>
-        <button onClick={() => setActiveTab('dashboard')} className="btn btn-accent glow-amber" style={{ padding: '0.75rem 1.75rem', fontWeight: 700, borderRadius: '12px' }}>
-          Go to Student Dashboard 🚀
-        </button>
-      </section>
+      )}
 
-      {/* PLATFORM STATS */}
-      <section style={{ backgroundColor: '#ffffff', borderRadius: '24px', padding: '2rem', border: '1px solid #e2e8f0', boxShadow: '0 10px 30px -10px rgba(0,0,0,0.05)', marginBottom: '3rem' }}>
-        <div className="grid-3" style={{ textAlign: 'center' }}>
-          <div>
-            <div className="font-serif" style={{ fontSize: '2.25rem', fontWeight: 800, color: '#0f172a' }}>12,450+</div>
-            <div style={{ fontSize: '0.875rem', color: '#64748b', fontWeight: 500 }}>Active Campus Learners</div>
-          </div>
-          <div>
-            <div className="font-serif" style={{ fontSize: '2.25rem', fontWeight: 800, color: '#d97706' }}>98.4%</div>
-            <div style={{ fontSize: '0.875rem', color: '#64748b', fontWeight: 500 }}>Academic Doubt Resolution</div>
-          </div>
-          <div>
-            <div className="font-serif" style={{ fontSize: '2.25rem', fontWeight: 800, color: '#059669' }}>50+</div>
-            <div style={{ fontSize: '0.875rem', color: '#64748b', fontWeight: 500 }}>Top Universities</div>
-          </div>
-        </div>
-      </section>
-
-      {/* LEARNING FEATURES */}
-      <section>
-        <h2 className="font-serif" style={{ textAlign: 'center', fontSize: '1.875rem', marginBottom: '2rem' }}>
-          Student Learning Loop Features
-        </h2>
-        <div className="grid-2">
-          <div className="card-premium glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: '#eff6ff', color: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <HelpCircle size={24} />
-            </div>
-            <h3 className="font-serif" style={{ fontSize: '1.25rem' }}>1. Live Doubt Rooms & WebRTC Calls</h3>
-            <p style={{ color: '#64748b', fontSize: '0.875rem', lineHeight: 1.5 }}>
-              Open a doubt workspace, chat with a helper from your department, and start 1-click video calls with screen sharing.
-            </p>
-          </div>
-
-          <div className="card-premium glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: '#e0f2fe', color: '#0284c7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Sparkles size={24} />
-            </div>
-            <h3 className="font-serif" style={{ fontSize: '1.25rem' }}>2. 8-Factor Smart Peer Discovery</h3>
-            <p style={{ color: '#64748b', fontSize: '0.875rem', lineHeight: 1.5 }}>
-              Match algorithm evaluating college, department, skills, learning goals, and mutual connections for exact peer pairings.
-            </p>
-          </div>
-        </div>
-      </section>
     </div>
   );
 }
 
-// --- CONTACT & SUPPORT SCREEN ---
-function ContactSupportScreen({ token, setActiveTab, setActiveChatId, setChatPeer, profile }) {
-  const [issueType, setIssueType] = useState('');
-  const [subject, setSubject] = useState('');
-  const [message, setMessage] = useState('');
-  const [attachment, setAttachment] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submittedTicket, setSubmittedTicket] = useState(null);
-  const [showFaqModal, setShowFaqModal] = useState(false);
-  const [showSlaModal, setShowSlaModal] = useState(false);
-  const [toastMessage, setToastMessage] = useState(null);
-  const [activeFaqIndex, setActiveFaqIndex] = useState(null);
-  const fileInputRef = useRef(null);
-  const formRef = useRef(null);
-
-  const showToast = (msg) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3500);
-  };
-
-  const handleCardClick = (categoryTitle, defaultIssue) => {
-    setIssueType(defaultIssue);
-    showToast(`Selected category: ${categoryTitle}`);
-    if (formRef.current) {
-      formRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  };
-
-  const handleFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      if (file.size > 5 * 1024 * 1024) {
-        showToast('❌ File size exceeds 5MB limit');
-        return;
-      }
-      setAttachment(file);
-      showToast(`📎 Attached file: ${file.name}`);
-    }
-  };
-
-  const handleRemoveAttachment = () => {
-    setAttachment(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-    showToast('Removed attachment');
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!issueType || issueType === 'Select an option') {
-      showToast('⚠️ Please select an Issue Type');
-      return;
-    }
-    if (!subject.trim()) {
-      showToast('⚠️ Please enter a Subject');
-      return;
-    }
-    if (!message.trim()) {
-      showToast('⚠️ Please describe your issue');
-      return;
-    }
-
-    setIsSubmitting(true);
-    const payload = {
-      issueType,
-      subject,
-      message,
-      attachmentName: attachment ? attachment.name : null,
-      email: profile?.email || 'aarav@student.com',
-      fullName: profile?.fullName || 'Aarav Sharma'
-    };
-
-    try {
-      let res = null;
-      if (token) {
-        try {
-          res = await fetch('/api/contact/support', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(payload)
-          });
-        } catch (err) {
-          console.log("Simulating support ticket response");
-        }
-      }
-
-      let ticketData = null;
-      if (res && res.ok) {
-        const json = await res.json();
-        ticketData = json.ticket;
-      } else {
-        const randomId = "SL-" + Math.floor(10000 + Math.random() * 90000);
-        ticketData = {
-          ticketId: randomId,
-          issueType,
-          subject,
-          message,
-          attachmentName: attachment ? attachment.name : null,
-          status: 'Open',
-          createdAt: new Date().toLocaleString(),
-          estimatedResponse: 'Within 24 Hours'
-        };
-      }
-
-      setIsSubmitting(false);
-      setSubmittedTicket(ticketData);
-      showToast('✅ Ticket submitted successfully!');
-    } catch (err) {
-      setIsSubmitting(false);
-      showToast('❌ Failed to submit ticket. Please try again.');
-    }
-  };
-
-  const startSupportChat = () => {
-    const supportPeer = {
-      id: 'support-team-id',
-      fullName: 'StudyLoop Support Team',
-      college: 'StudyLoop Central',
-      department: 'Help & Operations',
-      avatarUrl: NEUTRAL_AVATAR_SVG
-    };
-    if (setChatPeer && setActiveChatId) {
-      setChatPeer(supportPeer);
-      setActiveChatId('support-thread-01');
-      setActiveTab('chat');
-    } else {
-      setActiveTab('chat');
-    }
-  };
-
-  const copyEmail = () => {
-    navigator.clipboard.writeText('support@studyloop.in');
-    showToast('📋 Copied support@studyloop.in to clipboard!');
-  };
-
-  const faqs = [
-    {
-      q: "How does StudyLoop peer matching work?",
-      a: "Our algorithm matches you with students from your campus and other top universities based on shared subjects, complementary skills, availability, and learning goals."
-    },
-    {
-      q: "How do I earn XP and unlock badges?",
-      a: "You earn XP by completing peer sessions, answering doubt room questions, contributing educational reels, and maintaining study streaks. Higher XP unlocks higher levels and mentor badges."
-    },
-    {
-      q: "How can I apply to become a verified Peer Tutor?",
-      a: "Go to your Dashboard, navigate to 'Tutor Verification', upload your academic transcript or test scores, and complete a 5-minute peer teaching review."
-    },
-    {
-      q: "What are Doubt Rooms and how do I join one?",
-      a: "Doubt Rooms are live interactive study hubs equipped with real-time video, screen sharing, and code editor features. Browse open rooms in the Doubt Rooms Hub to join immediately."
-    },
-    {
-      q: "How do tutor session earnings and withdrawals work?",
-      a: "Tutors receive StudyCoins for paid 1-to-1 doubt resolution sessions. Coins can be redeemed directly to your bank account or UPI via the Earnings tab in Dashboard."
-    },
-    {
-      q: "What if someone behaves inappropriately during a session?",
-      a: "You can instantly report any user via their profile or session menu using the 'Report' button. Our moderation team reviews reports within 1 hour."
-    }
+function LeaderboardScreen({ token, onOpenPublicProfile }) {
+  const leaders = [
+    { rank: 1, name: 'Aarav Sharma', college: 'IIT Madras', xp: 650, doubtsSolved: 15, level: 4, avatar: MALE_AVATAR_SVG },
+    { rank: 2, name: 'Bhavna Patel', college: 'IIT Madras', xp: 820, doubtsSolved: 18, level: 5, avatar: FEMALE_AVATAR_SVG },
+    { rank: 3, name: 'Chaitanya Reddy', college: 'BITS Pilani', xp: 340, doubtsSolved: 8, level: 2, avatar: MALE_AVATAR_SVG }
   ];
 
   return (
-    <div className="support-container">
-      {/* Toast notification overlay */}
-      {toastMessage && (
-        <div style={{
-          position: 'fixed',
-          top: '20px',
-          right: '20px',
-          backgroundColor: '#0f172a',
-          color: '#ffffff',
-          padding: '0.75rem 1.25rem',
-          borderRadius: '12px',
-          boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
-          zIndex: 9999,
-          fontSize: '0.875rem',
-          fontWeight: 600,
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem'
-        }}>
-          {toastMessage}
-        </div>
-      )}
+    <div style={{ padding: '1.5rem 2.5rem', width: '100%', maxWidth: '1200px', margin: '0 auto' }}>
+      <h1 className="font-serif" style={{ fontSize: '2rem', marginBottom: '0.25rem' }}>Campus Leaderboard</h1>
+      <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '2rem' }}>Top peer tutors and students ranked by academic doubt resolution and XP points.</p>
 
-      {/* 3. MAIN HEADER */}
-      <div>
-        <h1 className="support-header-title">Contact & Support</h1>
-        <p className="support-header-subtitle">
-          Get support, report a problem, share an idea, or connect with the StudyLoop team.
-        </p>
-      </div>
-
-      {/* 4. SUPPORT CATEGORY CARDS (4 HORIZONTAL CARDS) */}
-      <div className="support-cards-grid">
-        {/* Card 1: Student Support */}
-        <div className="support-card" onClick={() => handleCardClick('Student Support', 'Account & Login')}>
-          <div className="support-card-icon support-card-blue">
-            <Headphones size={22} />
-          </div>
-          <div style={{ flex: 1 }}>
-            <h3 style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--text-primary)' }}>Student Support</h3>
-            <p style={{ fontSize: '0.78125rem', color: 'var(--text-secondary)', marginTop: '0.25rem', lineHeight: 1.4 }}>
-              Account, learning, peer matching, doubt rooms and more.
-            </p>
-          </div>
-          <div className="support-card-arrow">
-            <ChevronRight size={16} />
-          </div>
-        </div>
-
-        {/* Card 2: Peer Tutor Support */}
-        <div className="support-card" onClick={() => handleCardClick('Peer Tutor Support', 'Peer Tutor')}>
-          <div className="support-card-icon support-card-green">
-            <GraduationCap size={22} />
-          </div>
-          <div style={{ flex: 1 }}>
-            <h3 style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--text-primary)' }}>Peer Tutor Support</h3>
-            <p style={{ fontSize: '0.78125rem', color: 'var(--text-secondary)', marginTop: '0.25rem', lineHeight: 1.4 }}>
-              Teaching, sessions, earnings, verification and more.
-            </p>
-          </div>
-          <div className="support-card-arrow">
-            <ChevronRight size={16} />
-          </div>
-        </div>
-
-        {/* Card 3: Report a Problem */}
-        <div className="support-card" onClick={() => handleCardClick('Report a Problem', 'Report a Bug')}>
-          <div className="support-card-icon support-card-orange">
-            <Bug size={22} />
-          </div>
-          <div style={{ flex: 1 }}>
-            <h3 style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--text-primary)' }}>Report a Problem</h3>
-            <p style={{ fontSize: '0.78125rem', color: 'var(--text-secondary)', marginTop: '0.25rem', lineHeight: 1.4 }}>
-              Something isn't working as expected? Let us know.
-            </p>
-          </div>
-          <div className="support-card-arrow">
-            <ChevronRight size={16} />
-          </div>
-        </div>
-
-        {/* Card 4: Suggest an Idea */}
-        <div className="support-card" onClick={() => handleCardClick('Suggest an Idea', 'Feature Request')}>
-          <div className="support-card-icon support-card-purple">
-            <Lightbulb size={22} />
-          </div>
-          <div style={{ flex: 1 }}>
-            <h3 style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--text-primary)' }}>Suggest an Idea</h3>
-            <p style={{ fontSize: '0.78125rem', color: 'var(--text-secondary)', marginTop: '0.25rem', lineHeight: 1.4 }}>
-              Share your ideas and help us make StudyLoop better for everyone.
-            </p>
-          </div>
-          <div className="support-card-arrow">
-            <ChevronRight size={16} />
-          </div>
-        </div>
-      </div>
-
-      {/* 5. MAIN CONTACT SECTION (TWO COLUMN LAYOUT) */}
-      <div className="support-two-column" ref={formRef}>
-        {/* LEFT COLUMN: SEND US A MESSAGE */}
-        <div className="support-form-column">
-          <div className="support-form-card">
-            <div className="support-form-title">
-              <Mail size={20} style={{ color: '#2563eb' }} />
-              <span>Send us a message</span>
-            </div>
-
-            {submittedTicket ? (
-              <div style={{
-                backgroundColor: '#f0fdf4',
-                border: '1px solid #bbf7d0',
-                borderRadius: '16px',
-                padding: '2rem',
-                textAlign: 'center',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '1rem',
-                margin: 'auto 0'
-              }}>
-                <div style={{
-                  width: '56px',
-                  height: '56px',
-                  borderRadius: '50%',
-                  backgroundColor: '#dcfce7',
-                  color: '#16a34a',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <CheckCircle size={32} />
+      <table className="admin-table">
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Student</th>
+            <th>University</th>
+            <th>Doubts Solved</th>
+            <th>Level</th>
+            <th>XP Points</th>
+          </tr>
+        </thead>
+        <tbody>
+          {leaders.map(l => (
+            <tr key={l.rank}>
+              <td><strong>#{l.rank}</strong></td>
+              <td>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <img src={l.avatar} alt="Av" style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} />
+                  <span style={{ fontWeight: 700 }}>{l.name}</span>
                 </div>
-                <div>
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#14532d' }}>Ticket Submitted!</h3>
-                  <p style={{ fontSize: '0.875rem', color: '#166534', marginTop: '0.25rem' }}>
-                    Your ticket ID is <strong>{submittedTicket.ticketId}</strong>. We've sent a confirmation email to <strong>{profile?.email || 'aarav@student.com'}</strong>.
-                  </p>
-                </div>
-                <div style={{
-                  backgroundColor: '#ffffff',
-                  border: '1px solid #cbd5e1',
-                  borderRadius: '12px',
-                  padding: '1rem 1.5rem',
-                  width: '100%',
-                  maxWidth: '400px',
-                  textAlign: 'left',
-                  fontSize: '0.8125rem',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '0.375rem'
-                }}>
-                  <div><strong>Issue Type:</strong> {submittedTicket.issueType}</div>
-                  <div><strong>Subject:</strong> {submittedTicket.subject}</div>
-                  <div><strong>Status:</strong> <span style={{ color: '#16a34a', fontWeight: 700 }}>Open</span></div>
-                  <div><strong>Est. Response:</strong> Within 24 Hours</div>
-                </div>
-                <button
-                  className="btn btn-primary"
-                  onClick={() => {
-                    setSubmittedTicket(null);
-                    setIssueType('');
-                    setSubject('');
-                    setMessage('');
-                    setAttachment(null);
-                  }}
-                  style={{ borderRadius: '10px', padding: '0.625rem 1.25rem', fontSize: '0.875rem' }}
-                >
-                  Send Another Message
-                </button>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                {/* Form fields: Issue Type & Subject */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                  <div className="support-field-group">
-                    <label className="support-label">Issue Type</label>
-                    <select
-                      className="support-select"
-                      value={issueType}
-                      onChange={(e) => setIssueType(e.target.value)}
-                      required
-                    >
-                      <option value="">Select an option</option>
-                      <option value="Account & Login">Account & Login</option>
-                      <option value="Peer Matching">Peer Matching</option>
-                      <option value="Doubt Rooms">Doubt Rooms</option>
-                      <option value="Peer Tutor">Peer Tutor</option>
-                      <option value="Earnings">Earnings</option>
-                      <option value="Direct Messages">Direct Messages</option>
-                      <option value="Educational Reels">Educational Reels</option>
-                      <option value="Report a Bug">Report a Bug</option>
-                      <option value="Feature Request">Feature Request</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
-
-                  <div className="support-field-group">
-                    <label className="support-label">Subject</label>
-                    <input
-                      type="text"
-                      className="support-input"
-                      placeholder="What's the issue?"
-                      value={subject}
-                      onChange={(e) => setSubject(e.target.value)}
-                      required
-                    />
-                  </div>
-                </div>
-
-                {/* Message Field with char counter */}
-                <div className="support-field-group" style={{ position: 'relative' }}>
-                  <label className="support-label">Message</label>
-                  <textarea
-                    className="support-textarea"
-                    placeholder="Tell us what happened..."
-                    value={message}
-                    maxLength={1000}
-                    onChange={(e) => setMessage(e.target.value)}
-                    required
-                  />
-                  <div style={{
-                    position: 'absolute',
-                    bottom: '0.625rem',
-                    right: '0.75rem',
-                    fontSize: '0.6875rem',
-                    fontWeight: 600,
-                    color: message.length > 900 ? '#dc2626' : '#94a3b8',
-                    pointerEvents: 'none'
-                  }}>
-                    {message.length}/1000
-                  </div>
-                </div>
-
-                {/* Attachment Dropzone */}
-                <div className="support-field-group">
-                  <label className="support-label">Attachment (optional)</label>
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    style={{ display: 'none' }}
-                    onChange={handleFileChange}
-                    accept=".png,.jpg,.jpeg,.pdf"
-                  />
-                  {attachment ? (
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '0.75rem 1rem',
-                      backgroundColor: '#f1f5f9',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '10px'
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                        <Paperclip size={16} style={{ color: '#2563eb' }} />
-                        <span>{attachment.name}</span>
-                        <span style={{ fontSize: '0.75rem', color: '#64748b' }}>({(attachment.size / 1024 / 1024).toFixed(2)} MB)</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={handleRemoveAttachment}
-                        style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-                      >
-                        <X size={16} />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="support-dropzone" onClick={() => fileInputRef.current && fileInputRef.current.click()}>
-                      <div style={{ color: '#2563eb', fontWeight: 700, fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-                        <Plus size={16} /> Add screenshot or file
-                      </div>
-                      <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>PNG, JPG, PDF up to 5MB</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Footer Privacy Info & Submit Button */}
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  marginTop: 'auto',
-                  paddingTop: '1rem',
-                  borderTop: '1px solid #f1f5f9'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                    <Lock size={14} style={{ color: '#64748b' }} />
-                    <span>Your information is only used to resolve your request.</span>
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="btn btn-primary"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      padding: '0.6875rem 1.5rem',
-                      borderRadius: '10px',
-                      fontSize: '0.875rem',
-                      fontWeight: 700,
-                      backgroundColor: '#2563eb',
-                      border: 'none',
-                      color: '#ffffff',
-                      cursor: 'pointer',
-                      boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)'
-                    }}
-                  >
-                    {isSubmitting ? 'Sending...' : 'Send Message →'}
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
-        </div>
-
-        {/* RIGHT COLUMN: QUICK HELP & STUDYLOOP SUPPORT CHAT */}
-        <div className="support-side-column">
-          {/* Quick Help Card */}
-          <div className="support-quickhelp-card">
-            <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <HelpCircle size={18} style={{ color: '#3b82f6' }} /> Quick Help
-            </h3>
-            <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '0.125rem', marginBottom: '1rem' }}>
-              Find the fastest way to get help.
-            </p>
-
-            {/* Row 1: FAQ */}
-            <div className="support-row-item" onClick={() => setShowFaqModal(true)}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <HelpCircle size={16} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '0.84375rem', fontWeight: 700, color: 'var(--text-primary)' }}>FAQ</div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Find answers to common questions.</div>
-              </div>
-              <ChevronRight size={16} style={{ color: '#94a3b8' }} />
-            </div>
-
-            {/* Row 2: Live Support Chat */}
-            <div className="support-row-item" onClick={startSupportChat}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#ecfdf5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <MessageSquare size={16} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '0.84375rem', fontWeight: 700, color: 'var(--text-primary)' }}>Live Support Chat</div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Chat with our support team.</div>
-              </div>
-              <span style={{
-                backgroundColor: '#d1fae5',
-                color: '#059669',
-                padding: '0.125rem 0.5rem',
-                borderRadius: '6px',
-                fontSize: '0.6875rem',
-                fontWeight: 800,
-                marginRight: '0.375rem'
-              }}>
-                Available
-              </span>
-              <ChevronRight size={16} style={{ color: '#94a3b8' }} />
-            </div>
-
-            {/* Row 3: Email Us */}
-            <div className="support-row-item" onClick={copyEmail}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <Mail size={16} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '0.84375rem', fontWeight: 700, color: 'var(--text-primary)' }}>Email Us</div>
-                <div style={{ fontSize: '0.75rem', color: '#2563eb', fontWeight: 600 }}>support@studyloop.in</div>
-              </div>
-              <ChevronRight size={16} style={{ color: '#94a3b8' }} />
-            </div>
-
-            {/* Row 4: Response Time */}
-            <div className="support-row-item" onClick={() => setShowSlaModal(true)}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#f1f5f9', color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <Clock size={16} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '0.84375rem', fontWeight: 700, color: 'var(--text-primary)' }}>Response Time</div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>We usually respond within 24 hours.</div>
-              </div>
-              <ChevronRight size={16} style={{ color: '#94a3b8' }} />
-            </div>
-          </div>
-
-          {/* 7. STUDYLOOP SUPPORT CHAT CARD */}
-          <div className="support-chat-box">
-            <div>
-              <h4 style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#0f172a' }}>StudyLoop Support</h4>
-              <p style={{ fontSize: '0.75rem', color: '#475569', marginTop: '0.125rem' }}>
-                Chat with our support team directly in your inbox.
-              </p>
-            </div>
-            <button
-              onClick={startSupportChat}
-              style={{
-                backgroundColor: '#ffffff',
-                border: '1px solid #bfdbfe',
-                borderRadius: '50px',
-                padding: '0.5rem 1rem',
-                fontSize: '0.78125rem',
-                fontWeight: 700,
-                color: '#2563eb',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.375rem',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              <MessageSquare size={14} /> Start Conversation
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* 8. PRODUCT SPECIFIC BOTTOM CONCEPT HELP CARD */}
-      <div className="support-concept-card">
-        {/* Left SVG Vector Illustration of 3 Students Learning Together */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flex: 1 }}>
-          <div style={{ width: '130px', height: '80px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg viewBox="0 0 160 100" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%' }}>
-              <rect x="10" y="70" width="140" height="6" rx="3" fill="#cbd5e1" />
-              {/* Student 1 (Left) */}
-              <circle cx="35" cy="35" r="14" fill="#3b82f6" />
-              <path d="M20 70 C20 52 50 52 50 70 Z" fill="#60a5fa" />
-              {/* Student 2 (Center) */}
-              <circle cx="75" cy="30" r="16" fill="#10b981" />
-              <path d="M58 70 C58 48 92 48 92 70 Z" fill="#34d399" />
-              {/* Laptop in Center */}
-              <rect x="65" y="55" width="22" height="13" rx="2" fill="#0f172a" />
-              <polygon points="60,68 92,68 90,71 62,71" fill="#94a3b8" />
-              {/* Student 3 (Right) */}
-              <circle cx="115" cy="35" r="14" fill="#8b5cf6" />
-              <path d="M100 70 C100 52 130 52 130 70 Z" fill="#a78bfa" />
-              {/* Question bubble overhead */}
-              <circle cx="75" cy="12" r="8" fill="#eff6ff" stroke="#3b82f6" strokeWidth="1.5" />
-              <text x="75" y="16" textAnchor="middle" fill="#2563eb" fontSize="10" fontWeight="bold">?</text>
-            </svg>
-          </div>
-
-          <div>
-            <h3 style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-              Need help with a concept instead?
-            </h3>
-            <p style={{ fontSize: '0.84375rem', color: 'var(--text-secondary)', marginTop: '0.25rem', marginBottom: '0.75rem' }}>
-              Connect with peer learners and mentors to get your doubts solved faster.
-            </p>
-            <button
-              onClick={() => setActiveTab('discover')}
-              className="btn btn-primary"
-              style={{
-                backgroundColor: '#2563eb',
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '0.5rem 1.125rem',
-                fontSize: '0.8125rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.375rem',
-                boxShadow: '0 2px 6px rgba(37, 99, 235, 0.25)'
-              }}
-            >
-              Find a Peer →
-            </button>
-          </div>
-        </div>
-
-        {/* Right side benefit checkmark pills */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: '0.75rem 1.25rem',
-          fontSize: '0.8125rem',
-          fontWeight: 600,
-          color: 'var(--text-primary)',
-          flexShrink: 0
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-            <CheckCircle size={15} style={{ color: '#059669' }} /> Verified Peers
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-            <CheckCircle size={15} style={{ color: '#059669' }} /> 1-to-1 Help
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-            <CheckCircle size={15} style={{ color: '#059669' }} /> Live Sessions
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-            <CheckCircle size={15} style={{ color: '#059669' }} /> Learn Together
-          </div>
-        </div>
-      </div>
-
-      {/* FAQ MODAL */}
-      {showFaqModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.5)',
-          backdropFilter: 'blur(4px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 3000,
-          padding: '1rem'
-        }}>
-          <div className="card-premium" style={{
-            backgroundColor: '#ffffff',
-            borderRadius: '20px',
-            maxWidth: '650px',
-            width: '100%',
-            maxHeight: '85vh',
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
-          }}>
-            <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 800, fontSize: '1.125rem', color: '#0f172a' }}>
-                <HelpCircle style={{ color: '#2563eb' }} size={20} /> Frequently Asked Questions
-              </div>
-              <button onClick={() => setShowFaqModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}>
-                <X size={20} />
-              </button>
-            </div>
-
-            <div style={{ padding: '1.5rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              {faqs.map((faq, index) => (
-                <div
-                  key={index}
-                  style={{
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '12px',
-                    overflow: 'hidden',
-                    backgroundColor: activeFaqIndex === index ? '#f8fafc' : '#ffffff'
-                  }}
-                >
-                  <button
-                    onClick={() => setActiveFaqIndex(activeFaqIndex === index ? null : index)}
-                    style={{
-                      width: '100%',
-                      padding: '0.875rem 1.125rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      background: 'none',
-                      border: 'none',
-                      textAlign: 'left',
-                      fontWeight: 700,
-                      fontSize: '0.875rem',
-                      color: '#0f172a',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    <span>{faq.q}</span>
-                    <ChevronDown size={16} style={{ transform: activeFaqIndex === index ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease' }} />
-                  </button>
-                  {activeFaqIndex === index && (
-                    <div style={{ padding: '0 1.125rem 0.875rem 1.125rem', fontSize: '0.8125rem', color: '#475569', lineHeight: 1.5, borderTop: '1px solid #f1f5f9', paddingTop: '0.625rem' }}>
-                      {faq.a}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid #e2e8f0', backgroundColor: '#f8fafc', textAlign: 'right' }}>
-              <button className="btn btn-secondary" onClick={() => setShowFaqModal(false)} style={{ borderRadius: '8px', padding: '0.5rem 1rem', fontSize: '0.8125rem' }}>
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* SLA / RESPONSE TIME MODAL */}
-      {showSlaModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.5)',
-          backdropFilter: 'blur(4px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 3000,
-          padding: '1rem'
-        }}>
-          <div className="card-premium" style={{
-            backgroundColor: '#ffffff',
-            borderRadius: '20px',
-            maxWidth: '480px',
-            width: '100%',
-            padding: '1.5rem',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 800, fontSize: '1.125rem', color: '#0f172a' }}>
-                <Clock style={{ color: '#2563eb' }} size={20} /> Support Response SLAs
-              </div>
-              <button onClick={() => setShowSlaModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}>
-                <X size={20} />
-              </button>
-            </div>
-            <div style={{ fontSize: '0.875rem', color: '#475569', display: 'flex', flexDirection: 'column', gap: '0.75rem', lineHeight: 1.5 }}>
-              <div style={{ backgroundColor: '#eff6ff', padding: '0.75rem 1rem', borderRadius: '10px', border: '1px solid #bfdbfe' }}>
-                <strong style={{ color: '#1e40af' }}>⚡ Urgent Issues (Bug/Security):</strong>
-                <p style={{ fontSize: '0.8125rem', color: '#1e3a8a', marginTop: '0.125rem' }}>Reviewed within 2 hours during business hours (9 AM - 9 PM IST).</p>
-              </div>
-              <div style={{ backgroundColor: '#f8fafc', padding: '0.75rem 1rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-                <strong style={{ color: '#0f172a' }}>📬 General Support & Inquiries:</strong>
-                <p style={{ fontSize: '0.8125rem', color: '#475569', marginTop: '0.125rem' }}>Responded to within 24 hours maximum.</p>
-              </div>
-              <div style={{ backgroundColor: '#f8fafc', padding: '0.75rem 1rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-                <strong style={{ color: '#0f172a' }}>💡 Feature Suggestions:</strong>
-                <p style={{ fontSize: '0.8125rem', color: '#475569', marginTop: '0.125rem' }}>Reviewed weekly by our product team.</p>
-              </div>
-            </div>
-            <button className="btn btn-primary" onClick={() => setShowSlaModal(false)} style={{ width: '100%', marginTop: '1.25rem', borderRadius: '10px' }}>
-              Got It
-            </button>
-          </div>
-        </div>
-      )}
+              </td>
+              <td>{l.college}</td>
+              <td>{l.doubtsSolved} Solved</td>
+              <td><span className="tag tag-accent">Lvl {l.level}</span></td>
+              <td style={{ fontWeight: 700, color: 'var(--accent-primary)' }}>⚡ {l.xp} XP</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
 
+// --- REAL-TIME VERTICAL TIKTOK / INSTAGRAM STYLE REELS SCREEN ---
+function ReelsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, socket, setWsMessages }) {
+  const [currentReelIndex, setCurrentReelIndex] = useState(0);
+  const [likesMap, setLikesMap] = useState({});
+  const [isMuted, setIsMuted] = useState(true);
+  const [showCommentsModal, setShowCommentsModal] = useState(false);
+  const [commentInput, setCommentInput] = useState('');
+
+  const [reels, setReels] = useState([
+    {
+      id: 'r-1',
+      title: '3 Tricks to solve Recursion Tree problems fast in Java ⚡ #Algorithms #Java',
+      author: 'Aarav Sharma',
+      college: 'IIT Madras',
+      avatarUrl: MALE_AVATAR_SVG,
+      videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-software-developer-working-on-code-42867-large.mp4',
+      likes: 154,
+      shares: 42,
+      comments: [
+        { author: 'Bhavna Patel', text: 'This helper tree recursion trick saved me in midterms! 🔥' },
+        { author: 'Chaitanya Reddy', text: 'Clean breakdown. Can you do Dynamic Programming memoization next?' }
+      ]
+    },
+    {
+      id: 'r-2',
+      title: 'How Spring Boot Inversion of Control & @Autowired work under 60s ☕ #SpringBoot',
+      author: 'Bhavna Patel',
+      college: 'IIT Madras',
+      avatarUrl: FEMALE_AVATAR_SVG,
+      videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-hands-of-a-man-typing-on-a-computer-keyboard-41334-large.mp4',
+      likes: 218,
+      shares: 67,
+      comments: [
+        { author: 'Aarav Sharma', text: 'Best 60-second explanation of ApplicationContext!' }
+      ]
+    },
+    {
+      id: 'r-3',
+      title: 'Visualizing Gradient Descent & Contour Cost Surfaces in 3D 📐 #MachineLearning',
+      author: 'Chaitanya Reddy',
+      college: 'BITS Pilani',
+      avatarUrl: MALE_AVATAR_SVG,
+      videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-animation-of-futuristic-devices-99786-large.mp4',
+      likes: 312,
+      shares: 89,
+      comments: [
+        { author: 'Divya Nambiar', text: 'The learning rate oscillation visual was super clear.' }
+      ]
+    }
+  ]);
+
+  const currentReel = reels[currentReelIndex] || reels[0];
+  const isLiked = likesMap[currentReel.id] || false;
+
+  // Keyboard navigation for smooth up/down reel browsing
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (showCommentsModal) return;
+      if (e.key === 'ArrowDown') {
+        setCurrentReelIndex(prev => (prev < reels.length - 1 ? prev + 1 : 0));
+      } else if (e.key === 'ArrowUp') {
+        setCurrentReelIndex(prev => (prev > 0 ? prev - 1 : reels.length - 1));
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [reels.length, showCommentsModal]);
+
+  const handleToggleLike = () => {
+    const nextLiked = !isLiked;
+    setLikesMap(prev => ({ ...prev, [currentReel.id]: nextLiked }));
+    setReels(prev => prev.map(r => r.id === currentReel.id ? { ...r, likes: nextLiked ? r.likes + 1 : r.likes - 1 } : r));
+  };
+
+  const handleAddComment = (e) => {
+    e.preventDefault();
+    if (!commentInput.trim()) return;
+    const newComment = { author: 'You (Aarav)', text: commentInput.trim() };
+    setReels(prev => prev.map(r => r.id === currentReel.id ? { ...r, comments: [...r.comments, newComment] } : r));
+    setCommentInput('');
+  };
+
+  return (
+    <div style={{ height: '100vh', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#09090b', position: 'relative', overflow: 'hidden' }}>
+      
+      {/* Top Left Back Navigation */}
+      <button 
+        onClick={() => setActiveTab('dashboard')} 
+        className="btn btn-secondary" 
+        style={{ position: 'absolute', top: '1.5rem', left: '1.5rem', zIndex: 100, borderRadius: 'var(--radius-full)', backgroundColor: 'rgba(15, 23, 42, 0.75)', color: '#ffffff', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.15)' }}
+      >
+        ← Back to Dashboard
+      </button>
+
+      {/* Top Right Counter Pill */}
+      <div style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', zIndex: 100, display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+        <span style={{ backgroundColor: 'rgba(15, 23, 42, 0.75)', color: '#ffffff', padding: '0.375rem 0.875rem', borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: 700, border: '1px solid rgba(255,255,255,0.15)' }}>
+          📱 Reel {currentReelIndex + 1} of {reels.length}
+        </span>
+      </div>
+
+      {/* REEL 9:16 VERTICAL CONTAINER */}
+      <div className="reel-frame" style={{ width: '100%', maxWidth: '420px', height: '90vh', borderRadius: '24px', overflow: 'hidden', position: 'relative', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+        
+        <video 
+          key={currentReel.id}
+          src={currentReel.videoUrl} 
+          autoPlay 
+          loop 
+          muted={isMuted}
+          playsInline 
+          style={{ width: '100%', height: '100%', objectFit: 'cover', backgroundColor: '#000000' }} 
+        />
+
+        {/* Right Floating Action Stack */}
+        <div className="reel-action-stack" style={{ position: 'absolute', right: '1rem', bottom: '6rem', display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center', zIndex: 50 }}>
+          
+          {/* Like */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
+            <button 
+              onClick={handleToggleLike} 
+              className="reel-action-btn" 
+              style={{ color: isLiked ? '#f43f5e' : '#ffffff', backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)', width: '48px', height: '48px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.2)' }}
+            >
+              <Heart size={24} fill={isLiked ? '#f43f5e' : 'none'} />
+            </button>
+            <span style={{ fontSize: '0.75rem', color: '#ffffff', fontWeight: 700 }}>{currentReel.likes}</span>
+          </div>
+
+          {/* Comments */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
+            <button 
+              onClick={() => setShowCommentsModal(true)} 
+              className="reel-action-btn"
+              style={{ color: '#ffffff', backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)', width: '48px', height: '48px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.2)' }}
+            >
+              <MessageCircle size={24} />
+            </button>
+            <span style={{ fontSize: '0.75rem', color: '#ffffff', fontWeight: 700 }}>{currentReel.comments.length}</span>
+          </div>
+
+          {/* Share */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
+            <button 
+              onClick={() => {
+                navigator.clipboard.writeText(window.location.href);
+                alert("🔗 Concept Reel link copied to clipboard!");
+              }} 
+              className="reel-action-btn"
+              style={{ color: '#ffffff', backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)', width: '48px', height: '48px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.2)' }}
+            >
+              <Share2 size={22} />
+            </button>
+            <span style={{ fontSize: '0.75rem', color: '#ffffff', fontWeight: 700 }}>{currentReel.shares}</span>
+          </div>
+
+          {/* Mute / Unmute */}
+          <button 
+            onClick={() => setIsMuted(!isMuted)} 
+            className="reel-action-btn"
+            style={{ color: '#ffffff', backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)', width: '44px', height: '44px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.2)' }}
+          >
+            {isMuted ? '🔇' : '🔊'}
+          </button>
+        </div>
+
+        {/* Bottom Overlay Info */}
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '2rem 1.25rem 1.25rem 1.25rem', background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 60%, transparent 100%)', color: '#ffffff', zIndex: 40 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.625rem' }}>
+            <img src={currentReel.avatarUrl} alt={currentReel.author} style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px solid var(--accent-primary)', objectFit: 'cover' }} />
+            <div>
+              <div style={{ fontWeight: 800, fontSize: '0.9375rem', color: '#ffffff' }}>@{currentReel.author}</div>
+              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>{currentReel.college} • Senior Tutor</div>
+            </div>
+          </div>
+
+          <p style={{ fontSize: '0.875rem', lineHeight: 1.4, margin: 0, color: '#f8fafc', fontWeight: 500 }}>
+            {currentReel.title}
+          </p>
+        </div>
+      </div>
+
+      {/* Next / Previous Vertical Stepper Buttons */}
+      <div style={{ position: 'absolute', right: '3rem', top: '50%', transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', gap: '1rem', zIndex: 100 }}>
+        <button 
+          onClick={() => setCurrentReelIndex(prev => (prev > 0 ? prev - 1 : reels.length - 1))}
+          className="btn-icon" 
+          style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'rgba(30, 41, 59, 0.85)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)' }}
+          title="Previous Reel (Arrow Up)"
+        >
+          ▲
+        </button>
+        <button 
+          onClick={() => setCurrentReelIndex(prev => (prev < reels.length - 1 ? prev + 1 : 0))}
+          className="btn-icon" 
+          style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'rgba(30, 41, 59, 0.85)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)' }}
+          title="Next Reel (Arrow Down)"
+        >
+          ▼
+        </button>
+      </div>
+
+      {/* COMMENTS MODAL DRAWER */}
+      {showCommentsModal && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.75)', zIndex: 3000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={() => setShowCommentsModal(false)}>
+          <div 
+            style={{ width: '100%', maxWidth: '480px', backgroundColor: 'var(--bg-elevated)', borderRadius: '24px 24px 0 0', padding: '1.75rem', maxHeight: '75vh', display: 'flex', flexDirection: 'column' }} 
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
+              <h3 className="font-serif" style={{ fontSize: '1.25rem', color: 'var(--text-primary)', margin: 0 }}>
+                💬 Reel Comments ({currentReel.comments.length})
+              </h3>
+              <button onClick={() => setShowCommentsModal(false)} className="btn-icon"><X size={18} /></button>
+            </div>
+
+            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.25rem' }}>
+              {currentReel.comments.map((c, i) => (
+                <div key={i} style={{ backgroundColor: 'var(--bg-tertiary)', padding: '0.75rem 1rem', borderRadius: 'var(--radius-md)' }}>
+                  <div style={{ fontWeight: 800, fontSize: '0.8125rem', color: 'var(--accent-primary)', marginBottom: '0.25rem' }}>
+                    {c.author}
+                  </div>
+                  <div style={{ fontSize: '0.875rem', color: 'var(--text-primary)' }}>
+                    {c.text}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <form onSubmit={handleAddComment} style={{ display: 'flex', gap: '0.625rem' }}>
+              <input 
+                type="text" 
+                className="input" 
+                placeholder="Share your thought or question on this concept..." 
+                value={commentInput} 
+                onChange={e => setCommentInput(e.target.value)} 
+                required 
+              />
+              <button type="submit" className="btn btn-accent" style={{ padding: '0.625rem 1.25rem', fontWeight: 700 }}>
+                Post
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}
+
+function SettingsScreen({ token, setActiveTab }) {
+  return (
+    <div style={{ padding: '1.5rem 2.5rem', width: '100%', maxWidth: '800px', margin: '0 auto' }}>
+      <h1 className="font-serif" style={{ fontSize: '2rem', marginBottom: '0.25rem' }}>Account & Profile Settings</h1>
+      <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '2rem' }}>Configure notification alerts, academic preferences, and privacy rules.</p>
+      
+      <div className="card-premium">
+        <h3 className="font-serif" style={{ fontSize: '1.25rem', marginBottom: '1.25rem' }}>Study & Notification Preferences</h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {[
+            { label: 'Academic Doubt Room Alerts', desc: 'Notify when peers join your live doubt room' },
+            { label: 'Direct Peer Messages', desc: 'Instant sound alert for 1:1 chat messages' },
+            { label: 'Daily Streak Reminders', desc: 'Remind before midnight to maintain study streak' }
+          ].map((item, idx) => (
+            <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 0', borderBottom: '1px solid var(--border-color)' }}>
+              <div>
+                <div style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-primary)' }}>{item.label}</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{item.desc}</div>
+              </div>
+              <input type="checkbox" defaultChecked style={{ width: '18px', height: '18px', cursor: 'pointer' }} />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FeedScreen({ setActiveTab, setActiveRoomId, token }) {
+  return <div style={{ padding: '2rem' }}>Feed Screen</div>;
+}
+
+function ContactSupportScreen({ token, setActiveTab, setActiveChatId, setChatPeer, profile }) {
+  const [subject, setSubject] = useState('');
+  const [desc, setDesc] = useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    alert("Support ticket submitted to academic safety team!");
+    setSubject('');
+    setDesc('');
+  };
+
+  return (
+    <div style={{ padding: '1.5rem 2.5rem', width: '100%', maxWidth: '800px', margin: '0 auto' }}>
+      <h1 className="font-serif" style={{ fontSize: '2rem', marginBottom: '0.25rem' }}>Contact & Help Desk</h1>
+      <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '2rem' }}>Submit a question or reach out to the campus operations safety team.</p>
+
+      <form onSubmit={handleSubmit} className="card-premium" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+        <div>
+          <label className="label">Subject / Issue Category</label>
+          <input type="text" className="input" placeholder="e.g. Question about Doubt Room credits" value={subject} onChange={e => setSubject(e.target.value)} required />
+        </div>
+        <div>
+          <label className="label">Description</label>
+          <textarea className="input" style={{ minHeight: '120px' }} placeholder="Please provide details..." value={desc} onChange={e => setDesc(e.target.value)} required />
+        </div>
+        <button type="submit" className="btn btn-accent" style={{ padding: '0.75rem' }}>
+          Submit Ticket 🚀
+        </button>
+      </form>
+    </div>
+  );
+}
