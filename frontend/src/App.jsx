@@ -2897,6 +2897,35 @@ function DashboardScreen({ token, setActiveTab, onOpenUserList, onStartChat }) {
     }
 
     if (uploadType === 'reel') {
+      const videoUrl = filePreviewUrl || 'https://assets.mixkit.co/videos/preview/mixkit-software-developer-working-on-code-42867-large.mp4';
+      const reelData = {
+        videoUrl: videoUrl,
+        thumbnailUrl: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=600&auto=format&fit=crop&q=80',
+        description: uploadTitle.trim(),
+        subject: uploadSubject || 'Algorithms'
+      };
+
+      if (token) {
+        fetch('/api/reels', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(reelData)
+        })
+        .then(res => {
+          if (!res.ok) throw new Error("Failed to upload reel to server");
+          return res.json();
+        })
+        .then(savedReel => {
+          console.log("Reel uploaded to backend:", savedReel);
+        })
+        .catch(err => {
+          console.error("Backend reel upload error:", err);
+        });
+      }
+
       const newReel = {
         id: `reel-${Date.now()}`,
         title: uploadTitle.trim(),
@@ -2904,7 +2933,7 @@ function DashboardScreen({ token, setActiveTab, onOpenUserList, onStartChat }) {
         views: '1',
         likes: 1,
         hashtag: uploadSubject || '#Java',
-        videoUrl: filePreviewUrl || 'https://assets.mixkit.co/videos/preview/mixkit-software-developer-working-on-code-42867-large.mp4',
+        videoUrl: videoUrl,
         thumbnail: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=600&auto=format&fit=crop&q=80',
         comments: []
       };
@@ -7759,86 +7788,279 @@ function LeaderboardScreen({ token, onOpenPublicProfile }) {
 }
 
 // --- REAL-TIME VERTICAL TIKTOK / INSTAGRAM STYLE REELS SCREEN ---
+function ReelCard({ reel, isActive, isMuted, setIsMuted, isLiked, onToggleLike, onOpenComments }) {
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+    if (!videoRef.current) return;
+    if (isActive) {
+      videoRef.current.play().catch(err => {
+        console.log("Play failed / Autoplay blocked:", err);
+      });
+    } else {
+      videoRef.current.pause();
+      videoRef.current.currentTime = 0;
+    }
+  }, [isActive]);
+
+  return (
+    <div className="reel-card">
+      <video 
+        ref={videoRef}
+        src={reel.videoUrl} 
+        loop 
+        muted={isMuted}
+        playsInline 
+        style={{ width: '100%', height: '100%', objectFit: 'cover', backgroundColor: '#000000' }} 
+      />
+
+      {/* Right Floating Action Stack */}
+      <div className="reel-action-stack" style={{ position: 'absolute', right: '1rem', bottom: '6rem', display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center', zIndex: 50 }}>
+        
+        {/* Like */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
+          <button 
+            onClick={onToggleLike} 
+            className="reel-action-btn" 
+            style={{ color: isLiked ? '#f43f5e' : '#ffffff', backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)', width: '48px', height: '48px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer' }}
+          >
+            <Heart size={24} fill={isLiked ? '#f43f5e' : 'none'} />
+          </button>
+          <span style={{ fontSize: '0.75rem', color: '#ffffff', fontWeight: 700, textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>{reel.likes}</span>
+        </div>
+
+        {/* Comments */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
+          <button 
+            onClick={onOpenComments} 
+            className="reel-action-btn"
+            style={{ color: '#ffffff', backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)', width: '48px', height: '48px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer' }}
+          >
+            <MessageCircle size={24} />
+          </button>
+          <span style={{ fontSize: '0.75rem', color: '#ffffff', fontWeight: 700, textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>{reel.commentsCount}</span>
+        </div>
+
+        {/* Share */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
+          <button 
+            onClick={() => {
+              if (navigator.clipboard) {
+                navigator.clipboard.writeText(window.location.href);
+              }
+              alert("🔗 Concept Reel link copied to clipboard!");
+            }} 
+            className="reel-action-btn"
+            style={{ color: '#ffffff', backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)', width: '48px', height: '48px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer' }}
+          >
+            <Share2 size={22} />
+          </button>
+          <span style={{ fontSize: '0.75rem', color: '#ffffff', fontWeight: 700, textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>{reel.shares}</span>
+        </div>
+
+        {/* Mute / Unmute */}
+        <button 
+          onClick={() => setIsMuted(!isMuted)} 
+          className="reel-action-btn"
+          style={{ color: '#ffffff', backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)', width: '44px', height: '44px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer' }}
+        >
+          {isMuted ? '🔇' : '🔊'}
+        </button>
+      </div>
+
+      {/* Bottom Overlay Info */}
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '2rem 1.25rem 1.25rem 1.25rem', background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.5) 65%, transparent 100%)', color: '#ffffff', zIndex: 40 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.625rem' }}>
+          <img src={reel.avatarUrl} alt={reel.author} style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px solid var(--accent-primary)', objectFit: 'cover' }} />
+          <div>
+            <div style={{ fontWeight: 800, fontSize: '0.9375rem', color: '#ffffff' }}>@{reel.author}</div>
+            <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.8)' }}>{reel.college} • Senior Tutor</div>
+          </div>
+        </div>
+
+        <p style={{ fontSize: '0.875rem', lineHeight: 1.4, margin: 0, color: '#f8fafc', fontWeight: 500, textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>
+          {reel.title}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function ReelsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, socket, setWsMessages }) {
   const [currentReelIndex, setCurrentReelIndex] = useState(0);
   const [likesMap, setLikesMap] = useState({});
   const [isMuted, setIsMuted] = useState(true);
   const [showCommentsModal, setShowCommentsModal] = useState(false);
   const [commentInput, setCommentInput] = useState('');
+  const [reels, setReels] = useState([]);
+  const [commentsMap, setCommentsMap] = useState({});
+  const [activeCommentsReelId, setActiveCommentsReelId] = useState(null);
+  const containerRef = useRef(null);
 
-  const [reels, setReels] = useState([
-    {
-      id: 'r-1',
-      title: '3 Tricks to solve Recursion Tree problems fast in Java ⚡ #Algorithms #Java',
-      author: 'Aarav Sharma',
-      college: 'IIT Madras',
-      avatarUrl: MALE_AVATAR_SVG,
-      videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-software-developer-working-on-code-42867-large.mp4',
-      likes: 154,
-      shares: 42,
-      comments: [
-        { author: 'Bhavna Patel', text: 'This helper tree recursion trick saved me in midterms! 🔥' },
-        { author: 'Chaitanya Reddy', text: 'Clean breakdown. Can you do Dynamic Programming memoization next?' }
-      ]
-    },
-    {
-      id: 'r-2',
-      title: 'How Spring Boot Inversion of Control & @Autowired work under 60s ☕ #SpringBoot',
-      author: 'Bhavna Patel',
-      college: 'IIT Madras',
-      avatarUrl: FEMALE_AVATAR_SVG,
-      videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-hands-of-a-man-typing-on-a-computer-keyboard-41334-large.mp4',
-      likes: 218,
-      shares: 67,
-      comments: [
-        { author: 'Aarav Sharma', text: 'Best 60-second explanation of ApplicationContext!' }
-      ]
-    },
-    {
-      id: 'r-3',
-      title: 'Visualizing Gradient Descent & Contour Cost Surfaces in 3D 📐 #MachineLearning',
-      author: 'Chaitanya Reddy',
-      college: 'BITS Pilani',
-      avatarUrl: MALE_AVATAR_SVG,
-      videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-animation-of-futuristic-devices-99786-large.mp4',
-      likes: 312,
-      shares: 89,
-      comments: [
-        { author: 'Divya Nambiar', text: 'The learning rate oscillation visual was super clear.' }
-      ]
+  // Fetch reels from backend
+  useEffect(() => {
+    const fetchReels = async () => {
+      try {
+        const response = await fetch('/api/reels', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          const mapped = data.map(item => {
+            const r = item.reel;
+            const c = item.creator;
+            return {
+              id: r.id,
+              title: r.description || '',
+              author: c ? c.fullName : 'Anonymous',
+              college: c ? c.college : 'IIT Madras',
+              avatarUrl: (c && c.avatarUrl) ? c.avatarUrl : MALE_AVATAR_SVG,
+              videoUrl: r.videoUrl,
+              likes: r.likesCount || 0,
+              commentsCount: r.commentsCount || 0,
+              shares: 0
+            };
+          });
+          setReels(mapped);
+          
+          const initialLikes = {};
+          data.forEach(item => {
+            initialLikes[item.reel.id] = item.likedByCurrentUser;
+          });
+          setLikesMap(initialLikes);
+        }
+      } catch (e) {
+        console.error("Error fetching reels", e);
+      }
+    };
+    if (token) {
+      fetchReels();
     }
-  ]);
+  }, [token]);
 
-  const currentReel = reels[currentReelIndex] || reels[0];
-  const isLiked = likesMap[currentReel.id] || false;
+  const currentReel = reels[currentReelIndex];
+
+  // Scroll to a specific reel card programmatically
+  const scrollToReel = (index) => {
+    if (containerRef.current) {
+      const container = containerRef.current;
+      container.scrollTo({
+        top: index * container.clientHeight,
+        behavior: 'smooth'
+      });
+      setCurrentReelIndex(index);
+    }
+  };
+
+  const handleScroll = (e) => {
+    const container = e.target;
+    const index = Math.round(container.scrollTop / container.clientHeight);
+    if (index !== currentReelIndex && index >= 0 && index < reels.length) {
+      setCurrentReelIndex(index);
+    }
+  };
 
   // Keyboard navigation for smooth up/down reel browsing
   useEffect(() => {
+    if (reels.length === 0) return;
     const handleKeyDown = (e) => {
       if (showCommentsModal) return;
       if (e.key === 'ArrowDown') {
-        setCurrentReelIndex(prev => (prev < reels.length - 1 ? prev + 1 : 0));
+        const nextIdx = currentReelIndex < reels.length - 1 ? currentReelIndex + 1 : 0;
+        scrollToReel(nextIdx);
       } else if (e.key === 'ArrowUp') {
-        setCurrentReelIndex(prev => (prev > 0 ? prev - 1 : reels.length - 1));
+        const nextIdx = currentReelIndex > 0 ? currentReelIndex - 1 : reels.length - 1;
+        scrollToReel(nextIdx);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [reels.length, showCommentsModal]);
+  }, [reels.length, showCommentsModal, currentReelIndex]);
 
-  const handleToggleLike = () => {
-    const nextLiked = !isLiked;
-    setLikesMap(prev => ({ ...prev, [currentReel.id]: nextLiked }));
-    setReels(prev => prev.map(r => r.id === currentReel.id ? { ...r, likes: nextLiked ? r.likes + 1 : r.likes - 1 } : r));
+  const handleToggleLike = async (reelId) => {
+    try {
+      const response = await fetch(`/api/reels/${reelId}/like`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setLikesMap(prev => ({ ...prev, [reelId]: data.liked }));
+        setReels(prev => prev.map(r => r.id === reelId ? { ...r, likes: data.likesCount } : r));
+      }
+    } catch (e) {
+      console.error("Error toggling like", e);
+    }
   };
 
-  const handleAddComment = (e) => {
+  const handleOpenComments = async (reelId) => {
+    setActiveCommentsReelId(reelId);
+    setShowCommentsModal(true);
+    try {
+      const response = await fetch(`/api/reels/${reelId}/comments`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        const mapped = data.map(c => ({
+          author: c.user ? c.user.fullName : 'Anonymous',
+          text: c.comment.comment
+        }));
+        setCommentsMap(prev => ({ ...prev, [reelId]: mapped }));
+      }
+    } catch (e) {
+      console.error("Error fetching comments", e);
+    }
+  };
+
+  const handleAddComment = async (e) => {
     e.preventDefault();
-    if (!commentInput.trim()) return;
-    const newComment = { author: 'You (Aarav)', text: commentInput.trim() };
-    setReels(prev => prev.map(r => r.id === currentReel.id ? { ...r, comments: [...r.comments, newComment] } : r));
-    setCommentInput('');
+    if (!commentInput.trim() || !activeCommentsReelId) return;
+    try {
+      const response = await fetch(`/api/reels/${activeCommentsReelId}/comment`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ comment: commentInput.trim() })
+      });
+      if (response.ok) {
+        const newCommentDto = await response.json();
+        const mappedComment = {
+          author: newCommentDto.user ? newCommentDto.user.fullName : 'You (Aarav)',
+          text: newCommentDto.comment.comment
+        };
+        setCommentsMap(prev => ({
+          ...prev,
+          [activeCommentsReelId]: [...(prev[activeCommentsReelId] || []), mappedComment]
+        }));
+        setReels(prev => prev.map(r => r.id === activeCommentsReelId ? { ...r, commentsCount: r.commentsCount + 1 } : r));
+        setCommentInput('');
+      }
+    } catch (err) {
+      console.error("Error posting comment", err);
+    }
   };
+
+  if (reels.length === 0) {
+    return (
+      <div style={{ minHeight: '100vh', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-primary)', position: 'relative', padding: '1.5rem 1rem' }}>
+        <button 
+          onClick={() => setActiveTab('dashboard')} 
+          className="btn btn-secondary" 
+          style={{ position: 'absolute', top: '1.5rem', left: '1.5rem', zIndex: 100, borderRadius: 'var(--radius-full)', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-md)', fontWeight: 700 }}
+        >
+          ← Back to Student Profile
+        </button>
+        <div style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📱</div>
+          <h3 style={{ fontSize: '1.25rem', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>No Concept Reels Available</h3>
+          <p style={{ fontSize: '0.875rem' }}>Be the first to publish an educational reel on your profile!</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ minHeight: '100vh', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-primary)', position: 'relative', overflow: 'hidden', padding: '1.5rem 1rem' }}>
@@ -7860,92 +8082,46 @@ function ReelsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, socket
       </div>
 
       {/* REEL 9:16 VERTICAL CONTAINER */}
-      <div className="reel-frame" style={{ width: '100%', maxWidth: '430px', height: '88vh', minHeight: '560px', borderRadius: '24px', overflow: 'hidden', position: 'relative', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)', border: '2px solid var(--border-color)', backgroundColor: '#000000' }}>
-        
-        <video 
-          key={currentReel.id}
-          src={currentReel.videoUrl} 
-          autoPlay 
-          loop 
-          muted={isMuted}
-          playsInline 
-          style={{ width: '100%', height: '100%', objectFit: 'cover', backgroundColor: '#000000' }} 
-        />
-
-        {/* Right Floating Action Stack */}
-        <div className="reel-action-stack" style={{ position: 'absolute', right: '1rem', bottom: '6rem', display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center', zIndex: 50 }}>
-          
-          {/* Like */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
-            <button 
-              onClick={handleToggleLike} 
-              className="reel-action-btn" 
-              style={{ color: isLiked ? '#f43f5e' : '#ffffff', backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)', width: '48px', height: '48px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer' }}
-            >
-              <Heart size={24} fill={isLiked ? '#f43f5e' : 'none'} />
-            </button>
-            <span style={{ fontSize: '0.75rem', color: '#ffffff', fontWeight: 700, textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>{currentReel.likes}</span>
-          </div>
-
-          {/* Comments */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
-            <button 
-              onClick={() => setShowCommentsModal(true)} 
-              className="reel-action-btn"
-              style={{ color: '#ffffff', backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)', width: '48px', height: '48px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer' }}
-            >
-              <MessageCircle size={24} />
-            </button>
-            <span style={{ fontSize: '0.75rem', color: '#ffffff', fontWeight: 700, textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>{currentReel.comments.length}</span>
-          </div>
-
-          {/* Share */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
-            <button 
-              onClick={() => {
-                if (navigator.clipboard) {
-                  navigator.clipboard.writeText(window.location.href);
-                }
-                alert("🔗 Concept Reel link copied to clipboard!");
-              }} 
-              className="reel-action-btn"
-              style={{ color: '#ffffff', backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)', width: '48px', height: '48px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer' }}
-            >
-              <Share2 size={22} />
-            </button>
-            <span style={{ fontSize: '0.75rem', color: '#ffffff', fontWeight: 700, textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>{currentReel.shares}</span>
-          </div>
-
-          {/* Mute / Unmute */}
-          <button 
-            onClick={() => setIsMuted(!isMuted)} 
-            className="reel-action-btn"
-            style={{ color: '#ffffff', backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)', width: '44px', height: '44px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer' }}
-          >
-            {isMuted ? '🔇' : '🔊'}
-          </button>
-        </div>
-
-        {/* Bottom Overlay Info */}
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '2rem 1.25rem 1.25rem 1.25rem', background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.5) 65%, transparent 100%)', color: '#ffffff', zIndex: 40 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.625rem' }}>
-            <img src={currentReel.avatarUrl} alt={currentReel.author} style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px solid var(--accent-primary)', objectFit: 'cover' }} />
-            <div>
-              <div style={{ fontWeight: 800, fontSize: '0.9375rem', color: '#ffffff' }}>@{currentReel.author}</div>
-              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.8)' }}>{currentReel.college} • Senior Tutor</div>
-            </div>
-          </div>
-
-          <p style={{ fontSize: '0.875rem', lineHeight: 1.4, margin: 0, color: '#f8fafc', fontWeight: 500, textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>
-            {currentReel.title}
-          </p>
-        </div>
+      <div 
+        ref={containerRef}
+        onScroll={handleScroll}
+        className="reel-frame" 
+        style={{ 
+          width: '100%', 
+          maxWidth: '430px', 
+          height: '88vh', 
+          minHeight: '560px', 
+          borderRadius: '24px', 
+          position: 'relative', 
+          border: '2px solid var(--border-color)',
+          backgroundColor: '#000000'
+        }}
+      >
+        {reels.map((reel, idx) => {
+          const isActive = idx === currentReelIndex;
+          const isReelLiked = likesMap[reel.id] || false;
+          return (
+            <ReelCard
+              key={reel.id}
+              reel={reel}
+              isActive={isActive}
+              isMuted={isMuted}
+              setIsMuted={setIsMuted}
+              isLiked={isReelLiked}
+              onToggleLike={() => handleToggleLike(reel.id)}
+              onOpenComments={() => handleOpenComments(reel.id)}
+            />
+          );
+        })}
       </div>
 
       {/* Next / Previous Vertical Stepper Buttons */}
       <div style={{ position: 'absolute', right: '2rem', top: '50%', transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', gap: '1rem', zIndex: 100 }}>
         <button 
-          onClick={() => setCurrentReelIndex(prev => (prev > 0 ? prev - 1 : reels.length - 1))}
+          onClick={() => {
+            const nextIdx = currentReelIndex > 0 ? currentReelIndex - 1 : reels.length - 1;
+            scrollToReel(nextIdx);
+          }}
           className="btn-icon" 
           style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-md)', cursor: 'pointer', fontSize: '1rem' }}
           title="Previous Reel (Arrow Up)"
@@ -7953,7 +8129,10 @@ function ReelsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, socket
           ▲
         </button>
         <button 
-          onClick={() => setCurrentReelIndex(prev => (prev < reels.length - 1 ? prev + 1 : 0))}
+          onClick={() => {
+            const nextIdx = currentReelIndex < reels.length - 1 ? currentReelIndex + 1 : 0;
+            scrollToReel(nextIdx);
+          }}
           className="btn-icon" 
           style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-md)', cursor: 'pointer', fontSize: '1rem' }}
           title="Next Reel (Arrow Down)"
@@ -7963,7 +8142,7 @@ function ReelsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, socket
       </div>
 
       {/* COMMENTS MODAL DRAWER */}
-      {showCommentsModal && (
+      {showCommentsModal && currentReel && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.75)', zIndex: 3000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={() => setShowCommentsModal(false)}>
           <div 
             style={{ width: '100%', maxWidth: '480px', backgroundColor: 'var(--bg-elevated)', borderRadius: '24px 24px 0 0', padding: '1.75rem', maxHeight: '75vh', display: 'flex', flexDirection: 'column', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-xl)' }} 
@@ -7971,13 +8150,13 @@ function ReelsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, socket
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
               <h3 className="font-serif" style={{ fontSize: '1.25rem', color: 'var(--text-primary)', margin: 0 }}>
-                💬 Reel Comments ({currentReel.comments.length})
+                💬 Reel Comments ({(commentsMap[activeCommentsReelId] || []).length})
               </h3>
               <button onClick={() => setShowCommentsModal(false)} className="btn-icon"><X size={18} /></button>
             </div>
 
             <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.25rem' }}>
-              {currentReel.comments.map((c, i) => (
+              {(commentsMap[activeCommentsReelId] || []).map((c, i) => (
                 <div key={i} style={{ backgroundColor: 'var(--bg-tertiary)', padding: '0.75rem 1rem', borderRadius: 'var(--radius-md)' }}>
                   <div style={{ fontWeight: 800, fontSize: '0.8125rem', color: 'var(--accent-primary)', marginBottom: '0.25rem' }}>
                     {c.author}
@@ -8245,6 +8424,22 @@ function SettingsScreen({ token, setActiveTab, theme, setTheme }) {
     }
     if (updated.id) {
       localStorage.setItem(`studyloop_profile_${updated.id}`, JSON.stringify(updated));
+    }
+    if (token) {
+      fetch('/api/profiles/me', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(updated)
+      })
+      .then(res => {
+        if (!res.ok) throw new Error("Sync failed");
+        return res.json();
+      })
+      .then(saved => console.log("Profile updated on backend:", saved))
+      .catch(err => console.error("Backend profile sync error:", err));
     }
     setTimeout(() => {
       setIsSaving(false);

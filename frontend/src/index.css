@@ -682,8 +682,26 @@ code, pre {
   aspect-ratio: 9 / 16;
   background-color: #000000;
   border-radius: var(--radius-lg);
-  overflow: hidden;
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  display: flex;
+  flex-direction: column;
   box-shadow: var(--shadow-premium);
+  scrollbar-width: none; /* Hide scrollbar for Firefox */
+  -ms-overflow-style: none;  /* Hide scrollbar for IE/Edge */
+}
+
+.reel-frame::-webkit-scrollbar {
+  display: none; /* Hide scrollbar for Chrome, Safari, and Opera */
+}
+
+.reel-card {
+  height: 100%;
+  width: 100%;
+  position: relative;
+  scroll-snap-align: start;
+  flex-shrink: 0;
+  background-color: #000000;
 }
 
 .reel-overlay-controls {
