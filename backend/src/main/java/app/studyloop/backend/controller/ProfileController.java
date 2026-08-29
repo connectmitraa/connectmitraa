@@ -71,6 +71,7 @@ public class ProfileController {
         if (updatedData.getSkills() != null) profile.setSkills(updatedData.getSkills());
         if (updatedData.getTeachingSkills() != null) profile.setTeachingSkills(updatedData.getTeachingSkills());
         if (updatedData.getLearningGoals() != null) profile.setLearningGoals(updatedData.getLearningGoals());
+        if (updatedData.getProfileVisibility() != null) profile.setProfileVisibility(updatedData.getProfileVisibility());
 
         profile.setLastActiveAt(Instant.now());
         Profile savedProfile = profileRepository.save(profile);

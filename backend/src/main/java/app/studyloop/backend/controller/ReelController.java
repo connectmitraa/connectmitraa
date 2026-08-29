@@ -4,11 +4,14 @@ import app.studyloop.backend.domain.Profile;
 import app.studyloop.backend.domain.Reel;
 import app.studyloop.backend.domain.ReelComment;
 import app.studyloop.backend.domain.ReelLike;
+import app.studyloop.backend.domain.UserFollow;
 import app.studyloop.backend.dto.ReelCommentDto;
+import app.studyloop.backend.dto.ReelDto;
 import app.studyloop.backend.repository.ProfileRepository;
 import app.studyloop.backend.repository.ReelCommentRepository;
 import app.studyloop.backend.repository.ReelLikeRepository;
 import app.studyloop.backend.repository.ReelRepository;
+import app.studyloop.backend.repository.UserFollowRepository;
 import app.studyloop.backend.security.UserPrincipal;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -26,20 +29,70 @@ public class ReelController {
     private final ReelLikeRepository reelLikeRepository;
     private final ReelCommentRepository reelCommentRepository;
     private final ProfileRepository profileRepository;
+    private final UserFollowRepository userFollowRepository;
 
     public ReelController(ReelRepository reelRepository,
                           ReelLikeRepository reelLikeRepository,
                           ReelCommentRepository reelCommentRepository,
-                          ProfileRepository profileRepository) {
+                          ProfileRepository profileRepository,
+                          UserFollowRepository userFollowRepository) {
         this.reelRepository = reelRepository;
         this.reelLikeRepository = reelLikeRepository;
         this.reelCommentRepository = reelCommentRepository;
         this.profileRepository = profileRepository;
+        this.userFollowRepository = userFollowRepository;
     }
 
     @GetMapping
-    public ResponseEntity<List<Reel>> getAllReels() {
-        return ResponseEntity.ok(reelRepository.findAllByOrderByCreatedAtDesc());
+    public ResponseEntity<List<ReelDto>> getAllReels(@AuthenticationPrincipal UserPrincipal principal) {
+        UUID currentUserId = principal.getId();
+        
+        // Find users that the current user follows
+        List<UserFollow> follows = userFollowRepository.findByFollowerId(currentUserId);
+        Set<UUID> followedUserIds = follows.stream()
+                .map(UserFollow::getFollowingId)
+                .collect(Collectors.toSet());
+
+        List<Reel> allReels = reelRepository.findAllByOrderByCreatedAtDesc();
+
+        List<ReelDto> filteredReels = allReels.stream()
+                .map(reel -> {
+                    Profile creator = profileRepository.findById(reel.getCreatorId()).orElse(null);
+                    return Map.entry(reel, creator);
+                })
+                .filter(entry -> {
+                    Reel reel = entry.getKey();
+                    Profile creator = entry.getValue();
+                    if (creator == null) return false;
+                    
+                    // Show reel if:
+                    // 1. The viewer is the creator themselves.
+                    if (reel.getCreatorId().equals(currentUserId)) {
+                        return true;
+                    }
+                    
+                    // 2. The creator's profile is public.
+                    String visibility = creator.getProfileVisibility();
+                    if (visibility == null || visibility.equalsIgnoreCase("public")) {
+                        return true;
+                    }
+                    
+                    // 3. The creator is private, but the viewer is a follower.
+                    return followedUserIds.contains(reel.getCreatorId());
+                })
+                .map(entry -> {
+                    Reel reel = entry.getKey();
+                    Profile creator = entry.getValue();
+                    boolean liked = reelLikeRepository.existsByReelIdAndUserId(reel.getId(), currentUserId);
+                    return ReelDto.builder()
+                            .reel(reel)
+                            .creator(creator)
+                            .likedByCurrentUser(liked)
+                            .build();
+                })
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(filteredReels);
     }
 
     @PostMapping

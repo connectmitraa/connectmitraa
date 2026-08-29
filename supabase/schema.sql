@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     level VARCHAR(50) DEFAULT 'Beginner',
     reputation NUMERIC(3, 2) DEFAULT 5.00 CHECK (reputation BETWEEN 0.00 AND 5.00),
     streak INT DEFAULT 0 CHECK (streak >= 0),
+    profile_visibility VARCHAR(50) DEFAULT 'public',
     last_active_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

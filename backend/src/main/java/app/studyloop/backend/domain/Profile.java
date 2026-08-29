@@ -1,9 +1,11 @@
 package app.studyloop.backend.domain;
 
 import app.studyloop.backend.util.ListToStringConverter;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Map;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -70,6 +72,9 @@ public class Profile {
     private String level = "Beginner";
     private BigDecimal reputation = new BigDecimal("5.00");
     private Integer streak = 0;
+
+    @Column(name = "profile_visibility")
+    private String profileVisibility = "public";
 
     @Column(name = "last_active_at")
     private Instant lastActiveAt = Instant.now();
@@ -193,6 +198,29 @@ public class Profile {
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+
+    public String getProfileVisibility() { return profileVisibility; }
+    public void setProfileVisibility(String profileVisibility) { this.profileVisibility = profileVisibility; }
+
+    @JsonProperty("privacySettings")
+    public void unpackPrivacySettings(Map<String, Object> privacySettings) {
+        if (privacySettings != null) {
+            Object visibility = privacySettings.get("profileVisibility");
+            if (visibility != null) {
+                this.profileVisibility = visibility.toString();
+            }
+        }
+    }
+
+    @JsonProperty("privacySettings")
+    public Map<String, Object> getPrivacySettingsMap() {
+        return Map.of(
+            "profileVisibility", this.profileVisibility != null ? this.profileVisibility : "public",
+            "allowDirectDoubts", true,
+            "showActivityStatus", true,
+            "twoFactorEnabled", false
+        );
+    }
 
     public static Builder builder() { return new Builder(); }
 
