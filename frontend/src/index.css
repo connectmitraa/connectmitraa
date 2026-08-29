@@ -502,6 +502,20 @@ code, pre {
   50% { opacity: 0.4; transform: scale(1.3); }
 }
 
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 .glow-amber {
   box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
 }
@@ -509,6 +523,7 @@ code, pre {
 .gradient-text {
   background: var(--accent-gradient);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -712,4 +727,32 @@ code, pre {
 .reel-action-btn:hover {
   transform: scale(1.1);
   background: rgba(15, 23, 42, 0.9);
+}
+
+/* ==========================================================================
+   SETTINGS & MOBILE RESPONSIVE UTILITIES
+   ========================================================================== */
+
+.settings-responsive-layout {
+  display: grid;
+  grid-template-columns: 290px 1fr;
+  gap: 1.75rem;
+  align-items: flex-start;
+}
+
+@media (max-width: 960px) {
+  .settings-responsive-layout {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .settings-sidebar-nav {
+    display: flex;
+    overflow-x: auto;
+    gap: 0.5rem;
+    padding-bottom: 0.5rem;
+    white-space: nowrap;
+  }
 }
