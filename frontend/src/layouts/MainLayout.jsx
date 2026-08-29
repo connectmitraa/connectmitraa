@@ -444,38 +444,6 @@ export function MainLayout() {
           )}
           <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'chat'} icon={<MessageSquare size={18} />} label="Direct Messages" onClick={() => { setActiveTab('chat'); setActiveRoomId(null); }} />
           <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'contact'} icon={<LifeBuoy size={18} />} label="Help Desk" onClick={() => { setActiveTab('contact'); setActiveRoomId(null); }} />
-
-          {/* PLATFORM OPERATIONS & ADMIN (ONLY VISIBLE TO SUPER ADMINS) */}
-          {isSuperAdmin && (
-            <>
-              {!isSidebarCollapsed && (
-                <div style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  fontSize: '0.6875rem', 
-                  fontWeight: 800, 
-                  letterSpacing: '0.08em', 
-                  color: '#ea580c', 
-                  marginTop: '1.25rem', 
-                  marginBottom: '0.5rem',
-                  textTransform: 'uppercase'
-                }}>
-                  PLATFORM OPERATIONS
-                  <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border-color)', marginLeft: '0.5rem' }}></div>
-                </div>
-              )}
-              <SidebarLink 
-                isCollapsed={isSidebarCollapsed} 
-                active={activeTab === 'admin'} 
-                icon={<Shield size={18} style={{ color: '#ea580c' }} />} 
-                label="Admin Portal" 
-                onClick={() => {
-                  setIsAdminMode(true);
-                  setActiveTab('admin');
-                }} 
-              />
-            </>
-          )}
         </div>
 
         {/* LOGOUT BUTTON */}
@@ -521,31 +489,6 @@ export function MainLayout() {
             {/* FAR RIGHT USER DROPDOWN CHIP & THEME TOGGLE */}
             <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '1rem' }}>
               
-              {/* ADMIN CONSOLE SWITCHER PILL (ONLY VISIBLE TO SUPER ADMINS) */}
-              {isSuperAdmin && (
-                <button
-                  onClick={() => {
-                    setIsAdminMode(true);
-                    setActiveTab('admin');
-                  }}
-                  className="btn btn-primary"
-                  style={{
-                    padding: '0.375rem 0.875rem',
-                    fontSize: '0.75rem',
-                    borderRadius: 'var(--radius-full)',
-                    background: 'linear-gradient(135deg, #ea580c 0%, #f59e0b 100%)',
-                    boxShadow: '0 4px 12px rgba(234, 88, 12, 0.25)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.375rem'
-                  }}
-                  title="Switch to Administrator Console"
-                >
-                  <Shield size={14} /> Admin Portal
-                  <span style={{ backgroundColor: 'rgba(255,255,255,0.25)', padding: '0.1rem 0.35rem', borderRadius: 'var(--radius-full)', fontSize: '0.625rem', fontWeight: 800 }}>⚡ 48 Live</span>
-                </button>
-              )}
-
               {/* THEME TOGGLE (LIGHT / DARK) */}
               <button
                 onClick={() => setTheme(prev => prev === 'light' ? 'dark' : 'light')}
@@ -621,25 +564,6 @@ export function MainLayout() {
                     >
                       <Award size={16} style={{ color: 'var(--accent-primary)' }} /> Student Profile
                     </button>
-
-                    {isSuperAdmin && (
-                      <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '0.5rem', marginTop: '0.25rem' }}>
-                        <div style={{ fontSize: '0.625rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '0 0.5rem 0.25rem 0.5rem' }}>
-                          SUPER ADMIN
-                        </div>
-                        <button 
-                          onClick={() => {
-                            setShowHeaderDropdown(false);
-                            setIsAdminMode(true);
-                            setActiveTab('admin');
-                          }} 
-                          className="dropdown-item"
-                          style={{ color: '#ea580c' }}
-                        >
-                          <Shield size={16} style={{ color: '#ea580c' }} /> Admin Portal
-                        </button>
-                      </div>
-                    )}
 
                     <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '0.5rem', marginTop: '0.25rem' }}>
                       <button 
