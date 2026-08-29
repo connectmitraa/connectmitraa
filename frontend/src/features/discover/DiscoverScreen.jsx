@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Search, Filter, Star, BookOpen, Users, Calendar, Award, ArrowUpRight } from 'lucide-react';
-import { getDefaultAvatarByGender } from '../../constants/avatars';
+import { ArrowUpRight, Award, BookOpen, Calendar, Filter, MessageSquare, Search, Star, Users } from 'lucide-react';
+import { getDefaultAvatarByGender, MALE_AVATAR_SVG, FEMALE_AVATAR_SVG, NEUTRAL_AVATAR_SVG } from '../../constants/avatars';
 
 export function DiscoverScreen({ token, setActiveTab, setActiveChatId, setChatPeer, onOpenPublicProfile, onOpenBookingModal }) {
   const [searchTopic, setSearchTopic] = useState('');

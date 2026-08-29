@@ -1,9 +1,6 @@
+import { useAuth } from '../../context/AuthContext';
 import React, { useState, useEffect } from 'react';
-import { 
-  Shield, Users, MessageSquare, AlertCircle, CheckCircle, XCircle, 
-  Award, TrendingUp, Search, Filter, Ban, Check, Eye, Trash2, 
-  DollarSign, Activity, FileText, Settings, RefreshCw, ArrowUpRight, BarChart2, CheckCheck
-} from 'lucide-react';
+import { Activity, AlertCircle, ArrowRight, ArrowUpRight, Award, Ban, BarChart2, BarChart3, Building2, Check, CheckCheck, CheckCircle, CheckCircle2, DollarSign, Eye, FileText, Filter, HelpCircle, History, LogOut, Megaphone, MessageSquare, RefreshCw, Search, Settings, Shield, ShieldAlert, Trash2, TrendingUp, Tv2, Users, X, XCircle } from 'lucide-react';
 import { getDefaultAvatarByGender } from '../../constants/avatars';
 
 export function AdminConsoleScreen({ onBackToStudent }) {

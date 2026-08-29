@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, Key, ArrowRight, AlertCircle } from 'lucide-react';
+import { AlertCircle, ArrowRight, Eye, EyeOff, Key, Lock, Mail, Shield } from 'lucide-react';
 
 export function AdminGateScreen({ loginAdmin, onBackToHome }) {
   const [email, setEmail] = useState('');

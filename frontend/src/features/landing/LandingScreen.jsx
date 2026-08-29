@@ -1,8 +1,5 @@
 import React, { useState } from 'react';
-import { 
-  BookOpen, Video, Users, Zap, Shield, Award, CheckCircle, ArrowRight, 
-  LogIn, UserPlus, Sparkles, MessageSquare, ChevronRight, Laptop, Star
-} from 'lucide-react';
+import { ArrowRight, Award, BookOpen, CheckCircle, ChevronRight, Eye, EyeOff, Github, Globe, HelpCircle, Laptop, Lock, LogIn, Mail, MessageSquare, Moon, Shield, ShieldAlert, Sparkles, Star, Sun, Trophy, Tv2, UserPlus, Users, Video, Zap } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export function LandingScreen({ setActiveTab, loginSimulated, loginAdmin, testAccounts, theme, setTheme, postLoginRedirectTab, setPostLoginRedirectTab }) {

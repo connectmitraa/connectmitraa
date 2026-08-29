@@ -1,5 +1,5 @@
 import React from 'react';
-import { Mic, MicOff, Video, VideoOff, ScreenShare, PhoneOff, Users, MessageSquare } from 'lucide-react';
+import { MessageSquare, Mic, MicOff, PhoneOff, ScreenShare, Users, Video, VideoOff } from 'lucide-react';
 
 export function RtcCallOverlay({ localVideoRef, remoteVideoRef, isScreenSharing, toggleScreenShare, hangUpCall, webrtcCall, localStream, remoteStream }) {
   return (

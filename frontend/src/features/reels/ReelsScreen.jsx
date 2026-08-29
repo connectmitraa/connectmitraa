@@ -1,10 +1,7 @@
-import React, { useState, useRef } from 'react';
-import { 
-  Heart, MessageCircle, Share2, Bookmark, Music, Plus, Upload, 
-  Play, Pause, Volume2, VolumeX, Eye, Sparkles, CheckCircle, 
-  TrendingUp, Award, Clock, ArrowUpRight, BarChart2, Filter, X, Send
-} from 'lucide-react';
-import { getDefaultAvatarByGender } from '../../constants/avatars';
+import { useAuth } from '../../context/AuthContext';
+import React, { useState, useRef, useEffect } from 'react';
+import { ArrowUpRight, Award, BarChart2, Bookmark, CheckCircle, Clock, Copy, Eye, Filter, Heart, MessageCircle, MessageSquare, Music, Pause, Play, Plus, Send, Share2, Sparkles, Trash2, TrendingUp, Upload, Volume2, VolumeX, X } from 'lucide-react';
+import { getDefaultAvatarByGender, MALE_AVATAR_SVG, FEMALE_AVATAR_SVG, NEUTRAL_AVATAR_SVG } from '../../constants/avatars';
 
 export function ReelsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, socket, setWsMessages }) {
   const { profile, updateProfileState } = useAuth();

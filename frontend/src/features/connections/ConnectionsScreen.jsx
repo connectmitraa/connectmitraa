@@ -1,9 +1,7 @@
-import React, { useState } from 'react';
-import { 
-  Users, Search, UserPlus, MessageSquare, Check, X, Star, BookOpen, 
-  Calendar, Award, ExternalLink, Filter, ChevronRight, CheckCircle, Sparkles
-} from 'lucide-react';
-import { getDefaultAvatarByGender } from '../../constants/avatars';
+import { useAuth } from '../../context/AuthContext';
+import React, { useState, useEffect } from 'react';
+import { Award, BookOpen, Calendar, Check, CheckCircle, CheckCircle2, ChevronRight, ExternalLink, Filter, MessageSquare, Search, Sparkles, Star, User, UserPlus, Users, X } from 'lucide-react';
+import { getDefaultAvatarByGender, MALE_AVATAR_SVG, FEMALE_AVATAR_SVG, NEUTRAL_AVATAR_SVG } from '../../constants/avatars';
 
 export function ConnectionsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, onOpenPublicProfile }) {
   const { profile, updateProfileState } = useAuth();

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Upload, Check, AlertCircle, FileText } from 'lucide-react';
+import { AlertCircle, Check, FileText, Upload, UploadCloud, X } from 'lucide-react';
 
 export function ResumeUploadModal({ currentFileName, onClose, onUpload }) {
   const [fileName, setFileName] = useState(currentFileName || 'Aarav_Sharma_BTech_CS_Resume.pdf');

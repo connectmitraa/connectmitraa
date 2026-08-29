@@ -1,10 +1,7 @@
+import { useAuth } from '../../context/AuthContext';
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Search, Send, Phone, Video, MoreVertical, BellOff, Trash2, Copy, 
-  CornerUpLeft, Smile, Mic, Image, FileText, CheckCheck, Check, 
-  Code, Paperclip, ChevronLeft, Calendar, UserPlus, ExternalLink, X
-} from 'lucide-react';
-import { getDefaultAvatarByGender } from '../../constants/avatars';
+import { BellOff, Calendar, Check, CheckCheck, ChevronLeft, Code, Copy, CornerUpLeft, Download, ExternalLink, FileText, Image, MessageSquare, Mic, MoreVertical, Paperclip, Phone, Play, Search, Send, Smile, Trash2, UserPlus, Video, X } from 'lucide-react';
+import { getDefaultAvatarByGender, MALE_AVATAR_SVG, FEMALE_AVATAR_SVG, NEUTRAL_AVATAR_SVG } from '../../constants/avatars';
 
 export function ChatScreen({ token, activeChatId, setActiveChatId, chatPeer, setChatPeer, socket, wsMessages, setWsMessages, setActiveTab }) {
   const { profile } = useAuth();

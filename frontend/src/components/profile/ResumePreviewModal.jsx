@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, FileText, CheckCircle2, Download, ExternalLink } from 'lucide-react';
+import { CheckCircle2, Download, ExternalLink, FileText, X } from 'lucide-react';
 
 export function ResumePreviewModal({ profile, onClose }) {
   const handlePrint = () => {

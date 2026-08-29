@@ -1,10 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  User, Mail, Phone, MapPin, School, BookOpen, Shield, Bell, 
-  Lock, Key, Eye, EyeOff, Save, Check, AlertCircle, Camera, 
-  Upload, Trash2, Plus, ExternalLink, Github, Globe, FileText, CheckCircle2, X
-} from 'lucide-react';
-import { getDefaultAvatarByGender } from '../../constants/avatars';
+import { useAuth } from '../../context/AuthContext';
+import React, { useState, useEffect, useRef } from 'react';
+import { AlertCircle, ArrowLeft, Award, BarChart3, Bell, BookOpen, Briefcase, Building2, Camera, Check, CheckCircle, CheckCircle2, Clock, Code, Coins, Compass, Download, ExternalLink, Eye, EyeOff, FileText, Flame, Github, Globe, GraduationCap, Key, Lock, Mail, MapPin, Moon, Phone, Play, Plus, RefreshCw, Save, School, Search, Shield, Sun, Trash2, Trophy, Tv2, Upload, UploadCloud, User, X } from 'lucide-react';
+import { getDefaultAvatarByGender, MALE_AVATAR_SVG, FEMALE_AVATAR_SVG, NEUTRAL_AVATAR_SVG } from '../../constants/avatars';
 import { AvatarChangeModal } from '../../components/modals/AvatarChangeModal';
 import { PhotoPreviewModal } from '../../components/modals/PhotoPreviewModal';
 

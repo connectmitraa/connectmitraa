@@ -1,8 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Plus, Users, MessageSquare, Video, Mic, Search, Filter, 
-  BookOpen, Sparkles, AlertCircle, Clock, Zap, ArrowUpRight
-} from 'lucide-react';
+import { AlertCircle, ArrowUpRight, BookOpen, Clock, Filter, MessageSquare, Mic, Plus, Search, Sparkles, Users, Video, Zap } from 'lucide-react';
 
 export function DoubtRoomsScreen({ token, activeRoomId, setActiveRoomId, socket, wsMessages, setWsMessages, startWebRtcCall, webrtcCall }) {
   const [rooms, setRooms] = useState([

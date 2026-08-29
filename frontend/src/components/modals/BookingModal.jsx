@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { X, Check, Calendar, Clock, DollarSign, BookOpen, AlertCircle } from 'lucide-react';
-import { getDefaultAvatarByGender } from '../../constants/avatars';
+import { AlertCircle, BookOpen, Calendar, Check, Clock, DollarSign, Shield, X } from 'lucide-react';
+import { getDefaultAvatarByGender, MALE_AVATAR_SVG, FEMALE_AVATAR_SVG, NEUTRAL_AVATAR_SVG } from '../../constants/avatars';
 
 export function BookingModal({ tutor, onClose, onConfirmBooking }) {
   const [selectedTopic, setSelectedTopic] = useState(tutor?.topicsMastered[0] || 'Core Subject Walkthrough');

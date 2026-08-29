@@ -1,8 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Video, Mic, MicOff, VideoOff, ScreenShare, PhoneOff, MessageSquare, 
-  Code, BookOpen, Users, Send, Settings, Play, CheckCircle
-} from 'lucide-react';
+import { BookOpen, CheckCircle, Code, MessageSquare, Mic, MicOff, PhoneOff, Play, ScreenShare, Send, Settings, Users, Video, VideoOff } from 'lucide-react';
 
 export function LiveClassroomScreen({ session, onEndClassroom, localVideoRef, remoteVideoRef, toggleScreenShare, isScreenSharing }) {
   const [codeLanguage, setCodeLanguage] = useState('java');

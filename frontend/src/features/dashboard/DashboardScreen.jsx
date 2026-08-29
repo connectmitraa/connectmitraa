@@ -1,12 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  BookOpen, Video, MessageSquare, Users, Award, TrendingUp, Calendar, 
-  Clock, Plus, Search, Filter, ArrowUpRight, CheckCircle, Zap, Shield, 
-  ExternalLink, Edit, Share2, Upload, AlertCircle, UserCheck, Star, 
-  ChevronRight, Sparkles, Eye, Download, Code, Globe, Github, Briefcase, FileText, X, Check, Heart
-} from 'lucide-react';
+import { AlertCircle, ArrowUpRight, Award, Bell, BookOpen, Bookmark, Briefcase, Calendar, Camera, Check, CheckCircle, ChevronRight, Clock, Code, Download, Edit, ExternalLink, Eye, FileText, Filter, Flame, Github, Globe, GraduationCap, Grid, Heart, MapPin, MessageSquare, Pencil, Plus, PlusCircle, Search, Send, Settings, Share2, Shield, Sparkles, Star, Trash2, TrendingUp, Trophy, Tv2, Upload, UploadCloud, UserCheck, Users, Video, X, Zap } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { getDefaultAvatarByGender } from '../../constants/avatars';
+import { getDefaultAvatarByGender, MALE_AVATAR_SVG, FEMALE_AVATAR_SVG, NEUTRAL_AVATAR_SVG } from '../../constants/avatars';
 import { AvatarChangeModal } from '../../components/modals/AvatarChangeModal';
 import { PhotoPreviewModal } from '../../components/modals/PhotoPreviewModal';
 

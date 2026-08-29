@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Check, Star } from 'lucide-react';
+import { Award, Check, Star, X } from 'lucide-react';
 
 export function ReviewSessionModal({ session, onClose, onSubmitReview }) {
   const [clarityRating, setClarityRating] = useState(5);

@@ -1,12 +1,7 @@
 import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
-import { 
-  BookOpen, Video, Users, Zap, Shield, Award, CheckCircle, ArrowRight, 
-  LogIn, UserPlus, Sparkles, MessageSquare, ChevronRight, Laptop, Star, 
-  Search, Bell, Settings, DollarSign, LogOut, Sun, Moon, Menu, X, 
-  Compass, Radio, Film, Check, ExternalLink, Activity
-} from 'lucide-react';
+import { Activity, ArrowRight, Award, Bell, BookOpen, Building2, Calendar, Check, CheckCircle, ChevronDown, ChevronRight, Compass, DollarSign, ExternalLink, Film, Grid, HelpCircle, Home, Infinity, Laptop, LifeBuoy, LogIn, LogOut, Menu, MessageSquare, Moon, Radio, Search, Settings, Shield, Sparkles, Star, Sun, Trophy, Tv2, UserCheck, UserPlus, Users, Video, Wallet, X, Zap } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { getDefaultAvatarByGender } from '../constants/avatars';
+import { getDefaultAvatarByGender, MALE_AVATAR_SVG, FEMALE_AVATAR_SVG, NEUTRAL_AVATAR_SVG } from '../constants/avatars';
 import { SidebarLink } from '../components/common/SidebarLink';
 import { LoadingFallback } from '../components/common/LoadingFallback';
 
@@ -260,55 +255,63 @@ export function MainLayout() {
   if (activeTab === 'admin') {
     if (isSuperAdmin) {
       return (
-        <AdminConsoleScreen 
-          onBackToStudent={() => {
-            setIsAdminMode(false);
+        <Suspense fallback={<LoadingFallback />}>
+          <AdminConsoleScreen 
+            onBackToStudent={() => {
+              setIsAdminMode(false);
+              setActiveTab('landing');
+              if (window.history.pushState) {
+                window.history.pushState(null, '', '/');
+              }
+            }} 
+          />
+        </Suspense>
+      );
+    }
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <AdminGateScreen 
+          loginAdmin={loginAdmin}
+          onBackToHome={() => {
             setActiveTab('landing');
             if (window.history.pushState) {
               window.history.pushState(null, '', '/');
             }
-          }} 
+          }}
         />
-      );
-    }
-    return (
-      <AdminGateScreen 
-        loginAdmin={loginAdmin}
-        onBackToHome={() => {
-          setActiveTab('landing');
-          if (window.history.pushState) {
-            window.history.pushState(null, '', '/');
-          }
-        }}
-      />
+      </Suspense>
     );
   }
 
   // --- VISITOR LANDING SCREEN ---
   if (!user) {
     return (
-      <LandingScreen 
-        setActiveTab={setActiveTab} 
-        loginSimulated={loginSimulated} 
-        loginAdmin={loginAdmin}
-        testAccounts={testAccounts} 
-        theme={theme} 
-        setTheme={setTheme} 
-        postLoginRedirectTab={postLoginRedirectTab}
-        setPostLoginRedirectTab={setPostLoginRedirectTab}
-      />
+      <Suspense fallback={<LoadingFallback />}>
+        <LandingScreen 
+          setActiveTab={setActiveTab} 
+          loginSimulated={loginSimulated} 
+          loginAdmin={loginAdmin}
+          testAccounts={testAccounts} 
+          theme={theme} 
+          setTheme={setTheme} 
+          postLoginRedirectTab={postLoginRedirectTab}
+          setPostLoginRedirectTab={setPostLoginRedirectTab}
+        />
+      </Suspense>
     );
   }
 
   // --- DEDICATED SEPARATE FULL-PAGE STUDENT PROFILE & SETTINGS (LINKEDIN / NAUKRI SEPARATE PAGE STYLE) ---
-  if (activeTab === 'dashboard' || activeTab === 'settings') {
+  if (activeTab === 'dashboard' || activeTab === 'settings' || activeTab === 'profile') {
     return (
-      <SettingsScreen 
-        token={token} 
-        setActiveTab={setActiveTab} 
-        theme={theme} 
-        setTheme={setTheme} 
-      />
+      <Suspense fallback={<LoadingFallback />}>
+        <SettingsScreen 
+          token={token} 
+          setActiveTab={setActiveTab} 
+          theme={theme} 
+          setTheme={setTheme} 
+        />
+      </Suspense>
     );
   }
 
@@ -727,101 +730,103 @@ export function MainLayout() {
         )}
 
         {/* TAB ROUTING */}
-        {activeTab === 'landing' && (
-          <LandingScreen 
-            setActiveTab={setActiveTab} 
-            loginSimulated={loginSimulated} 
-            loginAdmin={loginAdmin}
-            testAccounts={testAccounts} 
-            theme={theme} 
-            setTheme={setTheme} 
-            postLoginRedirectTab={postLoginRedirectTab}
-            setPostLoginRedirectTab={setPostLoginRedirectTab}
-          />
-        )}
-        {activeTab === 'feed' && <FeedScreen setActiveTab={setActiveTab} setActiveRoomId={setActiveRoomId} token={token} />}
-        {(activeTab === 'dashboard' || activeTab === 'settings') && <SettingsScreen token={token} setActiveTab={setActiveTab} theme={theme} setTheme={setTheme} />}
-        {activeTab === 'leaderboard' && <LeaderboardScreen token={token} onOpenPublicProfile={openPublicProfile} />}
-        {activeTab === 'discover' && (
-          <DiscoverScreen 
-            token={token} 
-            setActiveTab={setActiveTab} 
-            setActiveChatId={setActiveChatId} 
-            setChatPeer={setChatPeer} 
-            onOpenPublicProfile={openPublicProfile} 
-            onOpenBookingModal={(tutor) => setBookingModalTutor(tutor)}
-          />
-        )}
-        {activeTab === 'sessions' && (
-          <MySessionsScreen 
-            bookedSessions={bookedSessions} 
-            onLaunchClassroom={(s) => {
-              setActiveClassroomSession(s);
-              setActiveTab('classroom');
-            }} 
-            onOpenReviewModal={(s) => setReviewModalSession(s)} 
-            setActiveTab={setActiveTab} 
-          />
-        )}
-        {activeTab === 'classroom' && (
-          <LiveClassroomScreen 
-            session={activeClassroomSession} 
-            onEndClassroom={(s) => {
-              setActiveTab('sessions');
-              setReviewModalSession(s);
-            }} 
-            localVideoRef={localVideoRef} 
-            remoteVideoRef={remoteVideoRef} 
-            toggleScreenShare={toggleScreenShare} 
-            isScreenSharing={isScreenSharing} 
-          />
-        )}
-        {activeTab === 'wallet' && <WalletScreen token={token} />}
-        {activeTab === 'connections' && <ConnectionsScreen token={token} setActiveTab={setActiveTab} setActiveChatId={setActiveChatId} setChatPeer={setChatPeer} onOpenPublicProfile={openPublicProfile} />}
-        {activeTab === 'doubts' && (
-          <DoubtRoomsScreen 
-            token={token} 
-            activeRoomId={activeRoomId} 
-            setActiveRoomId={setActiveRoomId} 
-            socket={socket} 
-            wsMessages={wsMessages} 
-            setWsMessages={setWsMessages}
-            startWebRtcCall={startWebRtcCall}
-            webrtcCall={webrtcCall}
-          />
-        )}
-        {activeTab === 'chat' && (
-          <ChatScreen 
-            token={token} 
-            activeChatId={activeChatId} 
-            setActiveChatId={setActiveChatId} 
-            chatPeer={chatPeer} 
-            setChatPeer={setChatPeer}
-            socket={socket}
-            wsMessages={wsMessages}
-            setWsMessages={setWsMessages}
-            setActiveTab={setActiveTab}
-          />
-        )}
-        {activeTab === 'reels' && (
-          <ReelsScreen 
-            token={token} 
-            setActiveTab={setActiveTab}
-            setActiveChatId={setActiveChatId}
-            setChatPeer={setChatPeer}
-            socket={socket}
-            setWsMessages={setWsMessages}
-          />
-        )}
-        {activeTab === 'contact' && (
-          <ContactSupportScreen 
-            token={token} 
-            setActiveTab={setActiveTab}
-            setActiveChatId={setActiveChatId}
-            setChatPeer={setChatPeer}
-            profile={profile}
-          />
-        )}
+        <Suspense fallback={<LoadingFallback />}>
+          {activeTab === 'landing' && (
+            <LandingScreen 
+              setActiveTab={setActiveTab} 
+              loginSimulated={loginSimulated} 
+              loginAdmin={loginAdmin}
+              testAccounts={testAccounts} 
+              theme={theme} 
+              setTheme={setTheme} 
+              postLoginRedirectTab={postLoginRedirectTab}
+              setPostLoginRedirectTab={setPostLoginRedirectTab}
+            />
+          )}
+          {activeTab === 'feed' && <FeedScreen setActiveTab={setActiveTab} setActiveRoomId={setActiveRoomId} token={token} />}
+          {(activeTab === 'dashboard' || activeTab === 'settings') && <SettingsScreen token={token} setActiveTab={setActiveTab} theme={theme} setTheme={setTheme} />}
+          {activeTab === 'leaderboard' && <LeaderboardScreen token={token} onOpenPublicProfile={openPublicProfile} />}
+          {activeTab === 'discover' && (
+            <DiscoverScreen 
+              token={token} 
+              setActiveTab={setActiveTab} 
+              setActiveChatId={setActiveChatId} 
+              setChatPeer={setChatPeer} 
+              onOpenPublicProfile={openPublicProfile} 
+              onOpenBookingModal={(tutor) => setBookingModalTutor(tutor)}
+            />
+          )}
+          {activeTab === 'sessions' && (
+            <MySessionsScreen 
+              bookedSessions={bookedSessions} 
+              onLaunchClassroom={(s) => {
+                setActiveClassroomSession(s);
+                setActiveTab('classroom');
+              }} 
+              onOpenReviewModal={(s) => setReviewModalSession(s)} 
+              setActiveTab={setActiveTab} 
+            />
+          )}
+          {activeTab === 'classroom' && (
+            <LiveClassroomScreen 
+              session={activeClassroomSession} 
+              onEndClassroom={(s) => {
+                setActiveTab('sessions');
+                setReviewModalSession(s);
+              }} 
+              localVideoRef={localVideoRef} 
+              remoteVideoRef={remoteVideoRef} 
+              toggleScreenShare={toggleScreenShare} 
+              isScreenSharing={isScreenSharing} 
+            />
+          )}
+          {activeTab === 'wallet' && <WalletScreen token={token} />}
+          {activeTab === 'connections' && <ConnectionsScreen token={token} setActiveTab={setActiveTab} setActiveChatId={setActiveChatId} setChatPeer={setChatPeer} onOpenPublicProfile={openPublicProfile} />}
+          {activeTab === 'doubts' && (
+            <DoubtRoomsScreen 
+              token={token} 
+              activeRoomId={activeRoomId} 
+              setActiveRoomId={setActiveRoomId} 
+              socket={socket} 
+              wsMessages={wsMessages} 
+              setWsMessages={setWsMessages}
+              startWebRtcCall={startWebRtcCall}
+              webrtcCall={webrtcCall}
+            />
+          )}
+          {activeTab === 'chat' && (
+            <ChatScreen 
+              token={token} 
+              activeChatId={activeChatId} 
+              setActiveChatId={setActiveChatId} 
+              chatPeer={chatPeer} 
+              setChatPeer={setChatPeer}
+              socket={socket}
+              wsMessages={wsMessages}
+              setWsMessages={setWsMessages}
+              setActiveTab={setActiveTab}
+            />
+          )}
+          {activeTab === 'reels' && (
+            <ReelsScreen 
+              token={token} 
+              setActiveTab={setActiveTab}
+              setActiveChatId={setActiveChatId}
+              setChatPeer={setChatPeer}
+              socket={socket}
+              setWsMessages={setWsMessages}
+            />
+          )}
+          {activeTab === 'contact' && (
+            <ContactSupportScreen 
+              token={token} 
+              setActiveTab={setActiveTab}
+              setActiveChatId={setActiveChatId}
+              setChatPeer={setChatPeer}
+              profile={profile}
+            />
+          )}
+        </Suspense>
       </main>
 
       {/* MOBILE BOTTOM NAVIGATION BAR */}

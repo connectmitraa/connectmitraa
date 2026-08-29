@@ -1,8 +1,6 @@
+import { useAuth } from '../../context/AuthContext';
 import React, { useState } from 'react';
-import { 
-  DollarSign, TrendingUp, ArrowUpRight, ArrowDownLeft, Shield, 
-  Zap, Award, CheckCircle, Clock, Plus, AlertCircle, CreditCard, Sparkles
-} from 'lucide-react';
+import { AlertCircle, ArrowDownLeft, ArrowUpRight, Award, CheckCircle, Clock, CreditCard, DollarSign, History, Plus, Shield, Sparkles, TrendingUp, Zap } from 'lucide-react';
 
 export function WalletScreen({ token }) {
   const { profile, updateProfileState } = useAuth();

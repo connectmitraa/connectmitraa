@@ -1,10 +1,7 @@
+import { useAuth } from '../../context/AuthContext';
 import React, { useState } from 'react';
-import { 
-  X, Check, UserPlus, MessageSquare, Share2, Award, Calendar, BookOpen, 
-  ExternalLink, Github, Code, Briefcase, Globe, Star, Play, Heart, MessageCircle, 
-  Eye, ThumbsUp, Send, CheckCircle
-} from 'lucide-react';
-import { getDefaultAvatarByGender } from '../../constants/avatars';
+import { Award, BookOpen, Briefcase, Building2, Calendar, Check, CheckCircle, Code, ExternalLink, Eye, FileText, Github, Globe, GraduationCap, Heart, MessageCircle, MessageSquare, Play, PlayCircle, Send, Share2, Star, ThumbsUp, Tv2, UserPlus, X } from 'lucide-react';
+import { getDefaultAvatarByGender, MALE_AVATAR_SVG, FEMALE_AVATAR_SVG, NEUTRAL_AVATAR_SVG } from '../../constants/avatars';
 
 export function PublicProfileModal({ user, currentUserId, token, onClose, onStartChat, onOpenUserList, onOpenBookingModal }) {
   const { profile, updateProfileState } = useAuth();

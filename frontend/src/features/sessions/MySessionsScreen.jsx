@@ -1,8 +1,6 @@
-import React, { useState } from 'react';
-import { 
-  Calendar, Clock, Video, BookOpen, Star, CheckCircle, XCircle, 
-  ArrowUpRight, AlertCircle, Play, Download, MessageSquare, Plus, X
-} from 'lucide-react';
+import { getDefaultAvatarByGender, MALE_AVATAR_SVG, FEMALE_AVATAR_SVG, NEUTRAL_AVATAR_SVG } from '../../constants/avatars';
+import React, { useState, useEffect } from 'react';
+import { AlertCircle, ArrowUpRight, BookOpen, Calendar, CheckCircle, Clock, Download, MessageSquare, Play, Plus, Search, Star, Video, X, XCircle } from 'lucide-react';
 
 export function MySessionsScreen({ bookedSessions, onLaunchClassroom, onOpenReviewModal, setActiveTab }) {
   const [sessionsTab, setSessionsTab] = useState(() => localStorage.getItem('studyloop_sessions_tab') || 'upcoming');

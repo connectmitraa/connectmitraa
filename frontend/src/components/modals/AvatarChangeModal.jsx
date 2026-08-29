@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Check } from 'lucide-react';
-import { MALE_AVATAR_SVG, FEMALE_AVATAR_SVG, NEUTRAL_AVATAR_SVG } from '../../constants/avatars';
+import { getDefaultAvatarByGender, MALE_AVATAR_SVG, FEMALE_AVATAR_SVG, NEUTRAL_AVATAR_SVG } from '../../constants/avatars';
 
 export function AvatarChangeModal({ currentAvatarUrl, onSave, onClose }) {
   const [selectedAvatar, setSelectedAvatar] = useState(currentAvatarUrl);

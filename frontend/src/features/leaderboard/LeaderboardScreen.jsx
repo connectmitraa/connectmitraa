@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Award, Trophy, Medal, Flame, Star, TrendingUp, Users, ArrowUpRight } from 'lucide-react';
-import { getDefaultAvatarByGender } from '../../constants/avatars';
+import { getDefaultAvatarByGender, MALE_AVATAR_SVG, FEMALE_AVATAR_SVG, NEUTRAL_AVATAR_SVG } from '../../constants/avatars';
 
 export function LeaderboardScreen({ token, onOpenPublicProfile }) {
   const leaders = [
