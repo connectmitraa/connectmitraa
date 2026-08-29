@@ -13,7 +13,8 @@ import {
   Compass, ArrowRight, ThumbsUp, Building2, Megaphone, CheckCircle2, Filter, UserPlus,
   Wallet, CreditCard, DollarSign, Calendar, Code, PlayCircle, Star, TrendingUp, IndianRupee,
   Briefcase, FileText, Download, ExternalLink, Trash2, MapPin, UploadCloud, Link, ArrowLeft,
-  CheckSquare, Layers, Sliders, PieChart, LineChart
+  CheckSquare, Layers, Sliders, PieChart, LineChart,
+  Phone, Upload, MoreVertical, BellOff, Copy, CornerUpLeft, Smile, Mic, Image
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
@@ -6251,59 +6252,857 @@ function DoubtRoomsScreen({ token, activeRoomId, setActiveRoomId, socket, wsMess
   );
 }
 
+// --- SCREEN: WHATSAPP & INSTAGRAM STYLE DIRECT MESSAGING HUB ---
 function ChatScreen({ token, activeChatId, setActiveChatId, chatPeer, setChatPeer, socket, wsMessages, setWsMessages, setActiveTab }) {
-  const [messages, setMessages] = useState([
-    { sender: 'Bhavna Patel', text: 'Hey Aarav! Did you get a chance to check that OS memory paging question?' },
-    { sender: 'Aarav Sharma', text: 'Yes! Virtual to physical address translation table is ready. Want to jump on a quick call?' }
+  const { profile } = useAuth();
+  
+  // Persistent or default contacts list
+  const [contacts, setContacts] = useState([
+    {
+      id: 'c-1',
+      fullName: 'Bhavna Patel',
+      college: 'IIT Madras',
+      department: 'Computer Science (Yr 3)',
+      avatarUrl: FEMALE_AVATAR_SVG,
+      status: 'online',
+      lastSeen: 'Online',
+      lastMessage: 'Yes! Virtual to physical address translation table is ready. Want to jump on a quick call?',
+      lastTime: '4:32 PM',
+      unread: 0,
+      isTyping: false
+    },
+    {
+      id: 'c-2',
+      fullName: 'Chaitanya Reddy',
+      college: 'BITS Pilani',
+      department: 'Electrical Eng (Yr 1)',
+      avatarUrl: MALE_AVATAR_SVG,
+      status: 'online',
+      lastSeen: 'Online',
+      lastMessage: 'Can you explain Valgrind memory leak output for binary trees?',
+      lastTime: '3:15 PM',
+      unread: 2,
+      isTyping: false
+    },
+    {
+      id: 'c-3',
+      fullName: 'Divya Nambiar',
+      college: 'NIT Trichy',
+      department: 'Data Science (Yr 2)',
+      avatarUrl: FEMALE_AVATAR_SVG,
+      status: 'offline',
+      lastSeen: 'Last seen today at 1:40 PM',
+      lastMessage: 'Here is the SQL query for multi-table indexing optimization.',
+      lastTime: '1:40 PM',
+      unread: 0,
+      isTyping: false
+    },
+    {
+      id: 'c-4',
+      fullName: 'Rohan Deshmukh',
+      college: 'IIT Bombay',
+      department: 'Computer Science (Yr 2)',
+      avatarUrl: MALE_AVATAR_SVG,
+      status: 'online',
+      lastSeen: 'Online',
+      lastMessage: 'The 0/1 Knapsack memoization table transition was super clear!',
+      lastTime: 'Yesterday',
+      unread: 0,
+      isTyping: false
+    },
+    {
+      id: 'c-5',
+      fullName: 'Kavya Subramanian',
+      college: 'IIT Delhi',
+      department: 'Software Eng (Yr 4)',
+      avatarUrl: FEMALE_AVATAR_SVG,
+      status: 'offline',
+      lastSeen: 'Last seen yesterday at 8:15 PM',
+      lastMessage: 'Let\'s schedule our system design peer session for tomorrow.',
+      lastTime: 'Yesterday',
+      unread: 0,
+      isTyping: false
+    }
   ]);
-  const [inputText, setInputText] = useState('');
 
-  const handleSend = (e) => {
-    e.preventDefault();
-    if (!inputText.trim()) return;
-    setMessages(prev => [...prev, { sender: 'You', text: inputText.trim() }]);
+  // Active contact selection
+  const [selectedContactId, setSelectedContactId] = useState(() => {
+    if (chatPeer?.id) return `c-${chatPeer.id.replace('c-', '')}`;
+    return localStorage.getItem('studyloop_active_chat_contact') || 'c-1';
+  });
+
+  useEffect(() => {
+    if (chatPeer?.id) {
+      const matchId = `c-${chatPeer.id.replace('c-', '')}`;
+      setSelectedContactId(matchId);
+      // Ensure peer is in contacts
+      setContacts(prev => {
+        if (!prev.some(c => c.id === matchId)) {
+          return [{
+            id: matchId,
+            fullName: chatPeer.fullName || 'Peer Tutor',
+            college: chatPeer.college || 'IIT Madras',
+            department: chatPeer.department || 'Computer Science',
+            avatarUrl: chatPeer.avatarUrl || FEMALE_AVATAR_SVG,
+            status: 'online',
+            lastSeen: 'Online',
+            lastMessage: 'Started new study discussion.',
+            lastTime: 'Just now',
+            unread: 0,
+            isTyping: false
+          }, ...prev];
+        }
+        return prev;
+      });
+    }
+  }, [chatPeer]);
+
+  useEffect(() => {
+    if (selectedContactId) {
+      localStorage.setItem('studyloop_active_chat_contact', selectedContactId);
+    }
+  }, [selectedContactId]);
+
+  const activeContact = contacts.find(c => c.id === selectedContactId) || contacts[0];
+
+  // Conversation history by contact
+  const [chatHistories, setChatHistories] = useState({
+    'c-1': [
+      { id: 'm-1', sender: 'Bhavna Patel', text: 'Hey Aarav! Did you get a chance to check that OS memory paging question from assignment 3?', time: '4:28 PM', status: 'read', type: 'text' },
+      { id: 'm-2', sender: 'Aarav Sharma', text: 'Yes! Virtual to physical address translation table is ready. Want to jump on a quick call?', time: '4:30 PM', status: 'read', type: 'text' },
+      { id: 'm-3', sender: 'Aarav Sharma', text: '// Page Table Translation Formula\nint pageNumber = logicalAddress / PAGE_SIZE;\nint offset = logicalAddress % PAGE_SIZE;\nint physicalAddress = (frameTable[pageNumber] * PAGE_SIZE) + offset;', time: '4:31 PM', status: 'read', type: 'code', codeLang: 'java' },
+      { id: 'm-4', sender: 'Bhavna Patel', text: 'That snippet is so clean! Let\'s test with 4KB page size.', time: '4:32 PM', status: 'read', type: 'text' }
+    ],
+    'c-2': [
+      { id: 'm-21', sender: 'Chaitanya Reddy', text: 'Hey Aarav, can you explain Valgrind memory leak output for binary trees?', time: '3:12 PM', status: 'read', type: 'text' },
+      { id: 'm-22', sender: 'Chaitanya Reddy', text: 'I am getting "definitely lost: 32 bytes in 1 blocks" on post-order traversal deletion.', time: '3:15 PM', status: 'read', type: 'text' }
+    ],
+    'c-3': [
+      { id: 'm-31', sender: 'Divya Nambiar', text: 'Here is the SQL query for multi-table indexing optimization.', time: '1:40 PM', status: 'read', type: 'text' }
+    ],
+    'c-4': [
+      { id: 'm-41', sender: 'Rohan Deshmukh', text: 'The 0/1 Knapsack memoization table transition was super clear!', time: 'Yesterday', status: 'read', type: 'text' }
+    ],
+    'c-5': [
+      { id: 'm-51', sender: 'Kavya Subramanian', text: 'Let\'s schedule our system design peer session for tomorrow.', time: 'Yesterday', status: 'read', type: 'text' }
+    ]
+  });
+
+  const activeMessages = chatHistories[activeContact?.id] || [];
+
+  const [inputText, setInputText] = useState('');
+  const [searchContactFilter, setSearchContactFilter] = useState('');
+  const [chatCategoryFilter, setChatCategoryFilter] = useState('all'); // all, unread, mentors
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showAttachMenu, setShowAttachMenu] = useState(false);
+  const [showChatSettings, setShowChatSettings] = useState(false);
+  const [searchInChatQuery, setSearchInChatQuery] = useState('');
+  const [showSearchInChat, setShowSearchInChat] = useState(false);
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [activeMessageActionId, setActiveMessageActionId] = useState(null);
+  const [isRecordingAudio, setIsRecordingAudio] = useState(false);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const [callSimulationModal, setCallSimulationModal] = useState(null); // 'audio', 'video'
+  const chatBottomRef = useRef(null);
+
+  useEffect(() => {
+    chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [activeMessages]);
+
+  useEffect(() => {
+    let timer;
+    if (isRecordingAudio) {
+      timer = setInterval(() => setRecordingSeconds(s => s + 1), 1000);
+    } else {
+      setRecordingSeconds(0);
+    }
+    return () => clearInterval(timer);
+  }, [isRecordingAudio]);
+
+  const handleSendMessage = (textToSend = inputText, type = 'text', extraData = {}) => {
+    const text = textToSend.trim();
+    if (!text && type === 'text') return;
+
+    const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const newMsg = {
+      id: `m-${Date.now()}`,
+      sender: 'Aarav Sharma',
+      text,
+      time: currentTime,
+      status: 'sent',
+      type,
+      replyTo: replyingTo ? { sender: replyingTo.sender, text: replyingTo.text } : null,
+      ...extraData
+    };
+
+    setChatHistories(prev => ({
+      ...prev,
+      [activeContact.id]: [...(prev[activeContact.id] || []), newMsg]
+    }));
+
+    // Update contacts list preview
+    setContacts(prev => prev.map(c => c.id === activeContact.id ? { ...c, lastMessage: type === 'code' ? '💻 Shared Code Snippet' : (type === 'file' ? `📄 ${extraData.fileName || 'Shared Document'}` : text), lastTime: currentTime } : c));
+
     setInputText('');
+    setReplyingTo(null);
+    setShowEmojiPicker(false);
+    setShowAttachMenu(false);
+
+    // Simulate peer typing & auto-response
+    setTimeout(() => {
+      setContacts(prev => prev.map(c => c.id === activeContact.id ? { ...c, isTyping: true } : c));
+      
+      setTimeout(() => {
+        const replyTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const autoReplies = [
+          "Got it! That makes total sense.",
+          "Awesome explanation, thank you! 👍",
+          "Understood! Let's solve the next edge case together 🚀",
+          "Super helpful breakdown! Reviewing this right now."
+        ];
+        const randomReply = autoReplies[Math.floor(Math.random() * autoReplies.length)];
+        
+        const peerReply = {
+          id: `m-${Date.now() + 1}`,
+          sender: activeContact.fullName,
+          text: randomReply,
+          time: replyTime,
+          status: 'read',
+          type: 'text'
+        };
+
+        setChatHistories(prev => ({
+          ...prev,
+          [activeContact.id]: [...(prev[activeContact.id] || []), peerReply]
+        }));
+
+        setContacts(prev => prev.map(c => c.id === activeContact.id ? { ...c, isTyping: false, lastMessage: randomReply, lastTime: replyTime } : c));
+      }, 1500);
+    }, 800);
   };
 
-  return (
-    <div style={{ padding: '1.5rem 2.5rem', width: '100%', maxWidth: '1200px', margin: '0 auto', height: 'calc(100vh - 100px)', display: 'flex', flexDirection: 'column' }}>
-      <div className="card-premium" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden' }}>
-        
-        <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg-tertiary)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <img src={chatPeer?.avatarUrl || FEMALE_AVATAR_SVG} alt="Peer" style={{ width: '38px', height: '38px', borderRadius: '50%', objectFit: 'cover' }} />
-            <div>
-              <div style={{ fontWeight: 700, fontSize: '0.9375rem', color: 'var(--text-primary)' }}>{chatPeer?.fullName || 'Bhavna Patel'}</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--success-color)' }}>● Online • IIT Madras CSE</div>
-            </div>
-          </div>
-          <button onClick={() => setActiveTab('doubts')} className="btn btn-secondary" style={{ fontSize: '0.75rem' }}>
-            <Video size={14} /> Video Call
-          </button>
-        </div>
+  const handleDeleteMessage = (msgId, forEveryone = false) => {
+    setChatHistories(prev => ({
+      ...prev,
+      [activeContact.id]: prev[activeContact.id].filter(m => m.id !== msgId)
+    }));
+    setActiveMessageActionId(null);
+  };
 
-        <div style={{ flex: 1, padding: '1.5rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {messages.map((m, i) => (
-            <div key={i} style={{ alignSelf: m.sender === 'You' || m.sender === 'Aarav Sharma' ? 'flex-end' : 'flex-start', maxWidth: '70%' }}>
-              <div style={{
-                padding: '0.75rem 1rem',
-                borderRadius: 'var(--radius-md)',
-                backgroundColor: m.sender === 'You' || m.sender === 'Aarav Sharma' ? 'var(--accent-primary)' : 'var(--bg-tertiary)',
-                color: m.sender === 'You' || m.sender === 'Aarav Sharma' ? '#ffffff' : 'var(--text-primary)',
-                fontSize: '0.875rem'
-              }}>
-                {m.text}
+  const handleClearChat = () => {
+    if (confirm(`Clear all messages with ${activeContact.fullName}?`)) {
+      setChatHistories(prev => ({
+        ...prev,
+        [activeContact.id]: []
+      }));
+      setShowChatSettings(false);
+    }
+  };
+
+  const handleSendVoiceNote = () => {
+    setIsRecordingAudio(false);
+    handleSendMessage(`🎙️ Voice Message (${recordingSeconds}s)`, 'voice', { duration: `${recordingSeconds}s` });
+  };
+
+  const handleShareCodeSnippet = () => {
+    const sampleCode = `// Quick Java Solution for ${activeContact.fullName}\npublic static int binarySearch(int[] arr, int target) {\n    int left = 0, right = arr.length - 1;\n    while (left <= right) {\n        int mid = left + (right - left) / 2;\n        if (arr[mid] == target) return mid;\n        if (arr[mid] < target) left = mid + 1;\n        else right = mid - 1;\n    }\n    return -1;\n}`;
+    handleSendMessage(sampleCode, 'code', { codeLang: 'java' });
+  };
+
+  const handleShareStudyNotes = () => {
+    handleSendMessage('Operating Systems Memory Management Complete Notes (Paging, TLB, Virtual Memory)', 'file', { fileName: 'OS_Paging_Virtual_Memory_Notes.pdf', fileSize: '2.4 MB' });
+  };
+
+  const filteredContacts = contacts.filter(c => {
+    const matchesSearch = c.fullName.toLowerCase().includes(searchContactFilter.toLowerCase()) || c.college.toLowerCase().includes(searchContactFilter.toLowerCase()) || c.department.toLowerCase().includes(searchContactFilter.toLowerCase());
+    if (chatCategoryFilter === 'unread') return matchesSearch && c.unread > 0;
+    if (chatCategoryFilter === 'online') return matchesSearch && c.status === 'online';
+    return matchesSearch;
+  });
+
+  const displayedMessages = activeMessages.filter(m => {
+    if (!searchInChatQuery.trim()) return true;
+    return m.text.toLowerCase().includes(searchInChatQuery.toLowerCase());
+  });
+
+  const EMOJI_LIST = ['👍', '🔥', '💡', '🚀', '💻', '🎓', '✅', '❤️', '👏', '🙌', '💯', '☕', '🧠', '✨'];
+
+  return (
+    <div style={{ padding: '1.25rem 2rem 2.5rem 2rem', width: '100%', maxWidth: '1440px', margin: '0 auto', height: 'calc(100vh - 90px)', display: 'flex', flexDirection: 'column' }}>
+      
+      {/* 2-COLUMN WHATSAPP & INSTAGRAM MESSENGER CONTAINER */}
+      <div className="card-premium" style={{ flex: 1, display: 'grid', gridTemplateColumns: '360px 1fr', padding: 0, overflow: 'hidden', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-lg)' }}>
+        
+        {/* LEFT COLUMN: CHATS & CONTACTS LIST (WHATSAPP WEB STYLE) */}
+        <div style={{ borderRight: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-secondary)' }}>
+          
+          {/* Header & Status Pill */}
+          <div style={{ padding: '1.25rem 1.25rem 0.875rem 1.25rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: 'var(--accent-light)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <MessageSquare size={18} />
+              </div>
+              <div>
+                <h2 className="font-serif" style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0 }}>Direct Messages</h2>
+                <div style={{ fontSize: '0.6875rem', color: 'var(--success-color)', fontWeight: 700 }}>● Instant Live Peer Chat</div>
               </div>
             </div>
-          ))}
+
+            <button 
+              onClick={() => setActiveTab('connections')} 
+              className="btn btn-secondary" 
+              style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem', fontWeight: 700 }}
+              title="Find New Peers on Campus"
+            >
+              <UserPlus size={13} /> Add
+            </button>
+          </div>
+
+          {/* Search Contacts */}
+          <div style={{ padding: '0.75rem 1.25rem', borderBottom: '1px solid var(--border-color)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: 'var(--bg-tertiary)', padding: '0.45rem 0.875rem', borderRadius: 'var(--radius-full)', border: '1px solid var(--border-color)' }}>
+              <Search size={14} style={{ color: 'var(--text-muted)' }} />
+              <input 
+                type="text" 
+                placeholder="Search chats or peers..." 
+                value={searchContactFilter} 
+                onChange={e => setSearchContactFilter(e.target.value)} 
+                style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '0.8125rem', width: '100%', color: 'var(--text-primary)' }}
+              />
+            </div>
+
+            {/* Quick Filter Pills */}
+            <div style={{ display: 'flex', gap: '0.375rem', marginTop: '0.625rem' }}>
+              {['all', 'unread', 'online'].map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => setChatCategoryFilter(cat)}
+                  style={{
+                    padding: '0.2rem 0.625rem',
+                    borderRadius: 'var(--radius-full)',
+                    border: chatCategoryFilter === cat ? '1px solid var(--accent-primary)' : '1px solid var(--border-color)',
+                    backgroundColor: chatCategoryFilter === cat ? 'var(--accent-light)' : 'transparent',
+                    color: chatCategoryFilter === cat ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                    fontSize: '0.6875rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    textTransform: 'capitalize'
+                  }}
+                >
+                  {cat === 'all' ? 'All Chats' : (cat === 'unread' ? 'Unread (2)' : 'Online Now')}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Contacts Scrollable Stream */}
+          <div style={{ flex: 1, overflowY: 'auto' }}>
+            {filteredContacts.map(c => {
+              const isSelected = c.id === activeContact?.id;
+              return (
+                <div
+                  key={c.id}
+                  onClick={() => {
+                    setSelectedContactId(c.id);
+                    setContacts(prev => prev.map(item => item.id === c.id ? { ...item, unread: 0 } : item));
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.875rem',
+                    padding: '0.875rem 1.25rem',
+                    cursor: 'pointer',
+                    backgroundColor: isSelected ? 'var(--accent-light)' : 'transparent',
+                    borderBottom: '1px solid var(--border-color)',
+                    transition: 'all var(--transition-fast)'
+                  }}
+                >
+                  {/* Avatar + Online Dot */}
+                  <div style={{ position: 'relative', flexShrink: 0 }}>
+                    <img 
+                      src={c.avatarUrl} 
+                      alt={c.fullName} 
+                      style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', border: isSelected ? '2px solid var(--accent-primary)' : '1px solid var(--border-color)' }} 
+                    />
+                    <div style={{
+                      position: 'absolute',
+                      bottom: '2px',
+                      right: '2px',
+                      width: '11px',
+                      height: '11px',
+                      borderRadius: '50%',
+                      backgroundColor: c.status === 'online' ? '#10b981' : '#94a3b8',
+                      border: '2px solid var(--bg-secondary)'
+                    }}></div>
+                  </div>
+
+                  {/* Contact Info & Preview */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.15rem' }}>
+                      <div style={{ fontWeight: 800, fontSize: '0.875rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {c.fullName}
+                      </div>
+                      <span style={{ fontSize: '0.6875rem', color: isSelected ? 'var(--accent-primary)' : 'var(--text-muted)', fontWeight: 600 }}>
+                        {c.lastTime}
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ fontSize: '0.75rem', color: c.isTyping ? '#10b981' : 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '190px', fontStyle: c.isTyping ? 'italic' : 'normal' }}>
+                        {c.isTyping ? 'typing...' : c.lastMessage}
+                      </div>
+                      {c.unread > 0 && (
+                        <span style={{ backgroundColor: 'var(--accent-primary)', color: '#ffffff', fontSize: '0.625rem', fontWeight: 800, padding: '0.1rem 0.4rem', borderRadius: 'var(--radius-full)' }}>
+                          {c.unread}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
         </div>
 
-        <form onSubmit={handleSend} style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '0.75rem', backgroundColor: 'var(--bg-secondary)' }}>
-          <input type="text" className="input" placeholder="Type a message..." value={inputText} onChange={e => setInputText(e.target.value)} />
-          <button type="submit" className="btn btn-accent"><Send size={16} /></button>
-        </form>
+        {/* RIGHT COLUMN: WHATSAPP / INSTAGRAM ACTIVE CHAT ROOM */}
+        <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-card)', position: 'relative' }}>
+          
+          {/* Active Chat Header */}
+          <div style={{ padding: '0.875rem 1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg-secondary)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
+              <div style={{ position: 'relative' }}>
+                <img src={activeContact.avatarUrl} alt="Avatar" style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px solid var(--accent-primary)', objectFit: 'cover' }} />
+                <div style={{ position: 'absolute', bottom: '0', right: '0', width: '10px', height: '10px', borderRadius: '50%', backgroundColor: activeContact.status === 'online' ? '#10b981' : '#94a3b8', border: '2px solid var(--bg-card)' }}></div>
+              </div>
+              <div>
+                <div style={{ fontWeight: 800, fontSize: '0.9375rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  {activeContact.fullName}
+                  <span className="tag tag-accent" style={{ fontSize: '0.625rem', padding: '0.1rem 0.35rem' }}>Verified Peer</span>
+                </div>
+                <div style={{ fontSize: '0.6875rem', color: activeContact.status === 'online' ? '#10b981' : 'var(--text-muted)', fontWeight: 600 }}>
+                  {activeContact.isTyping ? 'typing...' : activeContact.lastSeen} • {activeContact.college}
+                </div>
+              </div>
+            </div>
+
+            {/* Actions: Audio Call, 1-Click Video Classroom, Search in Chat, Settings */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <button 
+                onClick={() => setCallSimulationModal('audio')} 
+                className="btn btn-secondary" 
+                style={{ fontSize: '0.75rem', padding: '0.4rem 0.75rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                title="Start Audio Doubt Call"
+              >
+                <Phone size={14} style={{ color: 'var(--success-color)' }} /> Audio
+              </button>
+
+              <button 
+                onClick={() => setActiveTab('doubts')} 
+                className="btn btn-accent" 
+                style={{ fontSize: '0.75rem', padding: '0.4rem 0.875rem', display: 'flex', alignItems: 'center', gap: '0.35rem', fontWeight: 800 }}
+                title="Enter Live WebRTC Video Doubt Room"
+              >
+                <Video size={14} /> Video Call 🚀
+              </button>
+
+              <button 
+                onClick={() => setShowSearchInChat(!showSearchInChat)} 
+                className="btn-icon" 
+                style={{ width: '34px', height: '34px', borderRadius: '50%' }}
+                title="Search in this conversation"
+              >
+                <Search size={15} />
+              </button>
+
+              <div style={{ position: 'relative' }}>
+                <button 
+                  onClick={() => setShowChatSettings(!showChatSettings)} 
+                  className="btn-icon" 
+                  style={{ width: '34px', height: '34px', borderRadius: '50%' }}
+                >
+                  <MoreVertical size={15} />
+                </button>
+
+                {/* Dropdown Options Menu */}
+                {showChatSettings && (
+                  <div style={{
+                    position: 'absolute',
+                    right: 0,
+                    top: '110%',
+                    width: '200px',
+                    backgroundColor: 'var(--bg-elevated)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: 'var(--radius-md)',
+                    boxShadow: 'var(--shadow-lg)',
+                    padding: '0.5rem',
+                    zIndex: 200,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.25rem'
+                  }}>
+                    <button onClick={() => { alert("🔔 Notifications muted for this chat."); setShowChatSettings(false); }} className="dropdown-item">
+                      <BellOff size={14} /> Mute Notifications
+                    </button>
+                    <button onClick={handleClearChat} className="dropdown-item" style={{ color: 'var(--danger-color)' }}>
+                      <Trash2 size={14} /> Clear Messages
+                    </button>
+                    <button onClick={() => { alert(`Exported conversation transcript with ${activeContact.fullName} as .txt`); setShowChatSettings(false); }} className="dropdown-item">
+                      <Download size={14} /> Export Transcript
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Search Inside Chat Drawer */}
+          {showSearchInChat && (
+            <div style={{ padding: '0.5rem 1.5rem', backgroundColor: 'var(--bg-tertiary)', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <Search size={14} style={{ color: 'var(--text-muted)' }} />
+              <input 
+                type="text" 
+                placeholder="Find message in chat..." 
+                value={searchInChatQuery} 
+                onChange={e => setSearchInChatQuery(e.target.value)} 
+                style={{ flex: 1, border: 'none', background: 'transparent', outline: 'none', fontSize: '0.8125rem', color: 'var(--text-primary)' }} 
+              />
+              {searchInChatQuery && (
+                <button onClick={() => setSearchInChatQuery('')} className="btn-icon" style={{ padding: '0.2rem' }}>
+                  <X size={13} />
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Message Stream (WhatsApp Bubbles) */}
+          <div style={{
+            flex: 1,
+            padding: '1.25rem 1.75rem',
+            overflowY: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.875rem',
+            background: 'var(--bg-card)'
+          }}>
+            
+            {/* Encryption & Safety Watermark */}
+            <div style={{ textAlign: 'center', margin: '0.5rem 0 1rem 0' }}>
+              <span style={{ backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-muted)', fontSize: '0.6875rem', padding: '0.3rem 0.875rem', borderRadius: 'var(--radius-full)', border: '1px solid var(--border-color)', fontWeight: 600 }}>
+                🔒 End-to-End Academic Doubt Session • StudyLoop Safety Guaranteed
+              </span>
+            </div>
+
+            {displayedMessages.map(msg => {
+              const isMe = msg.sender === 'Aarav Sharma' || msg.sender === 'You';
+              return (
+                <div 
+                  key={msg.id} 
+                  style={{
+                    alignSelf: isMe ? 'flex-end' : 'flex-start',
+                    maxWidth: '75%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    position: 'relative'
+                  }}
+                  onMouseEnter={() => setActiveMessageActionId(msg.id)}
+                  onMouseLeave={() => setActiveMessageActionId(null)}
+                >
+                  
+                  {/* Message Bubble Container */}
+                  <div style={{
+                    padding: '0.75rem 1rem',
+                    borderRadius: isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                    backgroundColor: isMe ? 'var(--accent-primary)' : 'var(--bg-tertiary)',
+                    color: isMe ? '#ffffff' : 'var(--text-primary)',
+                    boxShadow: 'var(--shadow-sm)',
+                    border: isMe ? 'none' : '1px solid var(--border-color)',
+                    position: 'relative'
+                  }}>
+                    
+                    {/* Reply Quoted Preview */}
+                    {msg.replyTo && (
+                      <div style={{
+                        padding: '0.35rem 0.625rem',
+                        marginBottom: '0.5rem',
+                        backgroundColor: isMe ? 'rgba(0,0,0,0.2)' : 'var(--bg-secondary)',
+                        borderLeft: `3px solid ${isMe ? '#ffffff' : 'var(--accent-primary)'}`,
+                        borderRadius: '4px',
+                        fontSize: '0.6875rem'
+                      }}>
+                        <strong style={{ display: 'block', marginBottom: '0.1rem' }}>{msg.replyTo.sender}</strong>
+                        <span style={{ opacity: 0.85 }}>{msg.replyTo.text}</span>
+                      </div>
+                    )}
+
+                    {/* Message Body by Type */}
+                    {msg.type === 'code' ? (
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem', fontSize: '0.6875rem', color: isMe ? '#dbeafe' : 'var(--text-muted)', fontWeight: 700 }}>
+                          <span>💻 {msg.codeLang?.toUpperCase() || 'CODE'} SNIPPET</span>
+                          <button 
+                            onClick={() => { navigator.clipboard?.writeText(msg.text); alert("Code snippet copied!"); }} 
+                            style={{ background: 'transparent', border: 'none', color: 'inherit', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.6875rem' }}
+                          >
+                            <Copy size={11} /> Copy
+                          </button>
+                        </div>
+                        <pre style={{
+                          backgroundColor: '#090d16',
+                          color: '#38bdf8',
+                          padding: '0.75rem',
+                          borderRadius: '8px',
+                          fontFamily: "'Fira Code', monospace",
+                          fontSize: '0.75rem',
+                          overflowX: 'auto',
+                          margin: 0,
+                          lineHeight: 1.5
+                        }}>
+                          {msg.text}
+                        </pre>
+                      </div>
+                    ) : msg.type === 'file' ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', backgroundColor: isMe ? 'rgba(0,0,0,0.2)' : 'var(--bg-secondary)', padding: '0.625rem 0.875rem', borderRadius: '8px' }}>
+                        <div style={{ width: '36px', height: '36px', borderRadius: '8px', backgroundColor: 'var(--accent-primary)', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <FileText size={18} />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: 700, fontSize: '0.8125rem' }}>{msg.fileName || 'Study_Document.pdf'}</div>
+                          <div style={{ fontSize: '0.6875rem', opacity: 0.8 }}>{msg.fileSize || '1.8 MB'} • Study Notes</div>
+                        </div>
+                        <button onClick={() => alert(`Downloading ${msg.fileName}...`)} className="btn-icon" style={{ color: 'inherit' }}>
+                          <Download size={15} />
+                        </button>
+                      </div>
+                    ) : msg.type === 'voice' ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: '180px' }}>
+                        <button onClick={() => alert("Playing simulated voice note...")} className="btn-icon" style={{ backgroundColor: isMe ? '#ffffff' : 'var(--accent-primary)', color: isMe ? 'var(--accent-primary)' : '#ffffff', width: '32px', height: '32px', borderRadius: '50%' }}>
+                          <Play size={14} />
+                        </button>
+                        <div style={{ flex: 1, height: '4px', backgroundColor: isMe ? 'rgba(255,255,255,0.4)' : 'var(--border-color)', borderRadius: '2px' }}>
+                          <div style={{ width: '45%', height: '100%', backgroundColor: isMe ? '#ffffff' : 'var(--accent-primary)', borderRadius: '2px' }}></div>
+                        </div>
+                        <span style={{ fontSize: '0.6875rem', fontWeight: 700 }}>{msg.duration || '0:14'}</span>
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: '0.875rem', lineHeight: 1.5, wordBreak: 'break-word' }}>
+                        {msg.text}
+                      </div>
+                    )}
+
+                    {/* Timestamp & Double Tick Indicator */}
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'flex-end',
+                      gap: '0.25rem',
+                      marginTop: '0.25rem',
+                      fontSize: '0.625rem',
+                      color: isMe ? 'rgba(255,255,255,0.85)' : 'var(--text-muted)'
+                    }}>
+                      <span>{msg.time}</span>
+                      {isMe && (
+                        <span title="Read receipt" style={{ color: '#67e8f9', fontWeight: 800 }}>
+                          ✓✓
+                        </span>
+                      )}
+                    </div>
+
+                  </div>
+
+                  {/* Hover Floating Action Bar (Reply, Copy, Delete) */}
+                  {activeMessageActionId === msg.id && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '-12px',
+                      right: isMe ? '0' : 'auto',
+                      left: isMe ? 'auto' : '0',
+                      backgroundColor: 'var(--bg-elevated)',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: 'var(--radius-full)',
+                      padding: '0.2rem 0.5rem',
+                      boxShadow: 'var(--shadow-md)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.35rem',
+                      zIndex: 10
+                    }}>
+                      <button onClick={() => setReplyingTo(msg)} title="Reply" className="btn-icon" style={{ padding: '0.2rem' }}>
+                        <CornerUpLeft size={12} />
+                      </button>
+                      <button onClick={() => { navigator.clipboard?.writeText(msg.text); alert("Message copied!"); }} title="Copy" className="btn-icon" style={{ padding: '0.2rem' }}>
+                        <Copy size={12} />
+                      </button>
+                      <button onClick={() => handleDeleteMessage(msg.id)} title="Delete" className="btn-icon" style={{ padding: '0.2rem', color: 'var(--danger-color)' }}>
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                  )}
+
+                </div>
+              );
+            })}
+            <div ref={chatBottomRef} />
+          </div>
+
+          {/* Replying Quote Bar */}
+          {replyingTo && (
+            <div style={{ padding: '0.5rem 1.5rem', backgroundColor: 'var(--bg-tertiary)', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ borderLeft: '3px solid var(--accent-primary)', paddingLeft: '0.625rem', fontSize: '0.75rem' }}>
+                <span style={{ fontWeight: 700, color: 'var(--accent-primary)' }}>Replying to {replyingTo.sender}</span>
+                <div style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '400px' }}>{replyingTo.text}</div>
+              </div>
+              <button onClick={() => setReplyingTo(null)} className="btn-icon"><X size={14} /></button>
+            </div>
+          )}
+
+          {/* Emoji Popover */}
+          {showEmojiPicker && (
+            <div style={{
+              position: 'absolute',
+              bottom: '75px',
+              left: '1.5rem',
+              backgroundColor: 'var(--bg-elevated)',
+              border: '1px solid var(--border-color)',
+              borderRadius: 'var(--radius-lg)',
+              boxShadow: 'var(--shadow-xl)',
+              padding: '0.75rem',
+              zIndex: 300,
+              display: 'grid',
+              gridTemplateColumns: 'repeat(7, 1fr)',
+              gap: '0.5rem'
+            }}>
+              {EMOJI_LIST.map((emoji, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => { setInputText(prev => prev + emoji); setShowEmojiPicker(false); }}
+                  style={{ fontSize: '1.25rem', background: 'transparent', border: 'none', cursor: 'pointer', padding: '0.25rem', borderRadius: '4px' }}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Attach Menu Popover */}
+          {showAttachMenu && (
+            <div style={{
+              position: 'absolute',
+              bottom: '75px',
+              left: '3.5rem',
+              backgroundColor: 'var(--bg-elevated)',
+              border: '1px solid var(--border-color)',
+              borderRadius: 'var(--radius-lg)',
+              boxShadow: 'var(--shadow-xl)',
+              padding: '0.625rem',
+              zIndex: 300,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.35rem',
+              width: '220px'
+            }}>
+              <button onClick={handleShareCodeSnippet} className="dropdown-item" style={{ fontSize: '0.8125rem' }}>
+                <Code size={16} style={{ color: '#38bdf8' }} /> Share Code Snippet
+              </button>
+              <button onClick={handleShareStudyNotes} className="dropdown-item" style={{ fontSize: '0.8125rem' }}>
+                <FileText size={16} style={{ color: '#10b981' }} /> Send Notes PDF
+              </button>
+              <button onClick={() => { handleSendMessage('https://images.unsplash.com/photo-1515879218367-8466d910aaa4?w=600&auto=format&fit=crop&q=80', 'file', { fileName: 'Algorithm_Complexity_Graph.png' }); setShowAttachMenu(false); }} className="dropdown-item" style={{ fontSize: '0.8125rem' }}>
+                <Image size={16} style={{ color: '#f59e0b' }} /> Share Diagram Image
+              </button>
+            </div>
+          )}
+
+          {/* Bottom WhatsApp Input Bar */}
+          <div style={{ padding: '0.875rem 1.5rem', borderTop: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+            
+            {/* Emoji Button */}
+            <button 
+              type="button" 
+              onClick={() => { setShowEmojiPicker(!showEmojiPicker); setShowAttachMenu(false); }} 
+              className="btn-icon" 
+              title="Add Emoji"
+              style={{ color: showEmojiPicker ? 'var(--accent-primary)' : 'var(--text-secondary)' }}
+            >
+              <Smile size={19} />
+            </button>
+
+            {/* Attach Button */}
+            <button 
+              type="button" 
+              onClick={() => { setShowAttachMenu(!showAttachMenu); setShowEmojiPicker(false); }} 
+              className="btn-icon" 
+              title="Attach Code / Notes / Media"
+              style={{ color: showAttachMenu ? 'var(--accent-primary)' : 'var(--text-secondary)' }}
+            >
+              <Paperclip size={19} />
+            </button>
+
+            {/* Text Input / Voice Note Recording Bar */}
+            {isRecordingAudio ? (
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: '0.5rem 1rem', borderRadius: 'var(--radius-full)', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--danger-color)', fontWeight: 700, fontSize: '0.8125rem' }}>
+                  <span className="live-dot" style={{ backgroundColor: 'var(--danger-color)' }}></span>
+                  Recording Voice Note... ({recordingSeconds}s)
+                </div>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button onClick={() => setIsRecordingAudio(false)} className="btn btn-secondary" style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem' }}>Cancel</button>
+                  <button onClick={handleSendVoiceNote} className="btn btn-accent" style={{ fontSize: '0.75rem', padding: '0.25rem 0.75rem', backgroundColor: 'var(--success-color)' }}>Send Voice</button>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }} style={{ flex: 1, display: 'flex', gap: '0.625rem' }}>
+                <input 
+                  type="text" 
+                  className="input" 
+                  placeholder={`Message ${activeContact.fullName} (Enter to send)...`} 
+                  value={inputText} 
+                  onChange={e => setInputText(e.target.value)} 
+                  style={{ flex: 1, borderRadius: 'var(--radius-full)', padding: '0.55rem 1.25rem', fontSize: '0.875rem' }}
+                />
+                
+                {inputText.trim() ? (
+                  <button type="submit" className="btn btn-accent" style={{ borderRadius: '50%', width: '40px', height: '40px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Send size={16} />
+                  </button>
+                ) : (
+                  <button 
+                    type="button" 
+                    onClick={() => setIsRecordingAudio(true)} 
+                    className="btn btn-secondary" 
+                    title="Record Voice Note"
+                    style={{ borderRadius: '50%', width: '40px', height: '40px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                  >
+                    <Mic size={17} />
+                  </button>
+                )}
+              </form>
+            )}
+
+          </div>
+
+        </div>
 
       </div>
+
+      {/* AUDIO CALL SIMULATION MODAL */}
+      {callSimulationModal && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.85)', zIndex: 4000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(8px)' }}>
+          <div className="card-premium" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem', textAlign: 'center', borderRadius: '24px', backgroundColor: 'var(--bg-elevated)' }}>
+            <img src={activeContact.avatarUrl} alt="Peer" style={{ width: '80px', height: '80px', borderRadius: '50%', border: '3px solid #10b981', objectFit: 'cover', margin: '0 auto 1.25rem auto' }} />
+            <h3 className="font-serif" style={{ fontSize: '1.35rem', fontWeight: 800, margin: '0 0 0.25rem 0' }}>{activeContact.fullName}</h3>
+            <div style={{ fontSize: '0.8125rem', color: '#10b981', fontWeight: 700, marginBottom: '1.5rem' }}>
+              📞 Live Doubt Audio Call Connected (00:34)
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
+              <button onClick={() => setCallSimulationModal(null)} className="btn btn-danger" style={{ borderRadius: 'var(--radius-full)', padding: '0.625rem 1.5rem', fontWeight: 800 }}>
+                End Call 🔴
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
@@ -6794,76 +7593,412 @@ function BookingModal({ tutor, onClose, onConfirmBooking }) {
   );
 }
 
-// --- MY 1:1 SESSIONS & CLASSES SCREEN ---
+// --- MY 1:1 SESSIONS & RECORDED CLASSES ARCHIVE SCREEN ---
 function MySessionsScreen({ bookedSessions, onLaunchClassroom, onOpenReviewModal, setActiveTab }) {
+  const [sessionsTab, setSessionsTab] = useState(() => localStorage.getItem('studyloop_sessions_tab') || 'upcoming');
+  const [activeRecordingModal, setActiveRecordingModal] = useState(null);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+
+  useEffect(() => {
+    localStorage.setItem('studyloop_sessions_tab', sessionsTab);
+  }, [sessionsTab]);
+
+  // Stored live class video recordings (YouTube/Coursera lecture archive)
+  const recordedLectures = [
+    {
+      id: 'rec-1',
+      title: 'Java OOP: Inheritance, Dynamic Dispatch & @Override Deep Dive',
+      tutorName: 'Bhavna Patel',
+      tutorCollege: 'IIT Madras',
+      tutorAvatar: FEMALE_AVATAR_SVG,
+      department: 'Computer Science',
+      duration: '32:15 Mins',
+      dateRecorded: '28 Aug 2026',
+      rating: 4.95,
+      subject: 'Java & OOP',
+      tags: ['#Inheritance', '#DynamicMethodDispatch', '#SuperKeyword', '#Polymorphism'],
+      videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-software-developer-working-on-code-42867-large.mp4',
+      views: 240,
+      doubtNotes: 'Learner was confused on method overriding with runtime type resolution. Solved with animal hierarchy code sample.',
+      chapters: [
+        { time: '00:00', title: 'Introduction & Problem Statement' },
+        { time: '05:30', title: 'Why is Super() constructor invoked first?' },
+        { time: '14:20', title: 'Dynamic Method Dispatch in Bytecode' },
+        { time: '25:40', title: 'Live Coding & Doubt Resolution' }
+      ]
+    },
+    {
+      id: 'rec-2',
+      title: 'Dynamic Programming: 0/1 Knapsack State Equations & Memory Optimization',
+      tutorName: 'Rohan Deshmukh',
+      tutorCollege: 'IIT Bombay',
+      tutorAvatar: MALE_AVATAR_SVG,
+      department: 'Computer Science',
+      duration: '45:10 Mins',
+      dateRecorded: '26 Aug 2026',
+      rating: 4.9,
+      subject: 'Data Structures & Algorithms',
+      tags: ['#DynamicProgramming', '#Knapsack', '#Memoization', '#SpaceOptimization'],
+      videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-hands-of-a-man-typing-on-a-computer-keyboard-41334-large.mp4',
+      views: 318,
+      doubtNotes: 'Step-by-step conversion of recursive exponential tree to 1D array DP table.',
+      chapters: [
+        { time: '00:00', title: 'Recursive Choice Diagram' },
+        { time: '12:15', title: 'Top-Down DP Matrix Formulation' },
+        { time: '28:00', title: 'Space Optimization from O(N*W) to O(W)' }
+      ]
+    },
+    {
+      id: 'rec-3',
+      title: 'C++ Pointers, References & Valgrind Memory Leak Debugging',
+      tutorName: 'Chaitanya Reddy',
+      tutorCollege: 'BITS Pilani',
+      tutorAvatar: MALE_AVATAR_SVG,
+      department: 'Electrical & CS',
+      duration: '27:40 Mins',
+      dateRecorded: '24 Aug 2026',
+      rating: 4.85,
+      subject: 'C / C++',
+      tags: ['#Pointers', '#Valgrind', '#HeapMemory', '#SmartPointers'],
+      videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-animation-of-futuristic-devices-99786-large.mp4',
+      views: 184,
+      doubtNotes: 'Walkthrough on double pointers and freeing post-order binary tree nodes cleanly.',
+      chapters: [
+        { time: '00:00', title: 'Stack vs Heap in C++' },
+        { time: '08:45', title: 'Reading Valgrind Memory Leak Traces' },
+        { time: '19:20', title: 'Smart Pointers: std::unique_ptr vs std::shared_ptr' }
+      ]
+    }
+  ];
+
   return (
     <div style={{ padding: '1.5rem 2.5rem', width: '100%', maxWidth: '1400px', margin: '0 auto' }}>
       
+      {/* HEADER */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h1 className="font-serif" style={{ fontSize: '2.25rem', fontWeight: 800, marginBottom: '0.25rem' }}>
-            My 1:1 Study Classes
+            Study Classes & Video Lecture Archive
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9375rem' }}>
-            Launch live WebRTC video classrooms with peer tutors, review notes, and rate completed sessions.
+            Launch live WebRTC video classrooms with peer tutors or watch saved video lecture recordings with chapter notes.
           </p>
         </div>
 
-        <button onClick={() => setActiveTab('discover')} className="btn btn-accent">
-          <Search size={16} /> Find More Tutors
-        </button>
+        {/* TABS SWITCHER */}
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '0.25rem', backgroundColor: 'var(--bg-tertiary)', padding: '0.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+            <button
+              onClick={() => setSessionsTab('upcoming')}
+              style={{
+                padding: '0.5rem 1.25rem',
+                borderRadius: 'var(--radius-sm)',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '0.8125rem',
+                fontWeight: 700,
+                backgroundColor: sessionsTab === 'upcoming' ? 'var(--bg-secondary)' : 'transparent',
+                color: sessionsTab === 'upcoming' ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                boxShadow: sessionsTab === 'upcoming' ? 'var(--shadow-sm)' : 'none'
+              }}
+            >
+              📅 Booked Classes ({bookedSessions.length})
+            </button>
+            <button
+              onClick={() => setSessionsTab('recordings')}
+              style={{
+                padding: '0.5rem 1.25rem',
+                borderRadius: 'var(--radius-sm)',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '0.8125rem',
+                fontWeight: 700,
+                backgroundColor: sessionsTab === 'recordings' ? 'var(--bg-secondary)' : 'transparent',
+                color: sessionsTab === 'recordings' ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                boxShadow: sessionsTab === 'recordings' ? 'var(--shadow-sm)' : 'none'
+              }}
+            >
+              📼 Recorded Lectures ({recordedLectures.length})
+            </button>
+          </div>
+
+          <button onClick={() => setActiveTab('discover')} className="btn btn-accent" style={{ fontSize: '0.8125rem', fontWeight: 700 }}>
+            <Search size={14} /> Find More Tutors
+          </button>
+        </div>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-        {bookedSessions.map(session => (
-          <div key={session.id} className="card-premium" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.5rem' }}>
-            
-            <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center', flex: 1, minWidth: '300px' }}>
-              <img src={session.tutorAvatar} alt={session.tutorName} style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--accent-primary)' }} />
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                  <span className="tag tag-accent">{session.duration}</span>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{session.time}</span>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: session.fee === 0 ? 'var(--success-color)' : 'var(--accent-primary)' }}>
-                    {session.fee === 0 ? 'FREE Session' : `₹${session.fee} Paid (Escrow Active)`}
-                  </span>
+      {/* TAB 1: UPCOMING & BOOKED SESSIONS */}
+      {sessionsTab === 'upcoming' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          {bookedSessions.length === 0 ? (
+            <div className="card-premium" style={{ textAlign: 'center', padding: '3.5rem' }}>
+              <Calendar size={48} style={{ color: 'var(--text-muted)', margin: '0 auto 1rem auto' }} />
+              <h3 className="font-serif" style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>No Active Booked Sessions</h3>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '1.5rem' }}>Find a verified peer tutor to schedule your first 1:1 study session.</p>
+              <button onClick={() => setActiveTab('discover')} className="btn btn-accent">Explore Peer Tutors 🚀</button>
+            </div>
+          ) : (
+            bookedSessions.map(session => (
+              <div key={session.id} className="card-premium" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.5rem' }}>
+                
+                <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center', flex: 1, minWidth: '300px' }}>
+                  <img src={session.tutorAvatar} alt={session.tutorName} style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--accent-primary)' }} />
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                      <span className="tag tag-accent">{session.duration}</span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{session.time}</span>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: session.fee === 0 ? 'var(--success-color)' : 'var(--accent-primary)' }}>
+                        {session.fee === 0 ? 'FREE Session' : `₹${session.fee} Paid (Escrow Active)`}
+                      </span>
+                    </div>
+                    <h3 className="font-serif" style={{ fontSize: '1.25rem', margin: '0 0 0.25rem 0' }}>
+                      {session.topic}
+                    </h3>
+                    <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                      Tutor: <strong>{session.tutorName}</strong> ({session.tutorCollege}) • Notes: <em>"{session.doubtNotes}"</em>
+                    </div>
+                  </div>
                 </div>
-                <h3 className="font-serif" style={{ fontSize: '1.25rem', margin: '0 0 0.25rem 0' }}>
-                  {session.topic}
+
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                  {session.status === 'confirmed' ? (
+                    <button 
+                      onClick={() => onLaunchClassroom(session)} 
+                      className="btn btn-accent" 
+                      style={{ padding: '0.75rem 1.5rem', fontWeight: 800, fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: 'var(--shadow-glow)' }}
+                    >
+                      <Video size={18} /> Enter Live Classroom 🚀
+                    </button>
+                  ) : session.rated ? (
+                    <div style={{ backgroundColor: 'var(--bg-tertiary)', padding: '0.5rem 1rem', borderRadius: 'var(--radius-md)', fontSize: '0.8125rem', color: 'var(--success-color)', fontWeight: 700 }}>
+                      ✓ Completed & Rated 5.0 ⭐
+                    </div>
+                  ) : (
+                    <button 
+                      onClick={() => onOpenReviewModal(session)} 
+                      className="btn btn-primary" 
+                      style={{ padding: '0.75rem 1.5rem', fontWeight: 700, fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                    >
+                      <Star size={16} /> Rate Concept Clarity ⭐
+                    </button>
+                  )}
+                </div>
+
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* TAB 2: RECORDED CLASSES & LECTURE ARCHIVE */}
+      {sessionsTab === 'recordings' && (
+        <div>
+          {/* Banner */}
+          <div className="card-premium" style={{ marginBottom: '2rem', background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%)', border: '1px solid rgba(16, 185, 129, 0.2)', padding: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+              <div>
+                <div className="tag tag-success" style={{ marginBottom: '0.5rem', fontSize: '0.6875rem', fontWeight: 800 }}>
+                  📼 100% Cloud Recorded & Synced
+                </div>
+                <h3 className="font-serif" style={{ fontSize: '1.35rem', fontWeight: 800, margin: '0 0 0.25rem 0' }}>
+                  Your Academic Lecture Library
                 </h3>
-                <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
-                  Tutor: <strong>{session.tutorName}</strong> ({session.tutorCollege}) • Notes: <em>"{session.doubtNotes}"</em>
+                <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', margin: 0 }}>
+                  Re-watch any 1:1 doubt session with interactive video chapters, live code snippets, and tutor revision notes.
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem', backgroundColor: 'var(--bg-card)', padding: '0.75rem 1.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--accent-primary)' }}>3 Recorded</div>
+                  <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>Class Sessions</div>
+                </div>
+                <div style={{ width: '1px', backgroundColor: 'var(--border-color)' }}></div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--success-color)' }}>1 hr 45m</div>
+                  <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>Watch Time</div>
                 </div>
               </div>
             </div>
+          </div>
 
-            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-              {session.status === 'confirmed' ? (
-                <button 
-                  onClick={() => onLaunchClassroom(session)} 
-                  className="btn btn-accent" 
-                  style={{ padding: '0.75rem 1.5rem', fontWeight: 800, fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: 'var(--shadow-glow)' }}
+          {/* Stored Video Recordings Grid */}
+          <div className="grid-3">
+            {recordedLectures.map(rec => (
+              <div key={rec.id} className="card-premium interactive-hover" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1.25rem' }}>
+                
+                {/* Video Thumbnail Preview */}
+                <div 
+                  onClick={() => setActiveRecordingModal(rec)}
+                  style={{
+                    position: 'relative',
+                    borderRadius: 'var(--radius-md)',
+                    overflow: 'hidden',
+                    backgroundColor: '#000000',
+                    aspectRatio: '16/9',
+                    cursor: 'pointer'
+                  }}
                 >
-                  <Video size={18} /> Enter Live Classroom 🚀
-                </button>
-              ) : session.rated ? (
-                <div style={{ backgroundColor: 'var(--bg-tertiary)', padding: '0.5rem 1rem', borderRadius: 'var(--radius-md)', fontSize: '0.8125rem', color: 'var(--success-color)', fontWeight: 700 }}>
-                  ✓ Completed & Rated 5.0 ⭐
+                  <video src={rec.videoUrl} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.7 }} />
+                  
+                  {/* Play Overlay Button */}
+                  <div style={{
+                    position: 'absolute',
+                    inset: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'rgba(0,0,0,0.3)'
+                  }}>
+                    <div style={{
+                      width: '48px',
+                      height: '48px',
+                      borderRadius: '50%',
+                      backgroundColor: 'rgba(59, 130, 246, 0.9)',
+                      color: '#ffffff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                      transition: 'transform var(--transition-fast)'
+                    }}>
+                      <Play size={22} fill="#ffffff" style={{ marginLeft: '3px' }} />
+                    </div>
+                  </div>
+
+                  {/* Duration & Views Badge */}
+                  <span style={{ position: 'absolute', bottom: '0.5rem', right: '0.5rem', backgroundColor: 'rgba(0,0,0,0.85)', color: '#ffffff', fontSize: '0.6875rem', fontWeight: 800, padding: '0.2rem 0.5rem', borderRadius: '4px' }}>
+                    ⏱️ {rec.duration}
+                  </span>
+
+                  <span style={{ position: 'absolute', top: '0.5rem', left: '0.5rem', backgroundColor: 'rgba(16, 185, 129, 0.9)', color: '#ffffff', fontSize: '0.625rem', fontWeight: 800, padding: '0.15rem 0.45rem', borderRadius: '4px' }}>
+                    HD 1080p
+                  </span>
                 </div>
-              ) : (
-                <button 
-                  onClick={() => onOpenReviewModal(session)} 
-                  className="btn btn-primary" 
-                  style={{ padding: '0.75rem 1.5rem', fontWeight: 700, fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                >
-                  <Star size={16} /> Rate Concept Clarity ⭐
-                </button>
-              )}
+
+                {/* Info */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                    <span className="tag tag-accent" style={{ fontSize: '0.6875rem' }}>{rec.subject}</span>
+                    <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>{rec.dateRecorded}</span>
+                  </div>
+
+                  <h3 
+                    onClick={() => setActiveRecordingModal(rec)}
+                    style={{ fontSize: '1rem', fontWeight: 800, margin: '0 0 0.5rem 0', color: 'var(--text-primary)', cursor: 'pointer', lineHeight: 1.35 }}
+                  >
+                    {rec.title}
+                  </h3>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.75rem' }}>
+                    <img src={rec.tutorAvatar} alt="Tutor" style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1px solid var(--accent-primary)' }} />
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: '0.8125rem' }}>{rec.tutorName}</div>
+                      <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>{rec.tutorCollege} • ⭐ {rec.rating}</div>
+                    </div>
+                  </div>
+
+                  {/* Tags */}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginBottom: '0.875rem' }}>
+                    {rec.tags.map((t, idx) => (
+                      <span key={idx} style={{ fontSize: '0.6875rem', color: 'var(--accent-primary)', backgroundColor: 'var(--accent-light)', padding: '0.15rem 0.4rem', borderRadius: '4px' }}>
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Actions */}
+                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: 'auto', paddingTop: '0.75rem', borderTop: '1px solid var(--border-color)' }}>
+                    <button 
+                      onClick={() => setActiveRecordingModal(rec)} 
+                      className="btn btn-accent" 
+                      style={{ flex: 1, fontSize: '0.75rem', padding: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem', fontWeight: 700 }}
+                    >
+                      <Play size={13} /> Watch Recording
+                    </button>
+                    <button 
+                      onClick={() => alert(`Downloading Concept Summary Notes for: ${rec.title}...`)} 
+                      className="btn btn-secondary" 
+                      style={{ fontSize: '0.75rem', padding: '0.5rem' }}
+                      title="Download PDF Study Notes"
+                    >
+                      <Download size={14} /> Notes
+                    </button>
+                  </div>
+
+                </div>
+
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* INTERACTIVE RECORDED CLASS VIDEO PLAYER MODAL */}
+      {activeRecordingModal && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.88)', zIndex: 4000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', backdropFilter: 'blur(8px)' }}>
+          <div className="card-premium" style={{ width: '100%', maxWidth: '900px', maxHeight: '90vh', overflowY: 'auto', padding: '1.5rem', borderRadius: '24px', backgroundColor: 'var(--bg-elevated)', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <span className="tag tag-success" style={{ fontSize: '0.6875rem', fontWeight: 800 }}>📼 Live Class Recorded Session</span>
+                <h3 className="font-serif" style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0.25rem 0 0 0' }}>{activeRecordingModal.title}</h3>
+              </div>
+              <button onClick={() => setActiveRecordingModal(null)} className="btn-icon"><X size={20} /></button>
+            </div>
+
+            {/* Video Player */}
+            <div style={{ borderRadius: '16px', overflow: 'hidden', backgroundColor: '#000000', position: 'relative' }}>
+              <video 
+                src={activeRecordingModal.videoUrl} 
+                controls 
+                autoPlay 
+                style={{ width: '100%', height: '380px', objectFit: 'cover' }} 
+              />
+            </div>
+
+            {/* Playback Controls & Chapters Bar */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '1.5rem' }}>
+              
+              {/* Tutor & Concept Breakdown */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', backgroundColor: 'var(--bg-tertiary)', padding: '0.875rem', borderRadius: 'var(--radius-md)' }}>
+                  <img src={activeRecordingModal.tutorAvatar} alt="Tutor" style={{ width: '42px', height: '42px', borderRadius: '50%', border: '2px solid var(--accent-primary)' }} />
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: '0.9375rem' }}>Taught by {activeRecordingModal.tutorName}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{activeRecordingModal.tutorCollege} • {activeRecordingModal.department}</div>
+                  </div>
+                </div>
+
+                <div style={{ backgroundColor: 'var(--bg-card)', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+                  <div style={{ fontWeight: 800, fontSize: '0.8125rem', marginBottom: '0.35rem', color: 'var(--text-primary)' }}>
+                    📝 Post-Session Tutor Notes:
+                  </div>
+                  <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
+                    "{activeRecordingModal.doubtNotes}"
+                  </p>
+                </div>
+              </div>
+
+              {/* Chapter Timeline Markers */}
+              <div style={{ backgroundColor: 'var(--bg-tertiary)', padding: '1rem', borderRadius: 'var(--radius-md)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <div style={{ fontWeight: 800, fontSize: '0.8125rem', color: 'var(--accent-primary)', marginBottom: '0.25rem' }}>
+                  ⏱️ Chapter Timestamps:
+                </div>
+                {activeRecordingModal.chapters?.map((ch, idx) => (
+                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', padding: '0.35rem 0.5rem', borderRadius: '4px', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', cursor: 'pointer' }}>
+                    <span style={{ fontWeight: 800, color: 'var(--accent-primary)' }}>{ch.time}</span>
+                    <span style={{ color: 'var(--text-primary)' }}>{ch.title}</span>
+                  </div>
+                ))}
+              </div>
+
             </div>
 
           </div>
-        ))}
-      </div>
+        </div>
+      )}
 
     </div>
   );
@@ -7363,9 +8498,14 @@ function WalletScreen({ token }) {
 // --- REAL-TIME LINKEDIN & INSTAGRAM STYLE CONNECTIONS & NETWORK SCREEN ---
 function ConnectionsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, onOpenPublicProfile }) {
   const { profile, updateProfileState } = useAuth();
-  const [activeSubTab, setActiveSubTab] = useState('connections');
+  const [activeSubTab, setActiveSubTab] = useState(() => localStorage.getItem('studyloop_conn_subtab') || 'connections');
   const [searchFilter, setSearchFilter] = useState('');
+  const [justConnectedModalPeer, setJustConnectedModalPeer] = useState(null); // Instagram style rectangle modal on accept
   
+  useEffect(() => {
+    localStorage.setItem('studyloop_conn_subtab', activeSubTab);
+  }, [activeSubTab]);
+
   // Real-time connections list
   const [connections, setConnections] = useState([
     { id: 'c-1', fullName: 'Bhavna Patel', college: 'IIT Madras', department: 'Computer Science', year: 3, avatarUrl: FEMALE_AVATAR_SVG, skills: ['Python', 'Machine Learning', 'Data Structures'], degree: '1st', mutuals: 14, endorsed: false },
@@ -7393,7 +8533,7 @@ function ConnectionsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, 
       fullName: req.fullName,
       college: req.college,
       department: req.department,
-      year: req.year,
+      year: req.year || 3,
       avatarUrl: req.avatarUrl,
       skills: req.skills,
       degree: '1st',
@@ -7405,7 +8545,8 @@ function ConnectionsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, 
       const updated = { ...profile, followersCount: (profile.followersCount || 1200) + 1, coins: (profile.coins || 45) + 5, xp: (profile.xp || 650) + 10 };
       updateProfileState(updated);
     }
-    alert(`🎉 Connected with ${req.fullName}! +10 XP and +5 Peer Coins awarded.`);
+    // Open Instagram-style rectangle modal
+    setJustConnectedModalPeer(newConn);
   };
 
   const handleIgnoreRequest = (reqId) => {
@@ -7414,7 +8555,6 @@ function ConnectionsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, 
 
   const handleSendConnect = (sugId) => {
     setSuggestions(prev => prev.map(s => s.id === sugId ? { ...s, isPending: true } : s));
-    alert("✉️ Connection request sent in real time!");
   };
 
   const handleToggleFollow = (sugId) => {
@@ -7601,7 +8741,7 @@ function ConnectionsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, 
                   <button 
                     onClick={() => { setChatPeer(c); setActiveChatId(`chat-${c.id}`); setActiveTab('chat'); }} 
                     className="btn btn-primary" 
-                    style={{ flex: 1, fontSize: '0.8125rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.375rem' }}
+                    style={{ flex: 1, fontSize: '0.8125rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.375rem', fontWeight: 700 }}
                   >
                     <MessageSquare size={14} /> Direct Message
                   </button>
@@ -7691,7 +8831,7 @@ function ConnectionsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, 
                 <button 
                   onClick={() => handleSendConnect(s.id)} 
                   className={`btn ${s.isPending ? 'btn-secondary' : 'btn-accent'}`} 
-                  style={{ flex: 1, fontSize: '0.75rem', padding: '0.5rem' }}
+                  style={{ flex: 1, fontSize: '0.75rem', padding: '0.5rem', fontWeight: 700 }}
                   disabled={s.isPending}
                 >
                   <UserPlus size={13} /> {s.isPending ? 'Pending ⏳' : 'Connect'}
@@ -7706,6 +8846,56 @@ function ConnectionsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, 
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* INSTAGRAM-STYLE RECTANGLE OPENING DIALOG UPON ACCEPTING CONNECTION */}
+      {justConnectedModalPeer && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 4000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', backdropFilter: 'blur(8px)' }}>
+          <div className="card-premium" style={{ width: '100%', maxWidth: '460px', padding: '2.5rem 2rem', textAlign: 'center', borderRadius: '24px', backgroundColor: 'var(--bg-elevated)', border: '2px solid var(--accent-primary)', boxShadow: '0 25px 50px -12px rgba(0, 102, 255, 0.4)' }}>
+            
+            <div style={{ position: 'relative', width: '80px', height: '80px', margin: '0 auto 1.25rem auto' }}>
+              <img src={justConnectedModalPeer.avatarUrl} alt="Peer" style={{ width: '80px', height: '80px', borderRadius: '50%', border: '3px solid var(--accent-primary)', objectFit: 'cover' }} />
+              <div style={{ position: 'absolute', bottom: '0', right: '0', backgroundColor: '#10b981', color: '#ffffff', borderRadius: '50%', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 800 }}>
+                ✓
+              </div>
+            </div>
+
+            <div className="tag tag-accent" style={{ marginBottom: '0.75rem', fontSize: '0.75rem', fontWeight: 800 }}>
+              🎉 Connection Request Accepted!
+            </div>
+
+            <h3 className="font-serif" style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 0.5rem 0' }}>
+              You are now connected with {justConnectedModalPeer.fullName}
+            </h3>
+
+            <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1.75rem' }}>
+              You can now exchange direct WhatsApp-style study messages, share code snippets, and launch 1:1 video classrooms together!
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <button 
+                onClick={() => {
+                  setChatPeer(justConnectedModalPeer);
+                  setActiveChatId(`chat-${justConnectedModalPeer.id}`);
+                  setActiveTab('chat');
+                  setJustConnectedModalPeer(null);
+                }} 
+                className="btn btn-accent" 
+                style={{ padding: '0.875rem', fontWeight: 800, fontSize: '0.9375rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+              >
+                <MessageSquare size={18} /> Say Hi (Direct Message) 💬
+              </button>
+              <button 
+                onClick={() => setJustConnectedModalPeer(null)} 
+                className="btn btn-secondary" 
+                style={{ padding: '0.625rem' }}
+              >
+                Close & Stay on Network
+              </button>
+            </div>
+
+          </div>
         </div>
       )}
 
@@ -7758,24 +8948,49 @@ function LeaderboardScreen({ token, onOpenPublicProfile }) {
   );
 }
 
-// --- REAL-TIME VERTICAL TIKTOK / INSTAGRAM STYLE REELS SCREEN ---
+// --- REAL-TIME VERTICAL SHORTS & YOUTUBE CREATOR STUDIO SUITE ---
 function ReelsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, socket, setWsMessages }) {
+  const { profile, updateProfileState } = useAuth();
+  const [reelsViewTab, setReelsViewTab] = useState(() => localStorage.getItem('studyloop_reels_view_tab') || 'player');
   const [currentReelIndex, setCurrentReelIndex] = useState(0);
   const [likesMap, setLikesMap] = useState({});
+  const [savedMap, setSavedMap] = useState({});
   const [isMuted, setIsMuted] = useState(true);
   const [showCommentsModal, setShowCommentsModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
   const [commentInput, setCommentInput] = useState('');
 
+  // New Video Upload Form state
+  const [uploadTitle, setUploadTitle] = useState('');
+  const [uploadSubject, setUploadSubject] = useState('Java');
+  const [uploadTags, setUploadTags] = useState('#Algorithms #StudyTips');
+  const [uploadDesc, setUploadDesc] = useState('');
+  const [uploadVideoUrl, setUploadVideoUrl] = useState('');
+  const [uploadVisibility, setUploadVisibility] = useState('public');
+
+  useEffect(() => {
+    localStorage.setItem('studyloop_reels_view_tab', reelsViewTab);
+  }, [reelsViewTab]);
+
+  // Master Reels & Videos Repository
   const [reels, setReels] = useState([
     {
       id: 'r-1',
       title: '3 Tricks to solve Recursion Tree problems fast in Java ⚡ #Algorithms #Java',
+      description: 'Break down exponential recursion trees into simple master theorem levels in under 60 seconds.',
       author: 'Aarav Sharma',
       college: 'IIT Madras',
       avatarUrl: MALE_AVATAR_SVG,
       videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-software-developer-working-on-code-42867-large.mp4',
       likes: 154,
       shares: 42,
+      views: 1420,
+      reach: 3850,
+      duration: '0:58',
+      date: '28 Aug 2026',
+      visibility: 'public',
+      isMyUpload: true,
       comments: [
         { author: 'Bhavna Patel', text: 'This helper tree recursion trick saved me in midterms! 🔥' },
         { author: 'Chaitanya Reddy', text: 'Clean breakdown. Can you do Dynamic Programming memoization next?' }
@@ -7784,12 +8999,19 @@ function ReelsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, socket
     {
       id: 'r-2',
       title: 'How Spring Boot Inversion of Control & @Autowired work under 60s ☕ #SpringBoot',
+      description: 'Visual walkthrough of Bean lifecycle in ApplicationContext with zero boilerplate.',
       author: 'Bhavna Patel',
       college: 'IIT Madras',
       avatarUrl: FEMALE_AVATAR_SVG,
       videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-hands-of-a-man-typing-on-a-computer-keyboard-41334-large.mp4',
       likes: 218,
       shares: 67,
+      views: 2310,
+      reach: 5200,
+      duration: '0:45',
+      date: '26 Aug 2026',
+      visibility: 'public',
+      isMyUpload: false,
       comments: [
         { author: 'Aarav Sharma', text: 'Best 60-second explanation of ApplicationContext!' }
       ]
@@ -7797,25 +9019,54 @@ function ReelsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, socket
     {
       id: 'r-3',
       title: 'Visualizing Gradient Descent & Contour Cost Surfaces in 3D 📐 #MachineLearning',
+      description: 'Why momentum helps gradient descent escape saddle points and oscillations.',
       author: 'Chaitanya Reddy',
       college: 'BITS Pilani',
       avatarUrl: MALE_AVATAR_SVG,
       videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-animation-of-futuristic-devices-99786-large.mp4',
       likes: 312,
       shares: 89,
+      views: 3490,
+      reach: 8100,
+      duration: '0:52',
+      date: '24 Aug 2026',
+      visibility: 'public',
+      isMyUpload: false,
       comments: [
         { author: 'Divya Nambiar', text: 'The learning rate oscillation visual was super clear.' }
+      ]
+    },
+    {
+      id: 'r-4',
+      title: 'SQL Indexing Secrets: B-Trees vs Hash Indexes Explained 🚀 #DBMS #SQL',
+      description: 'When does a composite index fail to accelerate range queries in PostgreSQL?',
+      author: 'Aarav Sharma',
+      college: 'IIT Madras',
+      avatarUrl: MALE_AVATAR_SVG,
+      videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-software-developer-working-on-code-42867-large.mp4',
+      likes: 189,
+      shares: 51,
+      views: 1890,
+      reach: 4600,
+      duration: '0:50',
+      date: '22 Aug 2026',
+      visibility: 'public',
+      isMyUpload: true,
+      comments: [
+        { author: 'Kavya Subramanian', text: 'Clear explanation on Leftmost Prefix rule!' }
       ]
     }
   ]);
 
   const currentReel = reels[currentReelIndex] || reels[0];
   const isLiked = likesMap[currentReel.id] || false;
+  const isSaved = savedMap[currentReel.id] || false;
 
   // Keyboard navigation for smooth up/down reel browsing
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (showCommentsModal) return;
+      if (showCommentsModal || showUploadModal || showShareModal) return;
+      if (reelsViewTab !== 'player') return;
       if (e.key === 'ArrowDown') {
         setCurrentReelIndex(prev => (prev < reels.length - 1 ? prev + 1 : 0));
       } else if (e.key === 'ArrowUp') {
@@ -7824,143 +9075,436 @@ function ReelsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, socket
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [reels.length, showCommentsModal]);
+  }, [reels.length, showCommentsModal, showUploadModal, showShareModal, reelsViewTab]);
 
   const handleToggleLike = () => {
     const nextLiked = !isLiked;
     setLikesMap(prev => ({ ...prev, [currentReel.id]: nextLiked }));
     setReels(prev => prev.map(r => r.id === currentReel.id ? { ...r, likes: nextLiked ? r.likes + 1 : r.likes - 1 } : r));
+    if (nextLiked && profile) {
+      updateProfileState({ ...profile, xp: (profile.xp || 650) + 2 });
+    }
+  };
+
+  const handleToggleSave = () => {
+    const nextSaved = !isSaved;
+    setSavedMap(prev => ({ ...prev, [currentReel.id]: nextSaved }));
+    alert(nextSaved ? "🔖 Reel saved to your Study Bookmarks!" : "Removed from Bookmarks");
   };
 
   const handleAddComment = (e) => {
     e.preventDefault();
     if (!commentInput.trim()) return;
-    const newComment = { author: 'You (Aarav)', text: commentInput.trim() };
+    const newComment = { author: 'You (Aarav Sharma)', text: commentInput.trim() };
     setReels(prev => prev.map(r => r.id === currentReel.id ? { ...r, comments: [...r.comments, newComment] } : r));
     setCommentInput('');
   };
 
+  const handleUploadSubmit = (e) => {
+    e.preventDefault();
+    if (!uploadTitle.trim()) return;
+
+    const sampleVideos = [
+      'https://assets.mixkit.co/videos/preview/mixkit-software-developer-working-on-code-42867-large.mp4',
+      'https://assets.mixkit.co/videos/preview/mixkit-hands-of-a-man-typing-on-a-computer-keyboard-41334-large.mp4',
+      'https://assets.mixkit.co/videos/preview/mixkit-animation-of-futuristic-devices-99786-large.mp4'
+    ];
+    const pickedVideo = uploadVideoUrl.trim() || sampleVideos[Math.floor(Math.random() * sampleVideos.length)];
+
+    const newReel = {
+      id: `r-${Date.now()}`,
+      title: `${uploadTitle.trim()} ${uploadTags.trim()}`,
+      description: uploadDesc.trim() || 'Concept breakdown uploaded by campus peer tutor.',
+      author: profile?.fullName || 'Aarav Sharma',
+      college: profile?.college || 'IIT Madras',
+      avatarUrl: profile?.avatarUrl || MALE_AVATAR_SVG,
+      videoUrl: pickedVideo,
+      likes: 1,
+      shares: 0,
+      views: 12,
+      reach: 85,
+      duration: '0:54',
+      date: 'Just now',
+      visibility: uploadVisibility,
+      isMyUpload: true,
+      comments: []
+    };
+
+    setReels(prev => [newReel, ...prev]);
+    if (profile) {
+      updateProfileState({ ...profile, xp: (profile.xp || 650) + 25, coins: (profile.coins || 45) + 10 });
+    }
+
+    setShowUploadModal(false);
+    setUploadTitle('');
+    setUploadDesc('');
+    setUploadVideoUrl('');
+    alert("🎉 Concept Video Short published successfully! +25 XP and +10 Peer Coins awarded.");
+  };
+
+  const handleDeleteMyVideo = (videoId) => {
+    if (confirm("Are you sure you want to delete this concept video?")) {
+      setReels(prev => prev.filter(r => r.id !== videoId));
+    }
+  };
+
+  // Filter user's uploaded videos
+  const myUploadedVideos = reels.filter(r => r.isMyUpload || r.author === 'Aarav Sharma');
+  const totalMyViews = myUploadedVideos.reduce((acc, curr) => acc + (curr.views || 0), 0);
+  const totalMyLikes = myUploadedVideos.reduce((acc, curr) => acc + (curr.likes || 0), 0);
+  const totalMyReach = myUploadedVideos.reduce((acc, curr) => acc + (curr.reach || 0), 0);
+
   return (
-    <div style={{ minHeight: '100vh', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-primary)', position: 'relative', overflow: 'hidden', padding: '1.5rem 1rem' }}>
+    <div style={{ minHeight: '100vh', width: '100%', backgroundColor: 'var(--bg-primary)', display: 'flex', flexDirection: 'column', position: 'relative' }}>
       
-      {/* Top Left Back Navigation */}
-      <button 
-        onClick={() => setActiveTab('dashboard')} 
-        className="btn btn-secondary" 
-        style={{ position: 'absolute', top: '1.5rem', left: '1.5rem', zIndex: 100, borderRadius: 'var(--radius-full)', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-md)', fontWeight: 700 }}
-      >
-        ← Back to Student Profile
-      </button>
-
-      {/* Top Right Counter Pill */}
-      <div style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', zIndex: 100, display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-        <span style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', padding: '0.45rem 1rem', borderRadius: 'var(--radius-full)', fontSize: '0.8125rem', fontWeight: 700, border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)' }}>
-          📱 Concept Short {currentReelIndex + 1} of {reels.length}
-        </span>
-      </div>
-
-      {/* REEL 9:16 VERTICAL CONTAINER */}
-      <div className="reel-frame" style={{ width: '100%', maxWidth: '430px', height: '88vh', minHeight: '560px', borderRadius: '24px', overflow: 'hidden', position: 'relative', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)', border: '2px solid var(--border-color)', backgroundColor: '#000000' }}>
+      {/* TOP NAVIGATION BAR */}
+      <div style={{ padding: '1rem 2rem', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', zIndex: 100 }}>
         
-        <video 
-          key={currentReel.id}
-          src={currentReel.videoUrl} 
-          autoPlay 
-          loop 
-          muted={isMuted}
-          playsInline 
-          style={{ width: '100%', height: '100%', objectFit: 'cover', backgroundColor: '#000000' }} 
-        />
-
-        {/* Right Floating Action Stack */}
-        <div className="reel-action-stack" style={{ position: 'absolute', right: '1rem', bottom: '6rem', display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center', zIndex: 50 }}>
-          
-          {/* Like */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
-            <button 
-              onClick={handleToggleLike} 
-              className="reel-action-btn" 
-              style={{ color: isLiked ? '#f43f5e' : '#ffffff', backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)', width: '48px', height: '48px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer' }}
-            >
-              <Heart size={24} fill={isLiked ? '#f43f5e' : 'none'} />
-            </button>
-            <span style={{ fontSize: '0.75rem', color: '#ffffff', fontWeight: 700, textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>{currentReel.likes}</span>
-          </div>
-
-          {/* Comments */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
-            <button 
-              onClick={() => setShowCommentsModal(true)} 
-              className="reel-action-btn"
-              style={{ color: '#ffffff', backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)', width: '48px', height: '48px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer' }}
-            >
-              <MessageCircle size={24} />
-            </button>
-            <span style={{ fontSize: '0.75rem', color: '#ffffff', fontWeight: 700, textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>{currentReel.comments.length}</span>
-          </div>
-
-          {/* Share */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
-            <button 
-              onClick={() => {
-                if (navigator.clipboard) {
-                  navigator.clipboard.writeText(window.location.href);
-                }
-                alert("🔗 Concept Reel link copied to clipboard!");
-              }} 
-              className="reel-action-btn"
-              style={{ color: '#ffffff', backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)', width: '48px', height: '48px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer' }}
-            >
-              <Share2 size={22} />
-            </button>
-            <span style={{ fontSize: '0.75rem', color: '#ffffff', fontWeight: 700, textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>{currentReel.shares}</span>
-          </div>
-
-          {/* Mute / Unmute */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <button 
-            onClick={() => setIsMuted(!isMuted)} 
-            className="reel-action-btn"
-            style={{ color: '#ffffff', backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)', width: '44px', height: '44px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer' }}
+            onClick={() => setActiveTab('dashboard')} 
+            className="btn btn-secondary" 
+            style={{ borderRadius: 'var(--radius-full)', fontSize: '0.8125rem', fontWeight: 700 }}
           >
-            {isMuted ? '🔇' : '🔊'}
+            ← Back to Student Profile
+          </button>
+          
+          <h2 className="font-serif" style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span>⚡ Shorts & Video Studio</span>
+          </h2>
+        </div>
+
+        {/* View Tabs & Upload Button */}
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+          <div style={{ display: 'flex', backgroundColor: 'var(--bg-tertiary)', padding: '0.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+            <button
+              onClick={() => setReelsViewTab('player')}
+              style={{
+                padding: '0.45rem 1.25rem',
+                borderRadius: 'var(--radius-sm)',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '0.8125rem',
+                fontWeight: 700,
+                backgroundColor: reelsViewTab === 'player' ? 'var(--bg-secondary)' : 'transparent',
+                color: reelsViewTab === 'player' ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                boxShadow: reelsViewTab === 'player' ? 'var(--shadow-sm)' : 'none'
+              }}
+            >
+              📱 Shorts Feed (9:16)
+            </button>
+
+            <button
+              onClick={() => setReelsViewTab('studio')}
+              style={{
+                padding: '0.45rem 1.25rem',
+                borderRadius: 'var(--radius-sm)',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '0.8125rem',
+                fontWeight: 700,
+                backgroundColor: reelsViewTab === 'studio' ? 'var(--bg-secondary)' : 'transparent',
+                color: reelsViewTab === 'studio' ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                boxShadow: reelsViewTab === 'studio' ? 'var(--shadow-sm)' : 'none'
+              }}
+            >
+              🎬 My Studio & Uploads ({myUploadedVideos.length})
+            </button>
+          </div>
+
+          <button 
+            onClick={() => setShowUploadModal(true)} 
+            className="btn btn-accent" 
+            style={{ fontWeight: 800, fontSize: '0.8125rem', display: 'flex', alignItems: 'center', gap: '0.35rem', boxShadow: 'var(--shadow-glow)' }}
+          >
+            <Upload size={15} /> Upload Video Short 🚀
           </button>
         </div>
 
-        {/* Bottom Overlay Info */}
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '2rem 1.25rem 1.25rem 1.25rem', background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.5) 65%, transparent 100%)', color: '#ffffff', zIndex: 40 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.625rem' }}>
-            <img src={currentReel.avatarUrl} alt={currentReel.author} style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px solid var(--accent-primary)', objectFit: 'cover' }} />
-            <div>
-              <div style={{ fontWeight: 800, fontSize: '0.9375rem', color: '#ffffff' }}>@{currentReel.author}</div>
-              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.8)' }}>{currentReel.college} • Senior Tutor</div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* VIEW 1: VERTICAL REELS / SHORTS PLAYER FEED (TIKTOK / INSTA / MOJ STYLE) */}
+      {/* ========================================================================= */}
+      {reelsViewTab === 'player' && (
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', position: 'relative' }}>
+          
+          {/* REEL 9:16 VERTICAL CONTAINER */}
+          <div className="reel-frame" style={{ width: '100%', maxWidth: '420px', height: '82vh', minHeight: '540px', borderRadius: '24px', overflow: 'hidden', position: 'relative', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6)', border: '2px solid var(--border-color)', backgroundColor: '#000000' }}>
+            
+            <video 
+              key={currentReel.id}
+              src={currentReel.videoUrl} 
+              autoPlay 
+              loop 
+              muted={isMuted}
+              playsInline 
+              style={{ width: '100%', height: '100%', objectFit: 'cover', backgroundColor: '#000000' }} 
+            />
+
+            {/* Top Reel Counter */}
+            <div style={{ position: 'absolute', top: '1rem', left: '1rem', zIndex: 50, backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', color: '#ffffff', padding: '0.3rem 0.75rem', borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: 700, border: '1px solid rgba(255,255,255,0.2)' }}>
+              🔥 Short {currentReelIndex + 1} / {reels.length}
+            </div>
+
+            {/* Right Floating Action Stack */}
+            <div className="reel-action-stack" style={{ position: 'absolute', right: '0.875rem', bottom: '5.5rem', display: 'flex', flexDirection: 'column', gap: '0.875rem', alignItems: 'center', zIndex: 50 }}>
+              
+              {/* Like */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.2rem' }}>
+                <button 
+                  onClick={handleToggleLike} 
+                  className="reel-action-btn" 
+                  style={{ color: isLiked ? '#f43f5e' : '#ffffff', backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)', width: '46px', height: '46px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer' }}
+                >
+                  <Heart size={22} fill={isLiked ? '#f43f5e' : 'none'} />
+                </button>
+                <span style={{ fontSize: '0.6875rem', color: '#ffffff', fontWeight: 700, textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>{currentReel.likes}</span>
+              </div>
+
+              {/* Comments */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.2rem' }}>
+                <button 
+                  onClick={() => setShowCommentsModal(true)} 
+                  className="reel-action-btn"
+                  style={{ color: '#ffffff', backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)', width: '46px', height: '46px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer' }}
+                >
+                  <MessageCircle size={22} />
+                </button>
+                <span style={{ fontSize: '0.6875rem', color: '#ffffff', fontWeight: 700, textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>{currentReel.comments.length}</span>
+              </div>
+
+              {/* Save */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.2rem' }}>
+                <button 
+                  onClick={handleToggleSave} 
+                  className="reel-action-btn"
+                  style={{ color: isSaved ? '#f59e0b' : '#ffffff', backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)', width: '46px', height: '46px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer' }}
+                >
+                  <Bookmark size={20} fill={isSaved ? '#f59e0b' : 'none'} />
+                </button>
+                <span style={{ fontSize: '0.6875rem', color: '#ffffff', fontWeight: 700 }}>Save</span>
+              </div>
+
+              {/* Share */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.2rem' }}>
+                <button 
+                  onClick={() => setShowShareModal(true)} 
+                  className="reel-action-btn"
+                  style={{ color: '#ffffff', backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)', width: '46px', height: '46px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer' }}
+                >
+                  <Share2 size={20} />
+                </button>
+                <span style={{ fontSize: '0.6875rem', color: '#ffffff', fontWeight: 700, textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>{currentReel.shares}</span>
+              </div>
+
+              {/* Mute / Unmute */}
+              <button 
+                onClick={() => setIsMuted(!isMuted)} 
+                className="reel-action-btn"
+                style={{ color: '#ffffff', backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)', width: '42px', height: '42px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer' }}
+              >
+                {isMuted ? '🔇' : '🔊'}
+              </button>
+            </div>
+
+            {/* Bottom Overlay Info */}
+            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '2rem 1.25rem 1.25rem 1.25rem', background: 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 65%, transparent 100%)', color: '#ffffff', zIndex: 40 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+                  <img src={currentReel.avatarUrl} alt={currentReel.author} style={{ width: '36px', height: '36px', borderRadius: '50%', border: '2px solid var(--accent-primary)', objectFit: 'cover' }} />
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: '0.875rem', color: '#ffffff' }}>@{currentReel.author}</div>
+                    <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.8)' }}>{currentReel.college}</div>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={() => {
+                    setChatPeer({ fullName: currentReel.author, college: currentReel.college, avatarUrl: currentReel.avatarUrl });
+                    setActiveChatId(`chat-${currentReel.id}`);
+                    setActiveTab('chat');
+                  }} 
+                  className="btn btn-accent" 
+                  style={{ fontSize: '0.6875rem', padding: '0.25rem 0.625rem', borderRadius: 'var(--radius-full)' }}
+                >
+                  Message
+                </button>
+              </div>
+
+              <p style={{ fontSize: '0.8125rem', lineHeight: 1.4, margin: '0 0 0.5rem 0', color: '#f8fafc', fontWeight: 500, textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>
+                {currentReel.title}
+              </p>
+
+              {/* Sound Audio Pill */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.6875rem', color: 'rgba(255,255,255,0.8)' }}>
+                <span>🎵 Original Academic Audio • StudyLoop Shorts</span>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Next / Previous Stepper Floating Buttons */}
+          <div style={{ position: 'absolute', right: '3rem', top: '50%', transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', gap: '1rem', zIndex: 100 }}>
+            <button 
+              onClick={() => setCurrentReelIndex(prev => (prev > 0 ? prev - 1 : reels.length - 1))}
+              className="btn-icon" 
+              style={{ width: '46px', height: '46px', borderRadius: '50%', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-md)', cursor: 'pointer', fontSize: '1rem' }}
+              title="Previous Reel (Arrow Up)"
+            >
+              ▲
+            </button>
+            <button 
+              onClick={() => setCurrentReelIndex(prev => (prev < reels.length - 1 ? prev + 1 : 0))}
+              className="btn-icon" 
+              style={{ width: '46px', height: '46px', borderRadius: '50%', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-md)', cursor: 'pointer', fontSize: '1rem' }}
+              title="Next Reel (Arrow Down)"
+            >
+              ▼
+            </button>
+          </div>
+
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* VIEW 2: CREATOR VIDEO STUDIO & UPLOADED GALLERY (YOUTUBE STUDIO STYLE)   */}
+      {/* ========================================================================= */}
+      {reelsViewTab === 'studio' && (
+        <div style={{ padding: '2rem 2.5rem', width: '100%', maxWidth: '1400px', margin: '0 auto' }}>
+          
+          {/* 4 CREATOR REACH & ENGAGEMENT STATS */}
+          <div className="grid-4" style={{ marginBottom: '2rem' }}>
+            <div className="card-premium">
+              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.35rem' }}>Total Video Views</div>
+              <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--accent-primary)' }}>{totalMyViews.toLocaleString()}</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--success-color)', marginTop: '0.25rem', fontWeight: 600 }}>↑ +24% this week</div>
+            </div>
+
+            <div className="card-premium">
+              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.35rem' }}>Estimated Audience Reach</div>
+              <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--success-color)' }}>{totalMyReach.toLocaleString()}</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>Across 14 Universities</div>
+            </div>
+
+            <div className="card-premium">
+              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.35rem' }}>Peer Likes & Claps</div>
+              <div style={{ fontSize: '2rem', fontWeight: 800, color: '#f43f5e' }}>{totalMyLikes.toLocaleString()} ❤️</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>98.4% Like Ratio</div>
+            </div>
+
+            <div className="card-premium">
+              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.35rem' }}>Videos Stored & Published</div>
+              <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-primary)' }}>{myUploadedVideos.length}</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--accent-primary)', marginTop: '0.25rem', fontWeight: 700 }}>⚡ 100% Monetized & Public</div>
             </div>
           </div>
 
-          <p style={{ fontSize: '0.875rem', lineHeight: 1.4, margin: 0, color: '#f8fafc', fontWeight: 500, textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>
-            {currentReel.title}
-          </p>
-        </div>
-      </div>
+          {/* STORED VIDEOS STEP-BY-STEP GALLERY TABLE */}
+          <div className="card-premium" style={{ padding: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+              <div>
+                <h3 className="font-serif" style={{ fontSize: '1.35rem', fontWeight: 800, margin: '0 0 0.25rem 0' }}>
+                  My Uploaded Concept Videos & Shorts
+                </h3>
+                <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', margin: 0 }}>
+                  Manage stored videos, track live student reach analytics, and edit metadata.
+                </p>
+              </div>
 
-      {/* Next / Previous Vertical Stepper Buttons */}
-      <div style={{ position: 'absolute', right: '2rem', top: '50%', transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', gap: '1rem', zIndex: 100 }}>
-        <button 
-          onClick={() => setCurrentReelIndex(prev => (prev > 0 ? prev - 1 : reels.length - 1))}
-          className="btn-icon" 
-          style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-md)', cursor: 'pointer', fontSize: '1rem' }}
-          title="Previous Reel (Arrow Up)"
-        >
-          ▲
-        </button>
-        <button 
-          onClick={() => setCurrentReelIndex(prev => (prev < reels.length - 1 ? prev + 1 : 0))}
-          className="btn-icon" 
-          style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-md)', cursor: 'pointer', fontSize: '1rem' }}
-          title="Next Reel (Arrow Down)"
-        >
-          ▼
-        </button>
-      </div>
+              <button onClick={() => setShowUploadModal(true)} className="btn btn-accent" style={{ fontWeight: 800 }}>
+                <Upload size={16} /> Upload New Video 🚀
+              </button>
+            </div>
+
+            {/* Video List Table */}
+            <div style={{ overflowX: 'auto' }}>
+              <table className="admin-table" style={{ width: '100%' }}>
+                <thead>
+                  <tr>
+                    <th>Video / Short</th>
+                    <th>Visibility</th>
+                    <th>Date Published</th>
+                    <th>Views</th>
+                    <th>Likes</th>
+                    <th>Audience Reach</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {myUploadedVideos.map(vid => (
+                    <tr key={vid.id}>
+                      <td style={{ minWidth: '280px' }}>
+                        <div style={{ display: 'flex', gap: '0.875rem', alignItems: 'center' }}>
+                          <div style={{ position: 'relative', width: '80px', height: '48px', borderRadius: '6px', overflow: 'hidden', backgroundColor: '#000000', flexShrink: 0 }}>
+                            <video src={vid.videoUrl} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.8 }} />
+                            <span style={{ position: 'absolute', bottom: '2px', right: '3px', backgroundColor: 'rgba(0,0,0,0.85)', color: '#ffffff', fontSize: '0.5625rem', fontWeight: 800, padding: '0.1rem 0.25rem', borderRadius: '2px' }}>
+                              {vid.duration || '0:55'}
+                            </span>
+                          </div>
+                          <div>
+                            <div style={{ fontWeight: 800, fontSize: '0.875rem', color: 'var(--text-primary)', lineHeight: 1.3 }}>{vid.title}</div>
+                            <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>{vid.description || 'Quick concept walkthrough'}</div>
+                          </div>
+                        </div>
+                      </td>
+
+                      <td>
+                        <span className="tag tag-success" style={{ fontSize: '0.6875rem' }}>
+                          🌐 {vid.visibility.toUpperCase()}
+                        </span>
+                      </td>
+
+                      <td style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                        {vid.date}
+                      </td>
+
+                      <td style={{ fontWeight: 800, color: 'var(--accent-primary)', fontSize: '0.875rem' }}>
+                        {vid.views.toLocaleString()}
+                      </td>
+
+                      <td style={{ fontWeight: 700, color: '#f43f5e', fontSize: '0.875rem' }}>
+                        {vid.likes} ❤️
+                      </td>
+
+                      <td style={{ fontWeight: 700, color: 'var(--success-color)', fontSize: '0.875rem' }}>
+                        {vid.reach?.toLocaleString() || '1.2K'}
+                      </td>
+
+                      <td>
+                        <div style={{ display: 'flex', gap: '0.35rem' }}>
+                          <button 
+                            onClick={() => {
+                              const idx = reels.findIndex(r => r.id === vid.id);
+                              if (idx !== -1) setCurrentReelIndex(idx);
+                              setReelsViewTab('player');
+                            }} 
+                            className="btn btn-secondary" 
+                            style={{ fontSize: '0.6875rem', padding: '0.3rem 0.6rem' }}
+                            title="Play in Shorts Feed"
+                          >
+                            <Play size={12} /> Play
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteMyVideo(vid.id)} 
+                            className="btn btn-icon" 
+                            style={{ padding: '0.3rem', color: 'var(--danger-color)' }}
+                            title="Delete Video"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+
+        </div>
+      )}
 
       {/* COMMENTS MODAL DRAWER */}
       {showCommentsModal && (
@@ -8002,6 +9546,139 @@ function ReelsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, socket
                 Post
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* SHARE MODAL */}
+      {showShareModal && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 3500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', backdropFilter: 'blur(6px)' }}>
+          <div className="card-premium" style={{ width: '100%', maxWidth: '440px', padding: '2rem', borderRadius: '24px', backgroundColor: 'var(--bg-elevated)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <h3 className="font-serif" style={{ fontSize: '1.25rem', margin: 0 }}>Share Concept Reel</h3>
+              <button onClick={() => setShowShareModal(false)} className="btn-icon"><X size={18} /></button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <button 
+                onClick={() => {
+                  navigator.clipboard?.writeText(window.location.href);
+                  alert("🔗 Concept Short link copied to clipboard!");
+                  setShowShareModal(false);
+                }} 
+                className="btn btn-accent" 
+                style={{ padding: '0.75rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+              >
+                <Copy size={16} /> Copy Reel Link
+              </button>
+
+              <button 
+                onClick={() => {
+                  setActiveTab('chat');
+                  setShowShareModal(false);
+                }} 
+                className="btn btn-secondary" 
+                style={{ padding: '0.75rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+              >
+                <MessageSquare size={16} /> Send via Direct Message
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* UPLOAD CONCEPT SHORT / VIDEO MODAL (YOUTUBE STUDIO STYLE) */}
+      {showUploadModal && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.85)', zIndex: 4000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', backdropFilter: 'blur(8px)' }}>
+          <div className="card-premium" style={{ width: '100%', maxWidth: '560px', padding: '2rem', borderRadius: '24px', backgroundColor: 'var(--bg-elevated)', maxHeight: '90vh', overflowY: 'auto' }}>
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <div>
+                <span className="tag tag-accent" style={{ fontSize: '0.6875rem', fontWeight: 800 }}>🎬 StudyLoop Creator Studio</span>
+                <h3 className="font-serif" style={{ fontSize: '1.35rem', fontWeight: 800, margin: '0.25rem 0 0 0' }}>Upload Concept Video Short</h3>
+              </div>
+              <button onClick={() => setShowUploadModal(false)} className="btn-icon"><X size={20} /></button>
+            </div>
+
+            <form onSubmit={handleUploadSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              
+              <div>
+                <label className="label">Video Title (Catchy Academic Hook)</label>
+                <input 
+                  type="text" 
+                  className="input" 
+                  placeholder="e.g. 3 Tricks to solve Recursion Tree problems fast in Java" 
+                  value={uploadTitle} 
+                  onChange={e => setUploadTitle(e.target.value)} 
+                  required 
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div>
+                  <label className="label">Subject Category</label>
+                  <select className="input" value={uploadSubject} onChange={e => setUploadSubject(e.target.value)}>
+                    <option value="Java">Java & OOP</option>
+                    <option value="DSA">Data Structures & Algo</option>
+                    <option value="ML">Machine Learning & AI</option>
+                    <option value="DBMS">DBMS & SQL</option>
+                    <option value="WebDev">React & Web Dev</option>
+                    <option value="Math">Calculus & Linear Algebra</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="label">Hashtags</label>
+                  <input 
+                    type="text" 
+                    className="input" 
+                    placeholder="#Java #Algorithms" 
+                    value={uploadTags} 
+                    onChange={e => setUploadTags(e.target.value)} 
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="label">Description / Core Concept Takeaway</label>
+                <textarea 
+                  className="input" 
+                  style={{ minHeight: '80px' }} 
+                  placeholder="Summarize the concept or solution steps explained in this video..." 
+                  value={uploadDesc} 
+                  onChange={e => setUploadDesc(e.target.value)} 
+                />
+              </div>
+
+              <div>
+                <label className="label">Video Source / Local File</label>
+                <div style={{ border: '2px dashed var(--border-color)', padding: '1.25rem', borderRadius: 'var(--radius-md)', textAlign: 'center', backgroundColor: 'var(--bg-tertiary)' }}>
+                  <Upload size={24} style={{ color: 'var(--accent-primary)', margin: '0 auto 0.5rem auto' }} />
+                  <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-primary)' }}>Select Video File (MP4, WebM up to 100MB)</div>
+                  <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Auto-optimizes to 9:16 vertical shorts format</div>
+                </div>
+              </div>
+
+              <div>
+                <label className="label">Visibility & Privacy</label>
+                <select className="input" value={uploadVisibility} onChange={e => setUploadVisibility(e.target.value)}>
+                  <option value="public">🌐 Public (Visible to all students & Leaderboard)</option>
+                  <option value="campus">🏫 Campus Only ({profile?.college || 'IIT Madras'})</option>
+                  <option value="private">🔒 Private (Only approved connections)</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+                <button type="submit" className="btn btn-accent" style={{ flex: 1, padding: '0.875rem', fontWeight: 800 }}>
+                  Publish Video Short 🚀 (+25 XP)
+                </button>
+                <button type="button" onClick={() => setShowUploadModal(false)} className="btn btn-secondary">
+                  Cancel
+                </button>
+              </div>
+
+            </form>
+
           </div>
         </div>
       )}
