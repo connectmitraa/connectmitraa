@@ -5694,437 +5694,6 @@ function PhotoPreviewModal({ imageUrl, userName, onClose }) {
   );
 }
 
-function UserListModal({ title, userId, token, onClose, onSelectUser }) {
-  const sampleUsers = [
-    { id: '22222222-2222-2222-2222-222222222222', fullName: 'Bhavna Patel', college: 'IIT Madras', department: 'Computer Science', avatarUrl: FEMALE_AVATAR_SVG },
-    { id: '33333333-3333-3333-3333-333333333333', fullName: 'Chaitanya Reddy', college: 'BITS Pilani', department: 'Electrical Engineering', avatarUrl: MALE_AVATAR_SVG }
-  ];
-
-  return (
-    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.75)', zIndex: 3600, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', backdropFilter: 'blur(6px)' }}>
-      <div className="card-premium" style={{ width: '100%', maxWidth: '420px', padding: '1.5rem', borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--bg-elevated)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
-          <h3 className="font-serif" style={{ fontSize: '1.25rem' }}>{title}</h3>
-          <button onClick={onClose} className="btn-icon"><X size={18} /></button>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          {sampleUsers.map(u => (
-            <div 
-              key={u.id}
-              onClick={() => onSelectUser(u)}
-              style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem', borderRadius: 'var(--radius-sm)', cursor: 'pointer', backgroundColor: 'var(--bg-tertiary)' }}
-            >
-              <img src={u.avatarUrl} alt="User" style={{ width: '38px', height: '38px', borderRadius: '50%', objectFit: 'cover' }} />
-              <div>
-                <div style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-primary)' }}>{u.fullName}</div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{u.college} • {u.department}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function PublicProfileModal({ user, currentUserId, token, onClose, onStartChat, onOpenUserList }) {
-  if (!user) return null;
-
-  const [activeProfileTab, setActiveProfileTab] = useState('overview'); // 'overview', 'certifications', 'education', 'projects', 'achievements'
-  const [isFollowing, setIsFollowing] = useState(false);
-  const [followersCount, setFollowersCount] = useState(user.followersCount !== undefined ? user.followersCount : 124);
-  const [copyToast, setCopyToast] = useState(false);
-
-  const toggleFollow = () => {
-    if (isFollowing) {
-      setIsFollowing(false);
-      setFollowersCount(prev => Math.max(0, prev - 1));
-    } else {
-      setIsFollowing(true);
-      setFollowersCount(prev => prev + 1);
-    }
-  };
-
-  const handleCopyLink = () => {
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(`${window.location.origin}/#profile-${user.id || 'peer'}`);
-    }
-    setCopyToast(true);
-    setTimeout(() => setCopyToast(false), 2500);
-  };
-
-  const educations = user.educations || [
-    {
-      id: 'edu-p1',
-      school: user.college || 'Indian Institute of Technology (IIT) Madras',
-      degree: 'Bachelor of Technology - B.Tech',
-      field: user.department || 'Computer Science & Engineering',
-      startYear: '2023',
-      endYear: '2027',
-      grade: '8.8 / 10.0 CGPA',
-      activities: 'Peer Code & Academic Study Club'
-    }
-  ];
-
-  const certifications = user.certifications || [
-    {
-      id: 'cert-p1',
-      name: 'Oracle Certified Associate, Java SE 8 Programmer',
-      issuer: 'Oracle',
-      issueDate: '2025',
-      credentialId: 'OCA-JAVA-VERIFIED',
-      credentialUrl: 'https://catalog-education.oracle.com',
-      badgeIcon: '☕'
-    },
-    {
-      id: 'cert-p2',
-      name: 'NPTEL: Programming, Data Structures And Algorithms',
-      issuer: 'NPTEL & IIT Madras',
-      issueDate: '2025',
-      credentialId: 'NPTEL25CS89',
-      credentialUrl: 'https://nptel.ac.in',
-      badgeIcon: '🐍'
-    }
-  ];
-
-  const achievements = user.achievements || [
-    {
-      id: 'ach-p1',
-      title: 'Smart India Hackathon Finalist',
-      issuer: 'Ministry of Education',
-      date: '2025',
-      desc: 'Selected in Top 10 national teams for peer education routing algorithm.'
-    },
-    {
-      id: 'ach-p2',
-      title: 'LeetCode Knight (Top 3% Globally)',
-      issuer: 'LeetCode',
-      date: '2026',
-      desc: 'Solved 400+ algorithmic challenges with dynamic programming mastery.'
-    }
-  ];
-
-  const projects = user.projects || [
-    {
-      id: 'proj-p1',
-      title: 'PeerCode - WebRTC Real-Time Collaborative Workspace',
-      stack: ['React', 'WebRTC', 'Node.js', 'Socket.io', 'Java'],
-      desc: 'Low-latency collaborative coding and live doubt-solving workspace with synchronized editor and audio/video.',
-      githubUrl: 'https://github.com',
-      liveUrl: 'https://studyloop.app'
-    }
-  ];
-
-  const socialLinks = user.socialLinks || {
-    github: 'https://github.com',
-    linkedin: 'https://linkedin.com',
-    leetcode: 'https://leetcode.com',
-    portfolio: 'https://studyloop.app'
-  };
-
-  return (
-    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.75)', zIndex: 3500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', backdropFilter: 'blur(8px)' }} onClick={onClose}>
-      <div 
-        className="card-premium" 
-        style={{ width: '100%', maxWidth: '720px', maxHeight: '90vh', overflowY: 'auto', padding: 0, borderRadius: 'var(--radius-xl)', backgroundColor: 'var(--bg-elevated)', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-xl)', position: 'relative' }}
-        onClick={e => e.stopPropagation()}
-      >
-        {/* TOAST COPY NOTIFICATION */}
-        {copyToast && (
-          <div style={{
-            position: 'absolute',
-            top: '1rem',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            zIndex: 4000,
-            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-            color: '#ffffff',
-            padding: '0.5rem 1.25rem',
-            borderRadius: 'var(--radius-full)',
-            boxShadow: 'var(--shadow-lg)',
-            fontSize: '0.8125rem',
-            fontWeight: 700,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem'
-          }}>
-            <CheckCircle size={15} /> Profile link copied to clipboard!
-          </div>
-        )}
-
-        {/* COVER PHOTO BANNER */}
-        <div style={{ height: '140px', width: '100%', background: 'linear-gradient(135deg, #0066FF 0%, #00C6FF 50%, #4F46E5 100%)', position: 'relative' }}>
-          <button 
-            onClick={onClose}
-            className="btn-icon" 
-            style={{ position: 'absolute', top: '1rem', right: '1rem', backgroundColor: 'rgba(0,0,0,0.6)', color: '#ffffff', border: 'none', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-          >
-            <X size={18} />
-          </button>
-          <span style={{ position: 'absolute', bottom: '0.75rem', right: '1rem', backgroundColor: 'rgba(0,0,0,0.6)', color: '#ffffff', padding: '0.25rem 0.75rem', borderRadius: 'var(--radius-full)', fontSize: '0.6875rem', fontWeight: 700, backdropFilter: 'blur(4px)' }}>
-            🏫 {user.college || 'IIT Madras'}
-          </span>
-        </div>
-
-        {/* PROFILE HEADER & AVATAR */}
-        <div style={{ padding: '0 1.75rem 1.75rem 1.75rem', position: 'relative' }}>
-          
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '1rem', marginTop: '-48px', marginBottom: '1rem' }}>
-            <div style={{ position: 'relative' }}>
-              <img 
-                src={getDefaultAvatarByGender(user.gender, user.avatarUrl)} 
-                alt="Profile" 
-                style={{ width: '96px', height: '96px', borderRadius: '50%', border: '4px solid var(--bg-card)', objectFit: 'cover', boxShadow: 'var(--shadow-md)', backgroundColor: 'var(--bg-card)' }} 
-              />
-              <span style={{ position: 'absolute', bottom: '4px', right: '4px', width: '18px', height: '18px', borderRadius: '50%', backgroundColor: '#10b981', border: '2px solid var(--bg-card)' }} title="Online on StudyLoop"></span>
-            </div>
-
-            <div style={{ display: 'flex', gap: '0.625rem', alignItems: 'center', flexWrap: 'wrap' }}>
-              <button 
-                onClick={toggleFollow} 
-                className={`btn ${isFollowing ? 'btn-secondary' : 'btn-accent'}`} 
-                style={{ fontSize: '0.8125rem', padding: '0.45rem 1rem', fontWeight: 700 }}
-              >
-                {isFollowing ? <Check size={14} /> : <UserPlus size={14} />}
-                {isFollowing ? 'Following' : 'Connect / Follow'}
-              </button>
-
-              <button 
-                onClick={() => { onClose(); onStartChat(user); }} 
-                className="btn btn-primary" 
-                style={{ fontSize: '0.8125rem', padding: '0.45rem 1rem', fontWeight: 700 }}
-              >
-                <MessageSquare size={14} /> Send Message
-              </button>
-
-              <button 
-                onClick={handleCopyLink} 
-                className="btn btn-secondary" 
-                style={{ fontSize: '0.8125rem', padding: '0.45rem 0.75rem' }} 
-                title="Share Profile"
-              >
-                <Share2 size={14} />
-              </button>
-            </div>
-          </div>
-
-          {/* NAME, HEADLINE & METADATA */}
-          <div style={{ marginBottom: '1.25rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <h2 className="font-serif" style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
-                {user.fullName || 'Student Learner'}
-              </h2>
-              <span className="tag tag-accent" style={{ fontSize: '0.6875rem', fontWeight: 700 }}>
-                ✓ Verified Student
-              </span>
-              <span className="tag tag-success" style={{ fontSize: '0.6875rem', fontWeight: 700 }}>
-                ⚡ {user.xp || 650} XP • Lvl {user.level || 4}
-              </span>
-            </div>
-
-            <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', marginTop: '0.25rem' }}>
-              {user.headline || `${user.department || 'Computer Science'} Student @ ${user.college || 'IIT Madras'}`}
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.35rem', flexWrap: 'wrap' }}>
-              <span>🎓 {user.college || 'IIT Madras'} (Year {user.year || 2})</span>
-              <span>📍 {user.location || 'India'}</span>
-              <span>⭐ {user.conceptClarityRating || 4.9} Mentor Rating ({user.classesTaught || 18} Classes Taught)</span>
-            </div>
-
-            {/* COUNTERS */}
-            <div style={{ display: 'flex', gap: '1.5rem', fontSize: '0.8125rem', color: 'var(--text-primary)', marginTop: '0.75rem', borderTop: '1px solid var(--border-color)', paddingTop: '0.75rem' }}>
-              <div><strong>{followersCount}</strong> <span style={{ color: 'var(--text-secondary)' }}>followers</span></div>
-              <div><strong>{user.followingCount !== undefined ? user.followingCount : 85}</strong> <span style={{ color: 'var(--text-secondary)' }}>following</span></div>
-              <div><strong>₹{user.hourlyRate || user.customSessionRate || 450}</strong> <span style={{ color: 'var(--text-secondary)' }}>/ 30m peer class</span></div>
-            </div>
-
-            {/* SOCIAL LINKS */}
-            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap', marginTop: '0.625rem' }}>
-              {socialLinks.github && (
-                <a href={socialLinks.github} target="_blank" rel="noreferrer" className="tag tag-secondary" style={{ textDecoration: 'none', fontSize: '0.6875rem', fontWeight: 700 }}>
-                  <Github size={12} /> GitHub ↗
-                </a>
-              )}
-              {socialLinks.linkedin && (
-                <a href={socialLinks.linkedin} target="_blank" rel="noreferrer" className="tag tag-accent" style={{ textDecoration: 'none', fontSize: '0.6875rem', fontWeight: 700 }}>
-                  <Briefcase size={12} /> LinkedIn ↗
-                </a>
-              )}
-              {socialLinks.leetcode && (
-                <a href={socialLinks.leetcode} target="_blank" rel="noreferrer" className="tag tag-warning" style={{ textDecoration: 'none', fontSize: '0.6875rem', fontWeight: 700 }}>
-                  <Code size={12} /> LeetCode ↗
-                </a>
-              )}
-              {socialLinks.portfolio && (
-                <a href={socialLinks.portfolio} target="_blank" rel="noreferrer" className="tag tag-success" style={{ textDecoration: 'none', fontSize: '0.6875rem', fontWeight: 700 }}>
-                  <Globe size={12} /> Portfolio ↗
-                </a>
-              )}
-            </div>
-          </div>
-
-          {/* TAB STRIP */}
-          <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', gap: '0.5rem', marginBottom: '1.25rem', overflowX: 'auto', paddingBottom: '0.25rem' }}>
-            <button 
-              onClick={() => setActiveProfileTab('overview')}
-              style={{ padding: '0.5rem 0.875rem', fontSize: '0.8125rem', fontWeight: 700, border: 'none', background: 'transparent', cursor: 'pointer', color: activeProfileTab === 'overview' ? 'var(--accent-primary)' : 'var(--text-secondary)', borderBottom: activeProfileTab === 'overview' ? '2px solid var(--accent-primary)' : '2px solid transparent' }}
-            >
-              📋 Overview & Bio
-            </button>
-            <button 
-              onClick={() => setActiveProfileTab('certifications')}
-              style={{ padding: '0.5rem 0.875rem', fontSize: '0.8125rem', fontWeight: 700, border: 'none', background: 'transparent', cursor: 'pointer', color: activeProfileTab === 'certifications' ? 'var(--accent-primary)' : 'var(--text-secondary)', borderBottom: activeProfileTab === 'certifications' ? '2px solid var(--accent-primary)' : '2px solid transparent' }}
-            >
-              📜 Verified Certs ({certifications.length})
-            </button>
-            <button 
-              onClick={() => setActiveProfileTab('education')}
-              style={{ padding: '0.5rem 0.875rem', fontSize: '0.8125rem', fontWeight: 700, border: 'none', background: 'transparent', cursor: 'pointer', color: activeProfileTab === 'education' ? 'var(--accent-primary)' : 'var(--text-secondary)', borderBottom: activeProfileTab === 'education' ? '2px solid var(--accent-primary)' : '2px solid transparent' }}
-            >
-              🎓 Education ({educations.length})
-            </button>
-            <button 
-              onClick={() => setActiveProfileTab('projects')}
-              style={{ padding: '0.5rem 0.875rem', fontSize: '0.8125rem', fontWeight: 700, border: 'none', background: 'transparent', cursor: 'pointer', color: activeProfileTab === 'projects' ? 'var(--accent-primary)' : 'var(--text-secondary)', borderBottom: activeProfileTab === 'projects' ? '2px solid var(--accent-primary)' : '2px solid transparent' }}
-            >
-              💼 Projects ({projects.length})
-            </button>
-            <button 
-              onClick={() => setActiveProfileTab('achievements')}
-              style={{ padding: '0.5rem 0.875rem', fontSize: '0.8125rem', fontWeight: 700, border: 'none', background: 'transparent', cursor: 'pointer', color: activeProfileTab === 'achievements' ? 'var(--accent-primary)' : 'var(--text-secondary)', borderBottom: activeProfileTab === 'achievements' ? '2px solid var(--accent-primary)' : '2px solid transparent' }}
-            >
-              🏆 Honors ({achievements.length})
-            </button>
-          </div>
-
-          {/* TAB CONTENTS */}
-          {activeProfileTab === 'overview' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div>
-                <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.35rem' }}>About</div>
-                <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
-                  {user.bio || '🎓 Student mentor active on StudyLoop peer network.'}
-                </p>
-              </div>
-
-              <div>
-                <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.35rem' }}>Teaching & Mentoring Topics</div>
-                <div style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap' }}>
-                  {(user.teachingSkills || user.skills || ['Java', 'Algorithms', 'React']).map((s, i) => (
-                    <span key={i} className="tag tag-accent" style={{ fontSize: '0.75rem' }}>{s}</span>
-                  ))}
-                </div>
-              </div>
-
-              {user.learningGoals && user.learningGoals.length > 0 && (
-                <div>
-                  <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.35rem' }}>Currently Learning</div>
-                  <div style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap' }}>
-                    {user.learningGoals.map((g, i) => (
-                      <span key={i} className="tag tag-secondary" style={{ fontSize: '0.75rem' }}>🎯 {g}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {activeProfileTab === 'certifications' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
-              {certifications.map(c => (
-                <div key={c.id} style={{ padding: '0.875rem 1rem', backgroundColor: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                    <div style={{ width: '38px', height: '38px', borderRadius: '8px', backgroundColor: 'var(--bg-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem' }}>
-                      {c.badgeIcon || '📜'}
-                    </div>
-                    <div>
-                      <div style={{ fontWeight: 800, fontSize: '0.875rem', color: 'var(--text-primary)' }}>{c.name}</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{c.issuer} • Issued {c.issueDate}</div>
-                      {c.credentialId && (
-                        <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>ID: {c.credentialId}</div>
-                      )}
-                    </div>
-                  </div>
-                  {c.credentialUrl && (
-                    <a href={c.credentialUrl} target="_blank" rel="noreferrer" className="btn btn-secondary" style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem', textDecoration: 'none' }}>
-                      Verify ↗
-                    </a>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {activeProfileTab === 'education' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
-              {educations.map(edu => (
-                <div key={edu.id} style={{ padding: '0.875rem 1rem', backgroundColor: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
-                  <div style={{ fontWeight: 800, fontSize: '0.875rem', color: 'var(--text-primary)' }}>{edu.school}</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{edu.degree} • {edu.field}</div>
-                  <div style={{ fontSize: '0.6875rem', color: 'var(--accent-primary)', fontWeight: 700, marginTop: '0.2rem' }}>
-                    {edu.startYear} – {edu.endYear} • Grade: {edu.grade}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {activeProfileTab === 'projects' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
-              {projects.map(proj => (
-                <div key={proj.id} style={{ padding: '0.875rem 1rem', backgroundColor: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
-                  <div style={{ fontWeight: 800, fontSize: '0.875rem', color: 'var(--text-primary)' }}>{proj.title}</div>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: '0.25rem 0 0.5rem 0', lineHeight: 1.5 }}>
-                    {proj.desc}
-                  </p>
-                  <div style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
-                    {(proj.stack || []).map((tech, idx) => (
-                      <span key={idx} className="tag tag-accent" style={{ fontSize: '0.6875rem' }}>{tech}</span>
-                    ))}
-                  </div>
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    {proj.githubUrl && (
-                      <a href={proj.githubUrl} target="_blank" rel="noreferrer" className="btn btn-secondary" style={{ fontSize: '0.6875rem', padding: '0.25rem 0.625rem', textDecoration: 'none' }}>
-                        <Github size={12} /> Source Code
-                      </a>
-                    )}
-                    {proj.liveUrl && (
-                      <a href={proj.liveUrl} target="_blank" rel="noreferrer" className="btn btn-primary" style={{ fontSize: '0.6875rem', padding: '0.25rem 0.625rem', textDecoration: 'none' }}>
-                        <ExternalLink size={12} /> Live App ↗
-                      </a>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {activeProfileTab === 'achievements' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
-              {achievements.map(ach => (
-                <div key={ach.id} style={{ padding: '0.875rem 1rem', backgroundColor: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div style={{ fontWeight: 800, fontSize: '0.875rem', color: 'var(--text-primary)' }}>{ach.title}</div>
-                    <span className="tag tag-warning" style={{ fontSize: '0.6875rem' }}>{ach.date}</span>
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>Issued by: {ach.issuer}</div>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: '0.35rem 0 0 0', lineHeight: 1.5 }}>
-                    {ach.desc}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
-
-        </div>
-
-      </div>
-    </div>
-  );
-}
-
 function RtcCallOverlay({ localVideoRef, remoteVideoRef, isScreenSharing, toggleScreenShare, hangUpCall, webrtcCall, localStream, remoteStream }) {
   return (
     <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(9, 13, 22, 0.95)', zIndex: 5000, display: 'flex', flexDirection: 'column', padding: '1.5rem' }}>
@@ -8495,72 +8064,526 @@ function WalletScreen({ token }) {
   );
 }
 
+// --- INSTAGRAM & LINKEDIN HYBRID PUBLIC PROFILE MODAL ---
+function PublicProfileModal({ user, currentUserId, token, onClose, onStartChat, onOpenUserList, onOpenBookingModal }) {
+  const { profile, updateProfileState } = useAuth();
+  const [profileTab, setProfileTab] = useState('overview'); // 'overview', 'shorts', 'reviews'
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState('not_connected'); // 'not_connected', 'pending', 'connected'
+  const [endorsedSkillsMap, setEndorsedSkillsMap] = useState({});
+
+  if (!user) return null;
+
+  const isOwnProfile = user.id === currentUserId || user.id === profile?.id;
+  const fullName = user.fullName || 'Student Peer';
+  const username = user.username || user.fullName?.toLowerCase().replace(/\s+/g, '_') || 'student_peer';
+  const college = user.college || 'IIT Madras';
+  const department = user.department || 'Computer Science & Engineering';
+  const year = user.year || 3;
+  const avatarUrl = user.avatarUrl || (user.gender === 'female' ? FEMALE_AVATAR_SVG : MALE_AVATAR_SVG);
+  const headline = user.headline || `Undergrad Student @ ${college} • Peer Mentor`;
+  const bio = user.bio || `Passionate about ${department} and helping fellow students grasp tough academic concepts. Active in campus doubt solving and 1:1 peer sessions.`;
+  const mutuals = user.mutuals || 14;
+  const followersCount = user.followersCount || 1420;
+  const followingCount = user.followingCount || 240;
+  const doubtsSolved = user.doubtsSolved || 38;
+  const rating = user.rating || 4.92;
+  const xp = user.xp || 820;
+  const level = user.level || 5;
+
+  const skillsList = user.skills && user.skills.length > 0 
+    ? user.skills 
+    : ['Python', 'Data Structures & Algorithms', 'Machine Learning', 'Java & OOP', 'Database Systems'];
+
+  const sampleShorts = [
+    { id: 's-1', title: 'Recursion Trees in 60s', views: '2.4K', likes: 182, thumb: 'https://assets.mixkit.co/videos/preview/mixkit-software-developer-working-on-code-42867-large.mp4' },
+    { id: 's-2', title: 'Spring Boot IoC Explained', views: '3.8K', likes: 295, thumb: 'https://assets.mixkit.co/videos/preview/mixkit-hands-of-a-man-typing-on-a-computer-keyboard-41334-large.mp4' },
+    { id: 's-3', title: 'Gradient Descent in 3D', views: '4.1K', likes: 410, thumb: 'https://assets.mixkit.co/videos/preview/mixkit-animation-of-futuristic-devices-99786-large.mp4' }
+  ];
+
+  const sampleReviews = [
+    { author: 'Chaitanya Reddy', college: 'BITS Pilani', rating: 5, date: '2 days ago', text: 'Super clear explanations on Dynamic Programming memoization. Solved my doubts in under 20 mins!' },
+    { author: 'Divya Nambiar', college: 'NIT Trichy', rating: 5, date: '1 week ago', text: 'Patient tutor with great real-world examples in SQL indexing and PostgreSQL query plans.' }
+  ];
+
+  const handleToggleFollow = () => {
+    const nextState = !isFollowing;
+    setIsFollowing(nextState);
+    if (profile) {
+      updateProfileState({ 
+        ...profile, 
+        followingCount: nextState ? (profile.followingCount || 5) + 1 : Math.max(0, (profile.followingCount || 5) - 1) 
+      });
+    }
+  };
+
+  const handleToggleConnect = () => {
+    if (connectionStatus === 'not_connected') {
+      setConnectionStatus('pending');
+      alert(`🤝 Connection request sent to ${fullName}!`);
+    } else if (connectionStatus === 'pending') {
+      setConnectionStatus('not_connected');
+    }
+  };
+
+  const handleEndorse = (skill) => {
+    if (endorsedSkillsMap[skill]) return;
+    setEndorsedSkillsMap(prev => ({ ...prev, [skill]: true }));
+    if (profile) {
+      updateProfileState({ ...profile, coins: (profile.coins || 45) + 5, xp: (profile.xp || 650) + 10 });
+    }
+    alert(`🌟 You endorsed ${fullName} for ${skill}! +5 Peer Coins and +10 XP awarded.`);
+  };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.85)', zIndex: 3500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.25rem', backdropFilter: 'blur(8px)' }} onClick={onClose}>
+      <div 
+        className="card-premium" 
+        style={{ width: '100%', maxWidth: '780px', maxHeight: '92vh', overflowY: 'auto', borderRadius: '24px', backgroundColor: 'var(--bg-elevated)', padding: 0, position: 'relative', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6)', border: '1px solid var(--border-color)' }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* TOP COVER BANNER */}
+        <div style={{ height: '150px', background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%)', position: 'relative', borderRadius: '24px 24px 0 0' }}>
+          {/* Close Button */}
+          <button 
+            onClick={onClose} 
+            className="btn-icon" 
+            style={{ position: 'absolute', top: '1rem', right: '1rem', backgroundColor: 'rgba(0,0,0,0.5)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.2)', width: '36px', height: '36px', borderRadius: '50%', cursor: 'pointer' }}
+          >
+            <X size={18} />
+          </button>
+
+          <span style={{ position: 'absolute', top: '1rem', left: '1rem', backgroundColor: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)', color: '#ffffff', padding: '0.3rem 0.75rem', borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: 700, border: '1px solid rgba(255,255,255,0.2)' }}>
+            🎓 Verified Campus Student Profile
+          </span>
+        </div>
+
+        {/* PROFILE HEADER & AVATAR INFO */}
+        <div style={{ padding: '0 2rem 1.5rem 2rem', position: 'relative' }}>
+          
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '-50px', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '1rem' }}>
+            
+            {/* Avatar with Online Dot */}
+            <div style={{ position: 'relative' }}>
+              <img 
+                src={avatarUrl} 
+                alt={fullName} 
+                style={{ width: '104px', height: '104px', borderRadius: '50%', border: '4px solid var(--bg-elevated)', objectFit: 'cover', backgroundColor: 'var(--bg-secondary)', boxShadow: 'var(--shadow-md)' }} 
+              />
+              <span style={{ position: 'absolute', bottom: '6px', right: '6px', width: '18px', height: '18px', backgroundColor: '#10b981', border: '3px solid var(--bg-elevated)', borderRadius: '50%' }} title="Online now" />
+            </div>
+
+            {/* Action Buttons */}
+            {!isOwnProfile && (
+              <div style={{ display: 'flex', gap: '0.625rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                <button 
+                  onClick={handleToggleConnect} 
+                  className={`btn ${connectionStatus === 'connected' ? 'btn-secondary' : 'btn-accent'}`}
+                  style={{ fontSize: '0.8125rem', padding: '0.55rem 1.1rem', fontWeight: 800 }}
+                >
+                  <UserPlus size={14} /> {connectionStatus === 'pending' ? 'Pending ⏳' : connectionStatus === 'connected' ? 'Connected ✓' : 'Connect'}
+                </button>
+
+                <button 
+                  onClick={handleToggleFollow} 
+                  className="btn btn-secondary" 
+                  style={{ fontSize: '0.8125rem', padding: '0.55rem 1rem', fontWeight: 700, color: isFollowing ? 'var(--accent-primary)' : 'inherit' }}
+                >
+                  {isFollowing ? 'Following ✓' : '+ Follow'}
+                </button>
+
+                <button 
+                  onClick={() => {
+                    onClose();
+                    if (onStartChat) {
+                      onStartChat(user);
+                    }
+                  }} 
+                  className="btn btn-primary" 
+                  style={{ fontSize: '0.8125rem', padding: '0.55rem 1.1rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                >
+                  <MessageSquare size={14} /> Direct Message
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Identity & Badges */}
+          <div style={{ marginBottom: '1.25rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <h2 className="font-serif" style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+                {fullName}
+              </h2>
+              <span className="tag tag-accent" style={{ fontSize: '0.6875rem', fontWeight: 800 }}>
+                🛡️ Verified
+              </span>
+              <span className="tag tag-success" style={{ fontSize: '0.6875rem', fontWeight: 700 }}>
+                ⚡ Level {level}
+              </span>
+            </div>
+
+            <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+              @{username} • 📍 Chennai, India
+            </div>
+
+            <div style={{ fontSize: '0.9375rem', color: 'var(--text-primary)', fontWeight: 600, marginTop: '0.5rem' }}>
+              {headline}
+            </div>
+
+            <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '0.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Building2 size={14} style={{ color: 'var(--accent-primary)' }} />
+              <span>{college} • {department} (Year {year})</span>
+            </div>
+          </div>
+
+          {/* INSTAGRAM & LINKEDIN METRIC COUNTERS BAR */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '0.75rem', backgroundColor: 'var(--bg-tertiary)', padding: '0.875rem 1.25rem', borderRadius: 'var(--radius-lg)', marginBottom: '1.5rem', border: '1px solid var(--border-color)' }}>
+            
+            <div 
+              style={{ textAlign: 'center', cursor: onOpenUserList ? 'pointer' : 'default' }}
+              onClick={() => onOpenUserList && onOpenUserList(`${fullName}'s Followers`, user.id)}
+            >
+              <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-primary)' }}>{followersCount.toLocaleString()}</div>
+              <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Followers</div>
+            </div>
+
+            <div 
+              style={{ textAlign: 'center', cursor: onOpenUserList ? 'pointer' : 'default' }}
+              onClick={() => onOpenUserList && onOpenUserList(`${fullName}'s Following`, user.id)}
+            >
+              <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-primary)' }}>{followingCount.toLocaleString()}</div>
+              <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Following</div>
+            </div>
+
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--accent-primary)' }}>{mutuals}</div>
+              <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Mutuals</div>
+            </div>
+
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--success-color)' }}>{doubtsSolved}</div>
+              <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Doubts Solved</div>
+            </div>
+
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--warning-color)' }}>⭐ {rating}</div>
+              <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Clarity Score</div>
+            </div>
+
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--accent-primary)' }}>⚡ {xp}</div>
+              <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>XP Points</div>
+            </div>
+
+          </div>
+
+          {/* SUBTAB SELECTOR (INSTA / LINKEDIN TABS) */}
+          <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', marginBottom: '1.25rem', gap: '1.5rem' }}>
+            <button
+              onClick={() => setProfileTab('overview')}
+              style={{
+                padding: '0.625rem 0.25rem',
+                border: 'none',
+                borderBottom: profileTab === 'overview' ? '2px solid var(--accent-primary)' : '2px solid transparent',
+                backgroundColor: 'transparent',
+                color: profileTab === 'overview' ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                fontWeight: 700,
+                fontSize: '0.875rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.375rem'
+              }}
+            >
+              <FileText size={15} /> Overview & Skills
+            </button>
+
+            <button
+              onClick={() => setProfileTab('shorts')}
+              style={{
+                padding: '0.625rem 0.25rem',
+                border: 'none',
+                borderBottom: profileTab === 'shorts' ? '2px solid var(--accent-primary)' : '2px solid transparent',
+                backgroundColor: 'transparent',
+                color: profileTab === 'shorts' ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                fontWeight: 700,
+                fontSize: '0.875rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.375rem'
+              }}
+            >
+              <Tv2 size={15} /> Concept Shorts ({sampleShorts.length})
+            </button>
+
+            <button
+              onClick={() => setProfileTab('reviews')}
+              style={{
+                padding: '0.625rem 0.25rem',
+                border: 'none',
+                borderBottom: profileTab === 'reviews' ? '2px solid var(--accent-primary)' : '2px solid transparent',
+                backgroundColor: 'transparent',
+                color: profileTab === 'reviews' ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                fontWeight: 700,
+                fontSize: '0.875rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.375rem'
+              }}
+            >
+              <Star size={15} /> Reviews ({sampleReviews.length})
+            </button>
+          </div>
+
+          {/* TAB 1: OVERVIEW, BIO & SKILLS */}
+          {profileTab === 'overview' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              
+              {/* About Summary */}
+              <div style={{ backgroundColor: 'var(--bg-tertiary)', padding: '1.25rem', borderRadius: 'var(--radius-md)' }}>
+                <h4 className="font-serif" style={{ fontSize: '1rem', fontWeight: 800, margin: '0 0 0.5rem 0', color: 'var(--text-primary)' }}>
+                  About & Academic Focus
+                </h4>
+                <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
+                  {bio}
+                </p>
+              </div>
+
+              {/* Education Credentials */}
+              <div style={{ backgroundColor: 'var(--bg-tertiary)', padding: '1.25rem', borderRadius: 'var(--radius-md)' }}>
+                <h4 className="font-serif" style={{ fontSize: '1rem', fontWeight: 800, margin: '0 0 0.75rem 0', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                  <GraduationCap size={16} style={{ color: 'var(--accent-primary)' }} /> Education & University
+                </h4>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                  <div style={{ width: '42px', height: '42px', borderRadius: '8px', backgroundColor: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem', border: '1px solid var(--border-color)' }}>
+                    🏛️
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: '0.9375rem', color: 'var(--text-primary)' }}>{college}</div>
+                    <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>Bachelor of Technology (B.Tech) • {department}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--accent-primary)', fontWeight: 700, marginTop: '0.2rem' }}>CGPA: 9.35 / 10.0 • Dean's List Awardee</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Skills & Endorsements */}
+              <div style={{ backgroundColor: 'var(--bg-tertiary)', padding: '1.25rem', borderRadius: 'var(--radius-md)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                  <h4 className="font-serif" style={{ fontSize: '1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                    <Award size={16} style={{ color: 'var(--warning-color)' }} /> Verified Skills & Endorsements
+                  </h4>
+                  <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>Click to endorse (+5🪙)</span>
+                </div>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  {skillsList.map((skill, idx) => {
+                    const isEndorsed = endorsedSkillsMap[skill];
+                    return (
+                      <button
+                        key={idx}
+                        onClick={() => handleEndorse(skill)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.375rem',
+                          padding: '0.45rem 0.875rem',
+                          borderRadius: 'var(--radius-full)',
+                          border: isEndorsed ? '1px solid var(--success-color)' : '1px solid var(--border-color)',
+                          backgroundColor: isEndorsed ? 'var(--accent-light)' : 'var(--bg-secondary)',
+                          color: isEndorsed ? 'var(--success-color)' : 'var(--text-primary)',
+                          fontSize: '0.8125rem',
+                          fontWeight: 700,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <span>{skill}</span>
+                        <span style={{ fontSize: '0.6875rem', opacity: 0.8, backgroundColor: 'rgba(0,0,0,0.1)', padding: '0.1rem 0.35rem', borderRadius: 'var(--radius-full)' }}>
+                          {isEndorsed ? '✓ Endorsed' : `⭐ ${18 + idx * 7}`}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+            </div>
+          )}
+
+          {/* TAB 2: CONCEPT SHORTS GRID */}
+          {profileTab === 'shorts' && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1rem' }}>
+              {sampleShorts.map(s => (
+                <div key={s.id} className="card-premium interactive-hover" style={{ padding: 0, overflow: 'hidden', borderRadius: '16px', position: 'relative' }}>
+                  <div style={{ height: '220px', backgroundColor: '#000000', position: 'relative' }}>
+                    <video src={s.thumb} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.85 }} />
+                    <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <PlayCircle size={36} style={{ color: '#ffffff', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.6))' }} />
+                    </div>
+                    <span style={{ position: 'absolute', bottom: '8px', left: '8px', backgroundColor: 'rgba(0,0,0,0.7)', color: '#ffffff', fontSize: '0.6875rem', fontWeight: 700, padding: '0.15rem 0.5rem', borderRadius: 'var(--radius-full)' }}>
+                      👁️ {s.views}
+                    </span>
+                    <span style={{ position: 'absolute', bottom: '8px', right: '8px', backgroundColor: 'rgba(0,0,0,0.7)', color: '#f43f5e', fontSize: '0.6875rem', fontWeight: 700, padding: '0.15rem 0.5rem', borderRadius: 'var(--radius-full)' }}>
+                      ❤️ {s.likes}
+                    </span>
+                  </div>
+                  <div style={{ padding: '0.75rem', fontWeight: 700, fontSize: '0.8125rem', color: 'var(--text-primary)' }}>
+                    {s.title}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* TAB 3: REVIEWS & RECOMMENDATIONS */}
+          {profileTab === 'reviews' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {sampleReviews.map((rev, i) => (
+                <div key={i} style={{ backgroundColor: 'var(--bg-tertiary)', padding: '1rem 1.25rem', borderRadius: 'var(--radius-md)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                    <div>
+                      <span style={{ fontWeight: 800, fontSize: '0.875rem', color: 'var(--text-primary)' }}>{rev.author}</span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}> • {rev.college}</span>
+                    </div>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--warning-color)', fontWeight: 800 }}>
+                      {'⭐'.repeat(rev.rating)}
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', margin: '0 0 0.25rem 0', lineHeight: 1.4 }}>
+                    "{rev.text}"
+                  </p>
+                  <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>{rev.date}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+// --- USER LIST MODAL (FOLLOWERS / FOLLOWING LIST) ---
+function UserListModal({ title, userId, token, onClose, onSelectUser }) {
+  const [search, setSearch] = useState('');
+  
+  const sampleUsers = [
+    { id: 'u-1', fullName: 'Bhavna Patel', college: 'IIT Madras', department: 'Computer Science', year: 3, avatarUrl: FEMALE_AVATAR_SVG, isFollowing: true },
+    { id: 'u-2', fullName: 'Chaitanya Reddy', college: 'BITS Pilani', department: 'Electrical Engg', year: 1, avatarUrl: MALE_AVATAR_SVG, isFollowing: false },
+    { id: 'u-3', fullName: 'Divya Nambiar', college: 'NIT Trichy', department: 'Data Science', year: 2, avatarUrl: FEMALE_AVATAR_SVG, isFollowing: true },
+    { id: 'u-4', fullName: 'Kavya Subramanian', college: 'IIT Delhi', department: 'Software Engg', year: 4, avatarUrl: FEMALE_AVATAR_SVG, isFollowing: false }
+  ];
+
+  const filtered = sampleUsers.filter(u => u.fullName.toLowerCase().includes(search.toLowerCase()) || u.college.toLowerCase().includes(search.toLowerCase()));
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.8)', zIndex: 4000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', backdropFilter: 'blur(6px)' }} onClick={onClose}>
+      <div 
+        className="card-premium" 
+        style={{ width: '100%', maxWidth: '460px', padding: '1.75rem', borderRadius: '24px', backgroundColor: 'var(--bg-elevated)', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <h3 className="font-serif" style={{ fontSize: '1.25rem', margin: 0 }}>{title}</h3>
+          <button onClick={onClose} className="btn-icon"><X size={18} /></button>
+        </div>
+
+        <input 
+          type="text" 
+          className="input" 
+          placeholder="Search members..." 
+          value={search} 
+          onChange={e => setSearch(e.target.value)} 
+          style={{ marginBottom: '1rem' }}
+        />
+
+        <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          {filtered.map(u => (
+            <div key={u.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.625rem 0.875rem', backgroundColor: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)' }}>
+              <div 
+                style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }}
+                onClick={() => onSelectUser(u)}
+              >
+                <img src={u.avatarUrl} alt={u.fullName} style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }} />
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: '0.875rem', color: 'var(--text-primary)' }}>{u.fullName}</div>
+                  <div style={{ fontSize: '0.6875rem', color: 'var(--text-secondary)' }}>{u.college} • {u.department}</div>
+                </div>
+              </div>
+
+              <button 
+                onClick={() => onSelectUser(u)}
+                className="btn btn-secondary" 
+                style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem', fontWeight: 700 }}
+              >
+                View Profile
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // --- REAL-TIME LINKEDIN & INSTAGRAM STYLE CONNECTIONS & NETWORK SCREEN ---
 function ConnectionsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, onOpenPublicProfile }) {
   const { profile, updateProfileState } = useAuth();
-  const [activeSubTab, setActiveSubTab] = useState(() => localStorage.getItem('studyloop_conn_subtab') || 'connections');
+  const [activeSubTab, setActiveSubTab] = useState(() => localStorage.getItem('studyloop_conn_subtab') || 'all');
   const [searchFilter, setSearchFilter] = useState('');
+  const [selectedUniversityFilter, setSelectedUniversityFilter] = useState('All');
   const [justConnectedModalPeer, setJustConnectedModalPeer] = useState(null); // Instagram style rectangle modal on accept
   
   useEffect(() => {
     localStorage.setItem('studyloop_conn_subtab', activeSubTab);
   }, [activeSubTab]);
 
-  // Real-time connections list
-  const [connections, setConnections] = useState([
-    { id: 'c-1', fullName: 'Bhavna Patel', college: 'IIT Madras', department: 'Computer Science', year: 3, avatarUrl: FEMALE_AVATAR_SVG, skills: ['Python', 'Machine Learning', 'Data Structures'], degree: '1st', mutuals: 14, endorsed: false },
-    { id: 'c-2', fullName: 'Chaitanya Reddy', college: 'BITS Pilani', department: 'Electrical Engineering', year: 1, avatarUrl: MALE_AVATAR_SVG, skills: ['Circuits', 'Calculus', 'C++'], degree: '1st', mutuals: 8, endorsed: false },
-    { id: 'c-3', fullName: 'Divya Nambiar', college: 'NIT Trichy', department: 'Data Science', year: 2, avatarUrl: FEMALE_AVATAR_SVG, skills: ['SQL', 'Tableau', 'Statistics'], degree: '1st', mutuals: 19, endorsed: true }
+  // Real-time master campus members repository
+  const [members, setMembers] = useState([
+    { id: 'm-1', fullName: 'Bhavna Patel', username: 'bhavna_patel', college: 'IIT Madras', department: 'Computer Science', year: 3, avatarUrl: FEMALE_AVATAR_SVG, skills: ['Python', 'Machine Learning', 'Data Structures'], degree: '1st', mutuals: 14, doubtsSolved: 42, rating: 4.95, xp: 820, level: 5, isFollowing: true, isConnected: true, isPending: false },
+    { id: 'm-2', fullName: 'Chaitanya Reddy', username: 'chaitanya_bits', college: 'BITS Pilani', department: 'Electrical Engineering', year: 1, avatarUrl: MALE_AVATAR_SVG, skills: ['Circuits', 'Calculus', 'C++'], degree: '1st', mutuals: 8, doubtsSolved: 18, rating: 4.85, xp: 340, level: 2, isFollowing: false, isConnected: true, isPending: false },
+    { id: 'm-3', fullName: 'Divya Nambiar', username: 'divya_nitt', college: 'NIT Trichy', department: 'Data Science', year: 2, avatarUrl: FEMALE_AVATAR_SVG, skills: ['SQL', 'Tableau', 'Statistics'], degree: '1st', mutuals: 19, doubtsSolved: 31, rating: 4.90, xp: 520, level: 3, isFollowing: true, isConnected: true, isPending: false },
+    { id: 'm-4', fullName: 'Kavya Subramanian', username: 'kavya_iitd', college: 'IIT Delhi', department: 'Software Engineering', year: 4, avatarUrl: FEMALE_AVATAR_SVG, skills: ['React', 'TypeScript', 'Node.js', 'System Design'], degree: '2nd', mutuals: 11, doubtsSolved: 64, rating: 4.98, xp: 1120, level: 7, isFollowing: false, isConnected: false, isPending: false },
+    { id: 'm-5', fullName: 'Rohan Deshmukh', username: 'rohan_iitb', college: 'IIT Bombay', department: 'Computer Science', year: 2, avatarUrl: MALE_AVATAR_SVG, skills: ['Competitive Programming', 'Algorithms', 'Java'], degree: '2nd', mutuals: 16, doubtsSolved: 27, rating: 4.88, xp: 480, level: 3, isFollowing: false, isConnected: false, isPending: false },
+    { id: 'm-6', fullName: 'Sneha Roy', username: 'sneha_iiit', college: 'IIIT Hyderabad', department: 'AI & Data Science', year: 3, avatarUrl: FEMALE_AVATAR_SVG, skills: ['PyTorch', 'Computer Vision', 'NLP'], degree: '2nd', mutuals: 9, doubtsSolved: 53, rating: 4.96, xp: 950, level: 6, isFollowing: false, isConnected: false, isPending: false },
+    { id: 'm-7', fullName: 'Vikram Joshi', username: 'vikram_mech', college: 'IIT Madras', department: 'Mechanical Engineering', year: 4, avatarUrl: MALE_AVATAR_SVG, skills: ['Thermodynamics', 'MATLAB', 'Python'], degree: '2nd', mutuals: 7, doubtsSolved: 22, rating: 4.80, xp: 390, level: 2, isFollowing: false, isConnected: false, isPending: false },
+    { id: 'm-8', fullName: 'Ananya Guha', username: 'ananya_cloud', college: 'BITS Pilani', department: 'Computer Science', year: 3, avatarUrl: FEMALE_AVATAR_SVG, skills: ['Kubernetes', 'Go', 'Cloud Architecture'], degree: '2nd', mutuals: 13, doubtsSolved: 47, rating: 4.92, xp: 780, level: 4, isFollowing: false, isConnected: false, isPending: false }
   ]);
 
   // Real-time pending requests
   const [pendingRequests, setPendingRequests] = useState([
-    { id: 'p-1', fullName: 'Kavya Subramanian', college: 'IIT Delhi', department: 'Software Engineering', year: 4, avatarUrl: FEMALE_AVATAR_SVG, skills: ['React', 'TypeScript', 'Node.js'], note: 'Hey Aarav, saw your solution in the Java thread! Would love to connect for system design prep.', time: '2h ago' },
-    { id: 'p-2', fullName: 'Rohan Deshmukh', college: 'IIT Bombay', department: 'Computer Science', year: 2, avatarUrl: MALE_AVATAR_SVG, skills: ['Competitive Programming', 'Algorithms'], note: 'Let\'s collaborate on algorithmic doubt rooms.', time: '5h ago' }
-  ]);
-
-  // Real-time suggested peers
-  const [suggestions, setSuggestions] = useState([
-    { id: 's-1', fullName: 'Sneha Roy', college: 'IIIT Hyderabad', department: 'AI & Data Science', avatarUrl: FEMALE_AVATAR_SVG, skills: ['PyTorch', 'Computer Vision'], isPending: false, isFollowing: false },
-    { id: 's-2', fullName: 'Vikram Joshi', college: 'IIT Madras', department: 'Mechanical Engineering', avatarUrl: MALE_AVATAR_SVG, skills: ['Thermodynamics', 'MATLAB', 'Python'], isPending: false, isFollowing: false },
-    { id: 's-3', fullName: 'Ananya Guha', college: 'BITS Pilani', department: 'Computer Science', avatarUrl: FEMALE_AVATAR_SVG, skills: ['Kubernetes', 'Go', 'Cloud'], isPending: false, isFollowing: false }
+    { id: 'm-4', fullName: 'Kavya Subramanian', username: 'kavya_iitd', college: 'IIT Delhi', department: 'Software Engineering', year: 4, avatarUrl: FEMALE_AVATAR_SVG, skills: ['React', 'TypeScript', 'Node.js'], note: 'Hey Aarav, saw your solution in the Java thread! Would love to connect for system design prep.', time: '2h ago', doubtsSolved: 64, rating: 4.98, xp: 1120 },
+    { id: 'm-5', fullName: 'Rohan Deshmukh', username: 'rohan_iitb', college: 'IIT Bombay', department: 'Computer Science', year: 2, avatarUrl: MALE_AVATAR_SVG, skills: ['Competitive Programming', 'Algorithms'], note: 'Let\'s collaborate on algorithmic doubt rooms and coding contests.', time: '5h ago', doubtsSolved: 27, rating: 4.88, xp: 480 }
   ]);
 
   const handleAcceptRequest = (req) => {
     setPendingRequests(prev => prev.filter(p => p.id !== req.id));
-    const newConn = {
-      id: req.id,
-      fullName: req.fullName,
-      college: req.college,
-      department: req.department,
-      year: req.year || 3,
-      avatarUrl: req.avatarUrl,
-      skills: req.skills,
-      degree: '1st',
-      mutuals: 12,
-      endorsed: false
-    };
-    setConnections(prev => [newConn, ...prev]);
+    setMembers(prev => prev.map(m => m.id === req.id ? { ...m, isConnected: true, isPending: false } : m));
+    
     if (profile) {
       const updated = { ...profile, followersCount: (profile.followersCount || 1200) + 1, coins: (profile.coins || 45) + 5, xp: (profile.xp || 650) + 10 };
       updateProfileState(updated);
     }
     // Open Instagram-style rectangle modal
-    setJustConnectedModalPeer(newConn);
+    setJustConnectedModalPeer(req);
   };
 
   const handleIgnoreRequest = (reqId) => {
     setPendingRequests(prev => prev.filter(p => p.id !== reqId));
   };
 
-  const handleSendConnect = (sugId) => {
-    setSuggestions(prev => prev.map(s => s.id === sugId ? { ...s, isPending: true } : s));
+  const handleSendConnect = (memId) => {
+    setMembers(prev => prev.map(m => m.id === memId ? { ...m, isPending: true } : m));
+    alert("🤝 Connection request sent!");
   };
 
-  const handleToggleFollow = (sugId) => {
-    setSuggestions(prev => prev.map(s => {
-      if (s.id === sugId) {
-        const nextState = !s.isFollowing;
+  const handleToggleFollow = (memId) => {
+    setMembers(prev => prev.map(m => {
+      if (m.id === memId) {
+        const nextState = !m.isFollowing;
         if (profile) {
           const updated = { 
             ...profile, 
@@ -8568,14 +8591,13 @@ function ConnectionsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, 
           };
           updateProfileState(updated);
         }
-        return { ...s, isFollowing: nextState };
+        return { ...m, isFollowing: nextState };
       }
-      return s;
+      return m;
     }));
   };
 
-  const handleEndorseSkill = (connId, skillName) => {
-    setConnections(prev => prev.map(c => c.id === connId ? { ...c, endorsed: true } : c));
+  const handleEndorseSkill = (memId, skillName) => {
     if (profile) {
       const updated = { ...profile, coins: (profile.coins || 45) + 5, xp: (profile.xp || 650) + 10 };
       updateProfileState(updated);
@@ -8583,56 +8605,63 @@ function ConnectionsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, 
     alert(`🌟 You endorsed ${skillName}! +5 Peer Coins and +10 XP awarded.`);
   };
 
-  const handleRemoveConnection = (connId, name) => {
+  const handleRemoveConnection = (memId, name) => {
     if (confirm(`Are you sure you want to remove ${name} from your connections?`)) {
-      setConnections(prev => prev.filter(c => c.id !== connId));
+      setMembers(prev => prev.map(m => m.id === memId ? { ...m, isConnected: false } : m));
     }
   };
 
-  const filteredConnections = connections.filter(c => 
-    c.fullName.toLowerCase().includes(searchFilter.toLowerCase()) ||
-    c.college.toLowerCase().includes(searchFilter.toLowerCase()) ||
-    c.department.toLowerCase().includes(searchFilter.toLowerCase()) ||
-    c.skills.some(s => s.toLowerCase().includes(searchFilter.toLowerCase()))
-  );
+  // Filtered members list
+  const filteredMembers = members.filter(m => {
+    const matchesSearch = m.fullName.toLowerCase().includes(searchFilter.toLowerCase()) ||
+      m.college.toLowerCase().includes(searchFilter.toLowerCase()) ||
+      m.department.toLowerCase().includes(searchFilter.toLowerCase()) ||
+      m.skills.some(s => s.toLowerCase().includes(searchFilter.toLowerCase()));
+    
+    const matchesUni = selectedUniversityFilter === 'All' || m.college.toLowerCase().includes(selectedUniversityFilter.toLowerCase());
+    return matchesSearch && matchesUni;
+  });
+
+  const connectedMembers = members.filter(m => m.isConnected);
 
   return (
     <div style={{ padding: '1.5rem 2.5rem', width: '100%', maxWidth: '1400px', margin: '0 auto' }}>
       
-      {/* HEADER */}
+      {/* HEADER & HERO */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h1 className="font-serif" style={{ fontSize: '2.25rem', fontWeight: 800, marginBottom: '0.25rem' }}>
-            Campus Peer Network & Mentorship
+          <h1 className="font-serif" style={{ fontSize: '2.25rem', fontWeight: 800, marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+            <span>Campus Network & Connections</span>
           </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9375rem' }}>
-            Send connection requests, endorse peer skills, accept study invites, and message tutors in real time.
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9375rem', margin: 0 }}>
+            Discover campus peers, view detailed LinkedIn/Instagram profiles, accept connection invites, and exchange study notes.
           </p>
         </div>
 
         {/* TABS SWITCHER */}
         <div style={{ display: 'flex', gap: '0.375rem', backgroundColor: 'var(--bg-tertiary)', padding: '0.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+          
           <button 
-            onClick={() => setActiveSubTab('connections')} 
+            onClick={() => setActiveSubTab('all')} 
             style={{ 
-              padding: '0.5rem 1.25rem', 
+              padding: '0.5rem 1.1rem', 
               borderRadius: 'var(--radius-sm)', 
               border: 'none', 
               cursor: 'pointer',
               fontSize: '0.8125rem', 
               fontWeight: 700,
-              backgroundColor: activeSubTab === 'connections' ? 'var(--bg-secondary)' : 'transparent',
-              color: activeSubTab === 'connections' ? 'var(--accent-primary)' : 'var(--text-secondary)',
-              boxShadow: activeSubTab === 'connections' ? 'var(--shadow-sm)' : 'none'
+              backgroundColor: activeSubTab === 'all' ? 'var(--bg-secondary)' : 'transparent',
+              color: activeSubTab === 'all' ? 'var(--accent-primary)' : 'var(--text-secondary)',
+              boxShadow: activeSubTab === 'all' ? 'var(--shadow-sm)' : 'none'
             }}
           >
-            My Connections ({connections.length})
+            🌐 All Campus Members ({members.length})
           </button>
-          
+
           <button 
             onClick={() => setActiveSubTab('pending')} 
             style={{ 
-              padding: '0.5rem 1.25rem', 
+              padding: '0.5rem 1.1rem', 
               borderRadius: 'var(--radius-sm)', 
               border: 'none', 
               cursor: 'pointer',
@@ -8646,34 +8675,312 @@ function ConnectionsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, 
               gap: '0.375rem'
             }}
           >
-            Pending Requests
+            📩 Pending Requests
             {pendingRequests.length > 0 && (
-              <span style={{ backgroundColor: 'var(--danger-color)', color: '#ffffff', fontSize: '0.625rem', padding: '0.1rem 0.35rem', borderRadius: 'var(--radius-full)' }}>
+              <span style={{ backgroundColor: 'var(--danger-color)', color: '#ffffff', fontSize: '0.625rem', padding: '0.1rem 0.4rem', borderRadius: 'var(--radius-full)', fontWeight: 800 }}>
                 {pendingRequests.length}
               </span>
             )}
           </button>
 
           <button 
-            onClick={() => setActiveSubTab('discover')} 
+            onClick={() => setActiveSubTab('connections')} 
             style={{ 
-              padding: '0.5rem 1.25rem', 
+              padding: '0.5rem 1.1rem', 
               borderRadius: 'var(--radius-sm)', 
               border: 'none', 
               cursor: 'pointer',
               fontSize: '0.8125rem', 
               fontWeight: 700,
-              backgroundColor: activeSubTab === 'discover' ? 'var(--bg-secondary)' : 'transparent',
-              color: activeSubTab === 'discover' ? 'var(--accent-primary)' : 'var(--text-secondary)',
-              boxShadow: activeSubTab === 'discover' ? 'var(--shadow-sm)' : 'none'
+              backgroundColor: activeSubTab === 'connections' ? 'var(--bg-secondary)' : 'transparent',
+              color: activeSubTab === 'connections' ? 'var(--accent-primary)' : 'var(--text-secondary)',
+              boxShadow: activeSubTab === 'connections' ? 'var(--shadow-sm)' : 'none'
             }}
           >
-            Suggested Mentors ({suggestions.length})
+            🤝 My Connections ({connectedMembers.length})
           </button>
         </div>
       </div>
 
-      {/* SUBTAB 1: MY CONNECTIONS */}
+      {/* PENDING REQUESTS TOP NOTIFICATION BANNER (IF ON ALL TAB & PENDING EXISTS) */}
+      {activeSubTab === 'all' && pendingRequests.length > 0 && (
+        <div style={{ backgroundColor: 'var(--accent-light)', border: '1px solid var(--accent-primary)', borderRadius: 'var(--radius-lg)', padding: '1rem 1.5rem', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: 'var(--accent-primary)', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>
+              {pendingRequests.length}
+            </div>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: '0.9375rem', color: 'var(--text-primary)' }}>
+                You have {pendingRequests.length} pending connection invitation{pendingRequests.length > 1 ? 's' : ''}!
+              </div>
+              <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                {pendingRequests.map(p => p.fullName).join(', ')} wants to connect with you.
+              </div>
+            </div>
+          </div>
+
+          <button 
+            onClick={() => setActiveSubTab('pending')} 
+            className="btn btn-accent" 
+            style={{ fontSize: '0.8125rem', padding: '0.45rem 1rem', fontWeight: 800 }}
+          >
+            Review Requests →
+          </button>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* SUBTAB 1: ALL CAMPUS MEMBERS DIRECTORY (INSTAGRAM / LINKEDIN STYLE GRID) */}
+      {/* ========================================================================= */}
+      {activeSubTab === 'all' && (
+        <div>
+          {/* Search & Filter Bar */}
+          <div className="card-premium" style={{ marginBottom: '1.5rem', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', width: '100%' }}>
+              <Search size={18} style={{ color: 'var(--text-muted)' }} />
+              <input 
+                type="text" 
+                className="input" 
+                placeholder="Search campus members by student name, college, department, or skill (e.g. Machine Learning, Java, SQL)..." 
+                value={searchFilter} 
+                onChange={e => setSearchFilter(e.target.value)} 
+                style={{ border: 'none', background: 'transparent', padding: '0.25rem 0', width: '100%' }}
+              />
+            </div>
+
+            {/* University Filter Chips */}
+            <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.25rem' }}>
+              {['All', 'IIT Madras', 'BITS Pilani', 'NIT Trichy', 'IIIT Hyderabad', 'IIT Delhi', 'IIT Bombay'].map(uni => (
+                <button
+                  key={uni}
+                  onClick={() => setSelectedUniversityFilter(uni)}
+                  style={{
+                    padding: '0.35rem 0.875rem',
+                    borderRadius: 'var(--radius-full)',
+                    border: selectedUniversityFilter === uni ? '1px solid var(--accent-primary)' : '1px solid var(--border-color)',
+                    backgroundColor: selectedUniversityFilter === uni ? 'var(--accent-light)' : 'var(--bg-tertiary)',
+                    color: selectedUniversityFilter === uni ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  {uni === 'All' ? '🏛️ All Universities' : uni}
+                </button>
+              ))}
+            </div>
+
+          </div>
+
+          {/* Members Grid (Instagram / LinkedIn Cards) */}
+          <div className="grid-3">
+            {filteredMembers.map(mem => (
+              <div 
+                key={mem.id} 
+                className="card-premium interactive-hover" 
+                style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', borderRadius: '20px' }}
+              >
+                {/* Card Gradient Banner */}
+                <div style={{ height: '72px', background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%)', position: 'relative' }}>
+                  <span style={{ position: 'absolute', top: '8px', right: '10px', backgroundColor: 'rgba(0,0,0,0.6)', color: '#ffffff', fontSize: '0.625rem', fontWeight: 800, padding: '0.15rem 0.5rem', borderRadius: 'var(--radius-full)' }}>
+                    ⚡ {mem.xp} XP
+                  </span>
+                </div>
+
+                {/* Profile Avatar & Details */}
+                <div style={{ padding: '0 1.25rem 1.25rem 1.25rem', display: 'flex', flexDirection: 'column', flex: 1 }}>
+                  
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '-36px', marginBottom: '0.75rem' }}>
+                    <img 
+                      src={mem.avatarUrl} 
+                      alt={mem.fullName} 
+                      style={{ width: '68px', height: '68px', borderRadius: '50%', objectFit: 'cover', border: '3px solid var(--bg-card)', cursor: 'pointer', backgroundColor: 'var(--bg-secondary)', boxShadow: 'var(--shadow-sm)' }}
+                      onClick={() => onOpenPublicProfile(mem)}
+                      title="Click to view full Instagram/LinkedIn profile"
+                    />
+
+                    <span className="tag tag-accent" style={{ fontSize: '0.625rem', fontWeight: 800 }}>
+                      ⭐ {mem.rating} Rating
+                    </span>
+                  </div>
+
+                  {/* Name & Handle */}
+                  <div style={{ marginBottom: '0.5rem' }}>
+                    <div 
+                      style={{ fontWeight: 800, fontSize: '1.0625rem', color: 'var(--text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                      onClick={() => onOpenPublicProfile(mem)}
+                    >
+                      {mem.fullName}
+                      <CheckCircle size={14} style={{ color: 'var(--accent-primary)' }} />
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                      @{mem.username} • Yr {mem.year}
+                    </div>
+                  </div>
+
+                  {/* College & Department */}
+                  <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '0.75rem', lineHeight: 1.3 }}>
+                    🏛️ {mem.college} • {mem.department}
+                  </div>
+
+                  {/* Skills Tags */}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginBottom: '1rem' }}>
+                    {mem.skills.slice(0, 3).map((sk, i) => (
+                      <span key={i} className="tag tag-accent" style={{ fontSize: '0.6875rem' }}>
+                        {sk}
+                      </span>
+                    ))}
+                    {mem.skills.length > 3 && (
+                      <span className="tag" style={{ fontSize: '0.6875rem' }}>+{mem.skills.length - 3}</span>
+                    )}
+                  </div>
+
+                  {/* Mutuals & Doubts Stats */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1rem', paddingTop: '0.5rem', borderTop: '1px solid var(--border-color)' }}>
+                    <span>👥 {mem.mutuals} mutuals</span>
+                    <span>🎯 {mem.doubtsSolved} solved</span>
+                  </div>
+
+                  {/* Primary Action Buttons */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: 'auto' }}>
+                    
+                    {/* View Profile Button (Prominent) */}
+                    <button 
+                      onClick={() => onOpenPublicProfile(mem)}
+                      className="btn btn-secondary" 
+                      style={{ width: '100%', fontSize: '0.8125rem', padding: '0.55rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem', backgroundColor: 'var(--bg-tertiary)', border: '1px solid var(--border-color)' }}
+                    >
+                      <User size={14} /> View Full Profile 👤
+                    </button>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.375rem' }}>
+                      
+                      {/* Connect */}
+                      <button 
+                        onClick={() => handleSendConnect(mem.id)} 
+                        className={`btn ${mem.isConnected ? 'btn-secondary' : 'btn-accent'}`} 
+                        style={{ fontSize: '0.6875rem', padding: '0.45rem 0.25rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.2rem' }}
+                        disabled={mem.isConnected || mem.isPending}
+                      >
+                        {mem.isConnected ? 'Connected' : mem.isPending ? 'Pending' : 'Connect'}
+                      </button>
+
+                      {/* Follow */}
+                      <button 
+                        onClick={() => handleToggleFollow(mem.id)} 
+                        className="btn btn-secondary" 
+                        style={{ fontSize: '0.6875rem', padding: '0.45rem 0.25rem', fontWeight: 700, color: mem.isFollowing ? 'var(--accent-primary)' : 'inherit' }}
+                      >
+                        {mem.isFollowing ? 'Following' : '+ Follow'}
+                      </button>
+
+                      {/* Message */}
+                      <button 
+                        onClick={() => {
+                          setChatPeer(mem);
+                          setActiveChatId(`chat-${mem.id}`);
+                          setActiveTab('chat');
+                        }} 
+                        className="btn btn-secondary" 
+                        style={{ fontSize: '0.6875rem', padding: '0.45rem 0.25rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.2rem' }}
+                        title="Direct Message"
+                      >
+                        <MessageSquare size={12} /> Chat
+                      </button>
+
+                    </div>
+                  </div>
+
+                </div>
+
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* SUBTAB 2: PENDING INVITATIONS & REQUESTS                                  */}
+      {/* ========================================================================= */}
+      {activeSubTab === 'pending' && (
+        <div>
+          {pendingRequests.length === 0 ? (
+            <div className="card-premium" style={{ textAlign: 'center', padding: '3.5rem' }}>
+              <CheckCircle size={48} style={{ color: 'var(--success-color)', margin: '0 auto 1rem auto' }} />
+              <h3 className="font-serif" style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>All Caught Up!</h3>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>You have no pending connection requests at this time.</p>
+              <button onClick={() => setActiveSubTab('all')} className="btn btn-accent" style={{ marginTop: '1rem', fontWeight: 700 }}>
+                Explore Campus Directory
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              {pendingRequests.map(req => (
+                <div key={req.id} className="card-premium" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.25rem', borderRadius: '20px' }}>
+                  <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center', flex: 1, minWidth: '280px' }}>
+                    <img 
+                      src={req.avatarUrl} 
+                      alt={req.fullName} 
+                      style={{ width: '64px', height: '64px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--accent-primary)', cursor: 'pointer' }} 
+                      onClick={() => onOpenPublicProfile(req)}
+                    />
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <span 
+                          style={{ fontWeight: 800, fontSize: '1.125rem', cursor: 'pointer' }}
+                          onClick={() => onOpenPublicProfile(req)}
+                        >
+                          {req.fullName}
+                        </span>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>• {req.time}</span>
+                        <span className="tag tag-accent" style={{ fontSize: '0.625rem' }}>⭐ {req.rating || 4.9}</span>
+                      </div>
+                      <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{req.college} • {req.department} (Yr {req.year})</div>
+                      {req.note && (
+                        <div style={{ backgroundColor: 'var(--bg-tertiary)', padding: '0.625rem 1rem', borderRadius: 'var(--radius-md)', fontSize: '0.8125rem', color: 'var(--text-primary)', marginTop: '0.5rem', fontStyle: 'italic', borderLeft: '3px solid var(--accent-primary)' }}>
+                          "{req.note}"
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '0.625rem', alignItems: 'center' }}>
+                    <button 
+                      onClick={() => onOpenPublicProfile(req)} 
+                      className="btn btn-secondary" 
+                      style={{ padding: '0.625rem 1rem', fontSize: '0.8125rem', fontWeight: 700 }}
+                    >
+                      <User size={14} /> View Profile
+                    </button>
+
+                    <button 
+                      onClick={() => handleAcceptRequest(req)} 
+                      className="btn btn-accent" 
+                      style={{ padding: '0.625rem 1.25rem', fontWeight: 800, fontSize: '0.8125rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}
+                    >
+                      <CheckCircle2 size={16} /> Accept ✓
+                    </button>
+
+                    <button 
+                      onClick={() => handleIgnoreRequest(req.id)} 
+                      className="btn btn-secondary" 
+                      style={{ padding: '0.625rem 1rem', fontSize: '0.8125rem' }}
+                    >
+                      Ignore
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* SUBTAB 3: MY CONNECTED PEERS                                             */}
+      {/* ========================================================================= */}
       {activeSubTab === 'connections' && (
         <div>
           {/* Search Filter Bar */}
@@ -8682,15 +8989,15 @@ function ConnectionsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, 
             <input 
               type="text" 
               className="input" 
-              placeholder="Filter connections by name, university, department, or skill (e.g. Java, Python)..." 
+              placeholder="Filter your connections by name, university, or skill..." 
               value={searchFilter} 
               onChange={e => setSearchFilter(e.target.value)} 
-              style={{ border: 'none', background: 'transparent', padding: '0.25rem 0' }}
+              style={{ border: 'none', background: 'transparent', padding: '0.25rem 0', width: '100%' }}
             />
           </div>
 
           <div className="grid-2">
-            {filteredConnections.map(c => (
+            {connectedMembers.map(c => (
               <div key={c.id} className="card-premium interactive-hover" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -8708,7 +9015,7 @@ function ConnectionsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, 
                         >
                           {c.fullName}
                         </span>
-                        <span className="tag" style={{ fontSize: '0.625rem' }}>{c.degree}</span>
+                        <span className="tag" style={{ fontSize: '0.625rem' }}>{c.degree || '1st'}</span>
                       </div>
                       <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>{c.college} • {c.department} (Yr {c.year})</div>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.125rem' }}>👥 {c.mutuals} mutual connections</div>
@@ -8725,9 +9032,9 @@ function ConnectionsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, 
                   </button>
                 </div>
 
-                {/* Skills & Endorsements */}
+                {/* Skills Chips */}
                 <div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem', marginBottom: '0.75rem' }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
                     {c.skills.map((s, idx) => (
                       <span key={idx} className="tag tag-accent" style={{ fontSize: '0.75rem' }}>
                         {s}
@@ -8737,7 +9044,15 @@ function ConnectionsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, 
                 </div>
 
                 {/* Actions Footer */}
-                <div style={{ display: 'flex', gap: '0.625rem', marginTop: 'auto', paddingTop: '0.75rem', borderTop: '1px solid var(--border-color)' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', marginTop: 'auto', paddingTop: '0.75rem', borderTop: '1px solid var(--border-color)' }}>
+                  <button 
+                    onClick={() => onOpenPublicProfile(c)} 
+                    className="btn btn-secondary" 
+                    style={{ fontSize: '0.8125rem', padding: '0.55rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                  >
+                    <User size={14} /> Profile
+                  </button>
+
                   <button 
                     onClick={() => { setChatPeer(c); setActiveChatId(`chat-${c.id}`); setActiveTab('chat'); }} 
                     className="btn btn-primary" 
@@ -8745,107 +9060,18 @@ function ConnectionsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, 
                   >
                     <MessageSquare size={14} /> Direct Message
                   </button>
+
                   <button 
                     onClick={() => handleEndorseSkill(c.id, c.skills[0])} 
                     className="btn btn-secondary" 
-                    style={{ fontSize: '0.8125rem', color: c.endorsed ? 'var(--success-color)' : 'var(--warning-color)', display: 'flex', alignItems: 'center', gap: '0.375rem' }}
-                    disabled={c.endorsed}
+                    style={{ fontSize: '0.8125rem', color: 'var(--warning-color)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
                   >
-                    <Award size={14} /> {c.endorsed ? 'Endorsed ✓' : 'Endorse (+5🪙)'}
+                    <Award size={14} /> Endorse (+5🪙)
                   </button>
                 </div>
               </div>
             ))}
           </div>
-        </div>
-      )}
-
-      {/* SUBTAB 2: PENDING INVITATIONS */}
-      {activeSubTab === 'pending' && (
-        <div>
-          {pendingRequests.length === 0 ? (
-            <div className="card-premium" style={{ textAlign: 'center', padding: '3.5rem' }}>
-              <CheckCircle size={48} style={{ color: 'var(--success-color)', margin: '0 auto 1rem auto' }} />
-              <h3 className="font-serif" style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>All Caught Up!</h3>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>You have no pending connection requests at this time.</p>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              {pendingRequests.map(req => (
-                <div key={req.id} className="card-premium" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.25rem' }}>
-                  <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center', flex: 1, minWidth: '280px' }}>
-                    <img src={req.avatarUrl} alt={req.fullName} style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--accent-primary)' }} />
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <span style={{ fontWeight: 800, fontSize: '1.125rem' }}>{req.fullName}</span>
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>• {req.time}</span>
-                      </div>
-                      <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{req.college} • {req.department} (Yr {req.year})</div>
-                      {req.note && (
-                        <div style={{ backgroundColor: 'var(--bg-tertiary)', padding: '0.5rem 0.875rem', borderRadius: 'var(--radius-sm)', fontSize: '0.8125rem', color: 'var(--text-primary)', marginTop: '0.5rem', fontStyle: 'italic', borderLeft: '3px solid var(--accent-primary)' }}>
-                          "{req.note}"
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '0.75rem' }}>
-                    <button 
-                      onClick={() => handleAcceptRequest(req)} 
-                      className="btn btn-accent" 
-                      style={{ padding: '0.625rem 1.5rem', fontWeight: 700, fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}
-                    >
-                      <CheckCircle2 size={16} /> Accept ✓
-                    </button>
-                    <button 
-                      onClick={() => handleIgnoreRequest(req.id)} 
-                      className="btn btn-secondary" 
-                      style={{ padding: '0.625rem 1.25rem', fontSize: '0.875rem' }}
-                    >
-                      Ignore
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* SUBTAB 3: SUGGESTED PEERS & MENTORS */}
-      {activeSubTab === 'discover' && (
-        <div className="grid-3">
-          {suggestions.map(s => (
-            <div key={s.id} className="card-premium interactive-hover" style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <img src={s.avatarUrl} alt={s.fullName} style={{ width: '72px', height: '72px', borderRadius: '50%', objectFit: 'cover', border: '3px solid var(--accent-primary)', marginBottom: '1rem' }} />
-              <h3 className="font-serif" style={{ fontSize: '1.125rem', fontWeight: 800, marginBottom: '0.25rem' }}>{s.fullName}</h3>
-              <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>{s.college} • {s.department}</div>
-
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem', justifyContent: 'center', marginBottom: '1.25rem' }}>
-                {s.skills.map((sk, i) => (
-                  <span key={i} className="tag tag-accent" style={{ fontSize: '0.6875rem' }}>{sk}</span>
-                ))}
-              </div>
-
-              <div style={{ display: 'flex', gap: '0.5rem', width: '100%', marginTop: 'auto' }}>
-                <button 
-                  onClick={() => handleSendConnect(s.id)} 
-                  className={`btn ${s.isPending ? 'btn-secondary' : 'btn-accent'}`} 
-                  style={{ flex: 1, fontSize: '0.75rem', padding: '0.5rem', fontWeight: 700 }}
-                  disabled={s.isPending}
-                >
-                  <UserPlus size={13} /> {s.isPending ? 'Pending ⏳' : 'Connect'}
-                </button>
-                <button 
-                  onClick={() => handleToggleFollow(s.id)} 
-                  className="btn btn-secondary" 
-                  style={{ flex: 1, fontSize: '0.75rem', padding: '0.5rem', color: s.isFollowing ? 'var(--accent-primary)' : 'inherit' }}
-                >
-                  {s.isFollowing ? 'Following ✓' : '+ Follow'}
-                </button>
-              </div>
-            </div>
-          ))}
         </div>
       )}
 
@@ -8870,7 +9096,7 @@ function ConnectionsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, 
             </h3>
 
             <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1.75rem' }}>
-              You can now exchange direct WhatsApp-style study messages, share code snippets, and launch 1:1 video classrooms together!
+              You can now exchange direct WhatsApp-style study messages, share code snippets, and view their full academic profile!
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -8886,10 +9112,23 @@ function ConnectionsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, 
               >
                 <MessageSquare size={18} /> Say Hi (Direct Message) 💬
               </button>
+              
+              <button 
+                onClick={() => {
+                  const p = justConnectedModalPeer;
+                  setJustConnectedModalPeer(null);
+                  onOpenPublicProfile(p);
+                }}
+                className="btn btn-secondary" 
+                style={{ padding: '0.625rem', fontWeight: 700 }}
+              >
+                👤 View {justConnectedModalPeer.fullName}'s Profile
+              </button>
+
               <button 
                 onClick={() => setJustConnectedModalPeer(null)} 
-                className="btn btn-secondary" 
-                style={{ padding: '0.625rem' }}
+                className="btn-icon" 
+                style={{ padding: '0.5rem', color: 'var(--text-muted)', fontSize: '0.8125rem' }}
               >
                 Close & Stay on Network
               </button>
