@@ -668,7 +668,7 @@ export function MainLayout() {
             />
           )}
           {activeTab === 'feed' && <FeedScreen setActiveTab={setActiveTab} setActiveRoomId={setActiveRoomId} token={token} />}
-          {(activeTab === 'dashboard' || activeTab === 'settings') && <SettingsScreen token={token} setActiveTab={setActiveTab} theme={theme} setTheme={setTheme} />}
+          {(activeTab === 'dashboard' || activeTab === 'settings' || activeTab === 'profile') && <SettingsScreen token={token} setActiveTab={setActiveTab} theme={theme} setTheme={setTheme} />}
           {activeTab === 'leaderboard' && <LeaderboardScreen token={token} onOpenPublicProfile={openPublicProfile} />}
           {activeTab === 'discover' && (
             <DiscoverScreen 
