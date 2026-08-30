@@ -9,12 +9,18 @@ export function BookingModal({ tutor, onClose, onConfirmBooking }) {
 
   if (!tutor) return null;
 
+  const MIN_FEE = 10; // Minimum ₹10 required for any live session
   const baseRate = tutor.ratePerSession || 0;
   const multiplier = duration === '15' ? 0.6 : duration === '60' ? 1.8 : 1.0;
-  const calculatedFee = Math.round(baseRate * multiplier);
+  const rawFee = Math.round(baseRate * multiplier);
+  const calculatedFee = Math.max(MIN_FEE, rawFee); // Enforce ₹10 minimum
 
   const handleBookingSubmit = (e) => {
     e.preventDefault();
+    if (calculatedFee < MIN_FEE) {
+      alert(`A minimum fee of ₹${MIN_FEE} is required to book a live session.`);
+      return;
+    }
     const newSession = {
       id: `session-${Date.now()}`,
       tutorName: tutor.fullName,
@@ -85,7 +91,7 @@ export function BookingModal({ tutor, onClose, onConfirmBooking }) {
                 }}
               >
                 ⚡ 15 Mins Quick
-                <div style={{ fontSize: '0.6875rem', opacity: 0.8, marginTop: '0.25rem' }}>₹{Math.round(baseRate * 0.6)}</div>
+                <div style={{ fontSize: '0.6875rem', opacity: 0.8, marginTop: '0.25rem' }}>₹{Math.max(MIN_FEE, Math.round(baseRate * 0.6))}</div>
               </button>
 
               <button
@@ -104,7 +110,7 @@ export function BookingModal({ tutor, onClose, onConfirmBooking }) {
                 }}
               >
                 📖 30 Mins Standard
-                <div style={{ fontSize: '0.6875rem', opacity: 0.8, marginTop: '0.25rem' }}>₹{baseRate}</div>
+                <div style={{ fontSize: '0.6875rem', opacity: 0.8, marginTop: '0.25rem' }}>₹{Math.max(MIN_FEE, baseRate)}</div>
               </button>
 
               <button
@@ -123,7 +129,7 @@ export function BookingModal({ tutor, onClose, onConfirmBooking }) {
                 }}
               >
                 🚀 60 Mins Deep Dive
-                <div style={{ fontSize: '0.6875rem', opacity: 0.8, marginTop: '0.25rem' }}>₹{Math.round(baseRate * 1.8)}</div>
+                <div style={{ fontSize: '0.6875rem', opacity: 0.8, marginTop: '0.25rem' }}>₹{Math.max(MIN_FEE, Math.round(baseRate * 1.8))}</div>
               </button>
             </div>
           </div>
@@ -139,6 +145,16 @@ export function BookingModal({ tutor, onClose, onConfirmBooking }) {
               onChange={e => setDoubtNotes(e.target.value)}
             />
           </div>
+
+          {/* Minimum Fee Notice */}
+          {rawFee < MIN_FEE && (
+            <div style={{ backgroundColor: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.3)', padding: '0.625rem 0.875rem', borderRadius: 'var(--radius-md)', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <span style={{ fontSize: '1rem' }}>ℹ️</span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--warning-color)', fontWeight: 600 }}>
+                Minimum session fee of <strong>₹{MIN_FEE}</strong> applies (platform standard). Tutor's free sessions require a nominal platform access fee.
+              </span>
+            </div>
+          )}
 
           {/* Escrow Guarantee Banner */}
           <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.2)', padding: '0.875rem', borderRadius: 'var(--radius-md)', display: 'flex', gap: '0.75rem', alignItems: 'center' }}>

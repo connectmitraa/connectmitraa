@@ -1,18 +1,48 @@
 import { useAuth } from '../../context/AuthContext';
 import React, { useState, useEffect } from 'react';
-import { Award, BookOpen, Calendar, Check, CheckCircle, CheckCircle2, ChevronRight, ExternalLink, Filter, MessageSquare, Search, Sparkles, Star, User, UserPlus, Users, X } from 'lucide-react';
+import { 
+  Award, 
+  BookOpen, 
+  Calendar, 
+  Check, 
+  CheckCircle, 
+  CheckCircle2, 
+  ChevronRight, 
+  ExternalLink, 
+  Filter, 
+  MessageSquare, 
+  Search, 
+  Send,
+  Sparkles, 
+  Star, 
+  Trash2,
+  User, 
+  UserCheck,
+  UserMinus,
+  UserPlus, 
+  Users, 
+  X 
+} from 'lucide-react';
 import { getDefaultAvatarByGender, MALE_AVATAR_SVG, FEMALE_AVATAR_SVG, NEUTRAL_AVATAR_SVG } from '../../constants/avatars';
 
-export function ConnectionsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, onOpenPublicProfile }) {
+export function ConnectionsScreen({ token, setActiveTab, setActiveChatId, setChatPeer, onOpenPublicProfile, startWebRtcCall }) {
   const { profile, updateProfileState } = useAuth();
-  const [activeSubTab, setActiveSubTab] = useState(() => localStorage.getItem('studyloop_conn_subtab') || 'all');
+  const [activeSubTab, setActiveSubTab] = useState(() => localStorage.getItem('studyloop_conn_subtab') || 'pending');
+  const [pendingTypeFilter, setPendingTypeFilter] = useState('received'); // 'received' | 'sent'
   const [searchFilter, setSearchFilter] = useState('');
   const [selectedUniversityFilter, setSelectedUniversityFilter] = useState('All');
-  const [justConnectedModalPeer, setJustConnectedModalPeer] = useState(null); // Instagram style rectangle modal on accept
-  
+  const [actionToast, setActionToast] = useState(null); // { message, type: 'success' | 'info' }
+
   useEffect(() => {
     localStorage.setItem('studyloop_conn_subtab', activeSubTab);
   }, [activeSubTab]);
+
+  useEffect(() => {
+    if (actionToast) {
+      const t = setTimeout(() => setActionToast(null), 3500);
+      return () => clearTimeout(t);
+    }
+  }, [actionToast]);
 
   // Real-time master campus members repository
   const [members, setMembers] = useState([
@@ -26,31 +56,145 @@ export function ConnectionsScreen({ token, setActiveTab, setActiveChatId, setCha
     { id: 'm-8', fullName: 'Ananya Guha', username: 'ananya_cloud', college: 'BITS Pilani', department: 'Computer Science', year: 3, avatarUrl: FEMALE_AVATAR_SVG, skills: ['Kubernetes', 'Go', 'Cloud Architecture'], degree: '2nd', mutuals: 13, doubtsSolved: 47, rating: 4.92, xp: 780, level: 4, isFollowing: false, isConnected: false, isPending: false }
   ]);
 
-  // Real-time pending requests
+  // Real-time pending requests (Incoming)
   const [pendingRequests, setPendingRequests] = useState([
-    { id: 'm-4', fullName: 'Kavya Subramanian', username: 'kavya_iitd', college: 'IIT Delhi', department: 'Software Engineering', year: 4, avatarUrl: FEMALE_AVATAR_SVG, skills: ['React', 'TypeScript', 'Node.js'], note: 'Hey Aarav, saw your solution in the Java thread! Would love to connect for system design prep.', time: '2h ago', doubtsSolved: 64, rating: 4.98, xp: 1120 },
-    { id: 'm-5', fullName: 'Rohan Deshmukh', username: 'rohan_iitb', college: 'IIT Bombay', department: 'Computer Science', year: 2, avatarUrl: MALE_AVATAR_SVG, skills: ['Competitive Programming', 'Algorithms'], note: 'Let\'s collaborate on algorithmic doubt rooms and coding contests.', time: '5h ago', doubtsSolved: 27, rating: 4.88, xp: 480 }
+    { 
+      id: 'm-4', 
+      fullName: 'Kavya Subramanian', 
+      username: 'kavya_iitd', 
+      college: 'IIT Delhi', 
+      department: 'Software Engineering', 
+      year: 4, 
+      avatarUrl: FEMALE_AVATAR_SVG, 
+      skills: ['React', 'TypeScript', 'System Design'], 
+      note: 'Hey Aarav! Saw your solution in the Java OS thread. Would love to connect for peer sessions!', 
+      time: '2h ago', 
+      mutuals: 11,
+      doubtsSolved: 64, 
+      rating: 4.98, 
+      xp: 1120,
+      status: 'pending' // 'pending' | 'accepted' | 'rejected'
+    },
+    { 
+      id: 'm-5', 
+      fullName: 'Rohan Deshmukh', 
+      username: 'rohan_iitb', 
+      college: 'IIT Bombay', 
+      department: 'Computer Science', 
+      year: 2, 
+      avatarUrl: MALE_AVATAR_SVG, 
+      skills: ['Algorithms', 'Java', 'Dynamic Programming'], 
+      note: 'Let\'s collaborate on algorithmic doubt rooms and coding contests.', 
+      time: '4h ago', 
+      mutuals: 16,
+      doubtsSolved: 27, 
+      rating: 4.88, 
+      xp: 480,
+      status: 'pending'
+    },
+    { 
+      id: 'm-6', 
+      fullName: 'Sneha Roy', 
+      username: 'sneha_iiit', 
+      college: 'IIIT Hyderabad', 
+      department: 'AI & Data Science', 
+      year: 3, 
+      avatarUrl: FEMALE_AVATAR_SVG, 
+      skills: ['PyTorch', 'Computer Vision', 'NLP'], 
+      note: 'Working on Deep Learning assignments. Connecting to exchange study notes and project ideas.', 
+      time: 'Yesterday', 
+      mutuals: 9,
+      doubtsSolved: 53, 
+      rating: 4.96, 
+      xp: 950,
+      status: 'pending'
+    },
+    { 
+      id: 'm-7', 
+      fullName: 'Vikram Joshi', 
+      username: 'vikram_mech', 
+      college: 'IIT Madras', 
+      department: 'Mechanical Engineering', 
+      year: 4, 
+      avatarUrl: MALE_AVATAR_SVG, 
+      skills: ['Thermodynamics', 'MATLAB', 'Calculus'], 
+      note: 'Hey! We share the Calculus course group. Connecting to discuss upcoming midterms.', 
+      time: '2 days ago', 
+      mutuals: 7,
+      doubtsSolved: 22, 
+      rating: 4.80, 
+      xp: 390,
+      status: 'pending'
+    }
   ]);
 
+  // Outgoing Sent Requests
+  const [sentRequests, setSentRequests] = useState([
+    {
+      id: 'm-8',
+      fullName: 'Ananya Guha',
+      username: 'ananya_cloud',
+      college: 'BITS Pilani',
+      department: 'Computer Science',
+      year: 3,
+      avatarUrl: FEMALE_AVATAR_SVG,
+      skills: ['Kubernetes', 'Go', 'Cloud Architecture'],
+      time: 'Sent 1 day ago',
+      mutuals: 13
+    }
+  ]);
+
+  // Clean, Frictionless Inline Accept
   const handleAcceptRequest = (req) => {
-    setPendingRequests(prev => prev.filter(p => p.id !== req.id));
+    // Update request state inline
+    setPendingRequests(prev => prev.map(p => p.id === req.id ? { ...p, status: 'accepted' } : p));
     setMembers(prev => prev.map(m => m.id === req.id ? { ...m, isConnected: true, isPending: false } : m));
     
     if (profile) {
-      const updated = { ...profile, followersCount: (profile.followersCount || 1200) + 1, coins: (profile.coins || 45) + 5, xp: (profile.xp || 650) + 10 };
+      const updated = { 
+        ...profile, 
+        followersCount: (profile.followersCount || 1200) + 1, 
+        coins: (profile.coins || 45) + 5, 
+        xp: (profile.xp || 650) + 10 
+      };
       updateProfileState(updated);
     }
-    // Open Instagram-style rectangle modal
-    setJustConnectedModalPeer(req);
+
+    // Instant non-intrusive toast feedback
+    setActionToast({
+      message: `🎉 Connected with ${req.fullName}! +5 Peer Coins & +10 XP awarded.`,
+      type: 'success'
+    });
   };
 
-  const handleIgnoreRequest = (reqId) => {
+  // Clean, Frictionless Inline Reject
+  const handleRejectRequest = (reqId, reqName) => {
     setPendingRequests(prev => prev.filter(p => p.id !== reqId));
+    setActionToast({
+      message: `Declined connection invitation from ${reqName}.`,
+      type: 'info'
+    });
   };
 
-  const handleSendConnect = (memId) => {
+  // Withdraw Outgoing Request
+  const handleWithdrawSentRequest = (reqId, reqName) => {
+    setSentRequests(prev => prev.filter(p => p.id !== reqId));
+    setActionToast({
+      message: `Withdrew connection invitation sent to ${reqName}.`,
+      type: 'info'
+    });
+  };
+
+  const handleSendConnect = (memId, memName) => {
     setMembers(prev => prev.map(m => m.id === memId ? { ...m, isPending: true } : m));
-    alert("🤝 Connection request sent!");
+    const targetMem = members.find(m => m.id === memId);
+    if (targetMem) {
+      setSentRequests(prev => [{ ...targetMem, time: 'Sent Just now' }, ...prev]);
+    }
+    setActionToast({
+      message: `🤝 Connection invite sent to ${memName}!`,
+      type: 'success'
+    });
   };
 
   const handleToggleFollow = (memId) => {
@@ -75,12 +219,19 @@ export function ConnectionsScreen({ token, setActiveTab, setActiveChatId, setCha
       const updated = { ...profile, coins: (profile.coins || 45) + 5, xp: (profile.xp || 650) + 10 };
       updateProfileState(updated);
     }
-    alert(`🌟 You endorsed ${skillName}! +5 Peer Coins and +10 XP awarded.`);
+    setActionToast({
+      message: `🌟 Endorsed ${skillName}! +5 Coins & +10 XP awarded.`,
+      type: 'success'
+    });
   };
 
   const handleRemoveConnection = (memId, name) => {
     if (confirm(`Are you sure you want to remove ${name} from your connections?`)) {
       setMembers(prev => prev.map(m => m.id === memId ? { ...m, isConnected: false } : m));
+      setActionToast({
+        message: `Removed ${name} from your connections.`,
+        type: 'info'
+      });
     }
   };
 
@@ -96,10 +247,35 @@ export function ConnectionsScreen({ token, setActiveTab, setActiveChatId, setCha
   });
 
   const connectedMembers = members.filter(m => m.isConnected);
+  const activeIncomingCount = pendingRequests.filter(r => r.status === 'pending').length;
 
   return (
-    <div style={{ padding: '1.5rem 2.5rem', width: '100%', maxWidth: '1400px', margin: '0 auto' }}>
+    <div style={{ padding: '1.5rem 2.5rem', width: '100%', maxWidth: '1400px', margin: '0 auto', position: 'relative' }}>
       
+      {/* GLOBAL ACTION TOAST */}
+      {actionToast && (
+        <div style={{
+          position: 'fixed',
+          bottom: '2rem',
+          right: '2rem',
+          backgroundColor: actionToast.type === 'success' ? '#10b981' : '#334155',
+          color: '#ffffff',
+          padding: '0.75rem 1.25rem',
+          borderRadius: 'var(--radius-lg)',
+          boxShadow: 'var(--shadow-xl)',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.625rem',
+          fontSize: '0.875rem',
+          fontWeight: 700,
+          animation: 'fadeIn 0.3s ease'
+        }}>
+          {actionToast.type === 'success' ? <CheckCircle2 size={18} /> : <Sparkles size={18} />}
+          <span>{actionToast.message}</span>
+        </div>
+      )}
+
       {/* HEADER & HERO */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
@@ -107,7 +283,7 @@ export function ConnectionsScreen({ token, setActiveTab, setActiveChatId, setCha
             <span>Campus Network & Connections</span>
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9375rem', margin: 0 }}>
-            Discover campus peers, view detailed LinkedIn/Instagram profiles, accept connection invites, and exchange study notes.
+            Discover campus peers, view academic profiles, accept connection invites, and exchange study notes.
           </p>
         </div>
 
@@ -115,12 +291,37 @@ export function ConnectionsScreen({ token, setActiveTab, setActiveChatId, setCha
         <div style={{ display: 'flex', gap: '0.375rem', backgroundColor: 'var(--bg-tertiary)', padding: '0.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
           
           <button 
+            onClick={() => setActiveSubTab('pending')} 
+            style={{ 
+              padding: '0.5rem 1.1rem', 
+              borderRadius: 'var(--radius-sm)', 
+              border: 'none', 
+              cursor: 'pointer', 
+              fontSize: '0.8125rem', 
+              fontWeight: 700,
+              backgroundColor: activeSubTab === 'pending' ? 'var(--bg-secondary)' : 'transparent',
+              color: activeSubTab === 'pending' ? 'var(--accent-primary)' : 'var(--text-secondary)',
+              boxShadow: activeSubTab === 'pending' ? 'var(--shadow-sm)' : 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.375rem'
+            }}
+          >
+            📥 Pending Requests
+            {activeIncomingCount > 0 && (
+              <span style={{ backgroundColor: '#ef4444', color: '#ffffff', fontSize: '0.6875rem', fontWeight: 800, padding: '0.1rem 0.45rem', borderRadius: 'var(--radius-full)' }}>
+                {activeIncomingCount}
+              </span>
+            )}
+          </button>
+
+          <button 
             onClick={() => setActiveSubTab('all')} 
             style={{ 
               padding: '0.5rem 1.1rem', 
               borderRadius: 'var(--radius-sm)', 
               border: 'none', 
-              cursor: 'pointer',
+              cursor: 'pointer', 
               fontSize: '0.8125rem', 
               fontWeight: 700,
               backgroundColor: activeSubTab === 'all' ? 'var(--bg-secondary)' : 'transparent',
@@ -132,37 +333,12 @@ export function ConnectionsScreen({ token, setActiveTab, setActiveChatId, setCha
           </button>
 
           <button 
-            onClick={() => setActiveSubTab('pending')} 
-            style={{ 
-              padding: '0.5rem 1.1rem', 
-              borderRadius: 'var(--radius-sm)', 
-              border: 'none', 
-              cursor: 'pointer',
-              fontSize: '0.8125rem', 
-              fontWeight: 700,
-              backgroundColor: activeSubTab === 'pending' ? 'var(--bg-secondary)' : 'transparent',
-              color: activeSubTab === 'pending' ? 'var(--accent-primary)' : 'var(--text-secondary)',
-              boxShadow: activeSubTab === 'pending' ? 'var(--shadow-sm)' : 'none',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.375rem'
-            }}
-          >
-            📩 Pending Requests
-            {pendingRequests.length > 0 && (
-              <span style={{ backgroundColor: 'var(--danger-color)', color: '#ffffff', fontSize: '0.625rem', padding: '0.1rem 0.4rem', borderRadius: 'var(--radius-full)', fontWeight: 800 }}>
-                {pendingRequests.length}
-              </span>
-            )}
-          </button>
-
-          <button 
             onClick={() => setActiveSubTab('connections')} 
             style={{ 
               padding: '0.5rem 1.1rem', 
               borderRadius: 'var(--radius-sm)', 
               border: 'none', 
-              cursor: 'pointer',
+              cursor: 'pointer', 
               fontSize: '0.8125rem', 
               fontWeight: 700,
               backgroundColor: activeSubTab === 'connections' ? 'var(--bg-secondary)' : 'transparent',
@@ -175,279 +351,323 @@ export function ConnectionsScreen({ token, setActiveTab, setActiveChatId, setCha
         </div>
       </div>
 
-      {/* PENDING REQUESTS TOP NOTIFICATION BANNER (IF ON ALL TAB & PENDING EXISTS) */}
-      {activeSubTab === 'all' && pendingRequests.length > 0 && (
-        <div style={{ backgroundColor: 'var(--accent-light)', border: '1px solid var(--accent-primary)', borderRadius: 'var(--radius-lg)', padding: '1rem 1.5rem', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: 'var(--accent-primary)', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>
-              {pendingRequests.length}
+      {/* ========================================================================= */}
+      {/* SUBTAB 1: PENDING INVITATIONS (RECEIVED & SENT)                            */}
+      {/* ========================================================================= */}
+      {activeSubTab === 'pending' && (
+        <div>
+          {/* Sub-filter toggle: Received vs Sent */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.875rem' }}>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button
+                onClick={() => setPendingTypeFilter('received')}
+                className={`btn ${pendingTypeFilter === 'received' ? 'btn-accent' : 'btn-ghost'}`}
+                style={{ fontSize: '0.8125rem', padding: '0.4rem 0.875rem', fontWeight: 700 }}
+              >
+                Received Invitations ({pendingRequests.filter(r => r.status === 'pending').length})
+              </button>
+              <button
+                onClick={() => setPendingTypeFilter('sent')}
+                className={`btn ${pendingTypeFilter === 'sent' ? 'btn-accent' : 'btn-ghost'}`}
+                style={{ fontSize: '0.8125rem', padding: '0.4rem 0.875rem', fontWeight: 700 }}
+              >
+                Sent Invitations ({sentRequests.length})
+              </button>
             </div>
-            <div>
-              <div style={{ fontWeight: 800, fontSize: '0.9375rem', color: 'var(--text-primary)' }}>
-                You have {pendingRequests.length} pending connection invitation{pendingRequests.length > 1 ? 's' : ''}!
-              </div>
-              <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
-                {pendingRequests.map(p => p.fullName).join(', ')} wants to connect with you.
-              </div>
+
+            <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+              ⚡ Instant 1-Click Accept / Reject with Zero Interruption
             </div>
           </div>
 
-          <button 
-            onClick={() => setActiveSubTab('pending')} 
-            className="btn btn-accent" 
-            style={{ fontSize: '0.8125rem', padding: '0.45rem 1rem', fontWeight: 800 }}
-          >
-            Review Requests →
-          </button>
+          {pendingTypeFilter === 'received' ? (
+            /* INCOMING RECEIVED REQUESTS */
+            pendingRequests.length === 0 ? (
+              <div className="card-premium" style={{ textAlign: 'center', padding: '3.5rem' }}>
+                <CheckCircle size={48} style={{ color: 'var(--success-color)', margin: '0 auto 1rem auto' }} />
+                <h3 className="font-serif" style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>All Caught Up!</h3>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>You have reviewed all incoming connection requests.</p>
+                <button onClick={() => setActiveSubTab('all')} className="btn btn-accent" style={{ marginTop: '1rem', fontWeight: 700 }}>
+                  Explore Campus Directory
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {pendingRequests.map(req => {
+                  const isAccepted = req.status === 'accepted';
+                  return (
+                    <div 
+                      key={req.id} 
+                      className="card-premium" 
+                      style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center', 
+                        flexWrap: 'wrap', 
+                        gap: '1.25rem', 
+                        borderRadius: '16px',
+                        borderLeft: isAccepted ? '4px solid #10b981' : '4px solid var(--accent-primary)',
+                        backgroundColor: isAccepted ? 'rgba(16, 185, 129, 0.05)' : 'var(--bg-card)',
+                        transition: 'all 0.3s ease'
+                      }}
+                    >
+                      <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center', flex: 1, minWidth: '280px' }}>
+                        <div style={{ position: 'relative' }}>
+                          <img 
+                            src={req.avatarUrl} 
+                            alt={req.fullName} 
+                            style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--accent-primary)', cursor: 'pointer' }} 
+                            onClick={() => onOpenPublicProfile(req)}
+                          />
+                          {isAccepted && (
+                            <div style={{ position: 'absolute', bottom: 0, right: 0, width: '20px', height: '20px', borderRadius: '50%', backgroundColor: '#10b981', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 800 }}>
+                              ✓
+                            </div>
+                          )}
+                        </div>
+
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            <span 
+                              style={{ fontWeight: 800, fontSize: '1.0625rem', cursor: 'pointer', color: 'var(--text-primary)' }}
+                              onClick={() => onOpenPublicProfile(req)}
+                            >
+                              {req.fullName}
+                            </span>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>• {req.time}</span>
+                            <span className="tag tag-accent" style={{ fontSize: '0.625rem' }}>⭐ {req.rating || 4.9}</span>
+                            {isAccepted && (
+                              <span style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#10b981', padding: '0.15rem 0.5rem', borderRadius: 'var(--radius-full)', fontSize: '0.6875rem', fontWeight: 800 }}>
+                                ✓ Connected
+                              </span>
+                            )}
+                          </div>
+                          
+                          <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>
+                            {req.college} • {req.department} (Yr {req.year}) • 👥 {req.mutuals} mutual peers
+                          </div>
+
+                          {req.note && (
+                            <div style={{ backgroundColor: 'var(--bg-tertiary)', padding: '0.5rem 0.875rem', borderRadius: 'var(--radius-sm)', fontSize: '0.8125rem', color: 'var(--text-primary)', marginTop: '0.45rem', fontStyle: 'italic', borderLeft: '3px solid var(--accent-primary)' }}>
+                              "{req.note}"
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Dynamic Action Buttons */}
+                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                        {isAccepted ? (
+                          /* Once accepted, provide instant Direct Message & Profile options without reload */
+                          <>
+                            <button 
+                              onClick={() => {
+                                setChatPeer(req);
+                                setActiveChatId(`chat-${req.id}`);
+                                setActiveTab('chat');
+                              }}
+                              className="btn btn-accent"
+                              style={{ padding: '0.5rem 1rem', fontSize: '0.8125rem', fontWeight: 800, gap: '6px' }}
+                            >
+                              <MessageSquare size={14} /> Send Message 💬
+                            </button>
+                            <button 
+                              onClick={() => onOpenPublicProfile(req)} 
+                              className="btn btn-secondary" 
+                              style={{ padding: '0.5rem 0.875rem', fontSize: '0.8125rem' }}
+                            >
+                              <User size={14} /> Profile
+                            </button>
+                          </>
+                        ) : (
+                          /* Pending Accept & Reject */
+                          <>
+                            <button 
+                              onClick={() => onOpenPublicProfile(req)} 
+                              className="btn btn-secondary" 
+                              style={{ padding: '0.5rem 0.875rem', fontSize: '0.8125rem', fontWeight: 600 }}
+                            >
+                              <User size={14} /> Profile
+                            </button>
+
+                            <button 
+                              onClick={() => handleAcceptRequest(req)} 
+                              className="btn btn-accent" 
+                              style={{ padding: '0.5rem 1.25rem', fontWeight: 800, fontSize: '0.8125rem', display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#10b981', borderColor: '#10b981' }}
+                            >
+                              <CheckCircle2 size={15} /> Accept ✓
+                            </button>
+
+                            <button 
+                              onClick={() => handleRejectRequest(req.id, req.fullName)} 
+                              className="btn btn-secondary" 
+                              style={{ padding: '0.5rem 0.875rem', fontSize: '0.8125rem', color: 'var(--danger-color)' }}
+                              title="Decline Connection"
+                            >
+                              <X size={14} /> Reject
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )
+          ) : (
+            /* OUTGOING SENT REQUESTS */
+            sentRequests.length === 0 ? (
+              <div className="card-premium" style={{ textAlign: 'center', padding: '3.5rem' }}>
+                <Send size={48} style={{ color: 'var(--text-muted)', margin: '0 auto 1rem auto', opacity: 0.5 }} />
+                <h3 className="font-serif" style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>No Sent Invitations</h3>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>You have not sent any pending connection requests.</p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {sentRequests.map(s => (
+                  <div key={s.id} className="card-premium" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: '16px' }}>
+                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                      <img src={s.avatarUrl} alt={s.fullName} style={{ width: '50px', height: '50px', borderRadius: '50%', objectFit: 'cover' }} />
+                      <div>
+                        <div style={{ fontWeight: 800, fontSize: '0.9375rem', color: 'var(--text-primary)' }}>{s.fullName}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{s.college} • {s.department}</div>
+                        <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>🕒 {s.time}</div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <button 
+                        onClick={() => handleWithdrawSentRequest(s.id, s.fullName)} 
+                        className="btn btn-secondary" 
+                        style={{ fontSize: '0.75rem', padding: '0.4rem 0.75rem', color: 'var(--danger-color)' }}
+                      >
+                        <Trash2 size={13} /> Withdraw Invitation
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          )}
         </div>
       )}
 
       {/* ========================================================================= */}
-      {/* SUBTAB 1: ALL CAMPUS MEMBERS DIRECTORY (INSTAGRAM / LINKEDIN STYLE GRID) */}
+      {/* SUBTAB 2: ALL CAMPUS MEMBERS DIRECTORY                                    */}
       {/* ========================================================================= */}
       {activeSubTab === 'all' && (
         <div>
-          {/* Search & Filter Bar */}
-          <div className="card-premium" style={{ marginBottom: '1.5rem', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', width: '100%' }}>
-              <Search size={18} style={{ color: 'var(--text-muted)' }} />
+          {/* SEARCH & COLLEGE FILTER BAR */}
+          <div className="card-premium" style={{ marginBottom: '1.5rem', padding: '1.25rem', display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+            <div style={{ flex: 1, minWidth: '240px', display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: 'var(--bg-tertiary)', padding: '0.5rem 1rem', borderRadius: 'var(--radius-full)', border: '1px solid var(--border-color)' }}>
+              <Search size={16} style={{ color: 'var(--text-muted)' }} />
               <input 
                 type="text" 
-                className="input" 
-                placeholder="Search campus members by student name, college, department, or skill (e.g. Machine Learning, Java, SQL)..." 
+                placeholder="Search peers by name, college, major, or skill (e.g. Python, SQL)..." 
                 value={searchFilter} 
                 onChange={e => setSearchFilter(e.target.value)} 
-                style={{ border: 'none', background: 'transparent', padding: '0.25rem 0', width: '100%' }}
+                style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '0.875rem', color: 'var(--text-primary)' }}
               />
             </div>
 
-            {/* University Filter Chips */}
-            <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.25rem' }}>
-              {['All', 'IIT Madras', 'BITS Pilani', 'NIT Trichy', 'IIIT Hyderabad', 'IIT Delhi', 'IIT Bombay'].map(uni => (
+            {/* University Filter Pills */}
+            <div style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap' }}>
+              {['All', 'IIT Madras', 'IIT Bombay', 'IIT Delhi', 'BITS Pilani', 'NIT Trichy', 'IIIT Hyderabad'].map(uni => (
                 <button
                   key={uni}
                   onClick={() => setSelectedUniversityFilter(uni)}
                   style={{
-                    padding: '0.35rem 0.875rem',
+                    padding: '0.35rem 0.75rem',
                     borderRadius: 'var(--radius-full)',
                     border: selectedUniversityFilter === uni ? '1px solid var(--accent-primary)' : '1px solid var(--border-color)',
-                    backgroundColor: selectedUniversityFilter === uni ? 'var(--accent-light)' : 'var(--bg-tertiary)',
+                    backgroundColor: selectedUniversityFilter === uni ? 'var(--accent-light)' : 'var(--bg-secondary)',
                     color: selectedUniversityFilter === uni ? 'var(--accent-primary)' : 'var(--text-secondary)',
                     fontSize: '0.75rem',
                     fontWeight: 700,
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap'
+                    cursor: 'pointer'
                   }}
                 >
-                  {uni === 'All' ? '🏛️ All Universities' : uni}
+                  {uni}
                 </button>
               ))}
             </div>
-
           </div>
 
-          {/* Members Grid (Instagram / LinkedIn Cards) */}
+          {/* Members Grid */}
           <div className="grid-3">
             {filteredMembers.map(mem => (
-              <div 
-                key={mem.id} 
-                className="card-premium interactive-hover" 
-                style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', borderRadius: '20px' }}
-              >
-                {/* Card Gradient Banner */}
-                <div style={{ height: '72px', background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%)', position: 'relative' }}>
-                  <span style={{ position: 'absolute', top: '8px', right: '10px', backgroundColor: 'rgba(0,0,0,0.6)', color: '#ffffff', fontSize: '0.625rem', fontWeight: 800, padding: '0.15rem 0.5rem', borderRadius: 'var(--radius-full)' }}>
-                    ⚡ {mem.xp} XP
-                  </span>
-                </div>
-
-                {/* Profile Avatar & Details */}
-                <div style={{ padding: '0 1.25rem 1.25rem 1.25rem', display: 'flex', flexDirection: 'column', flex: 1 }}>
-                  
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '-36px', marginBottom: '0.75rem' }}>
+              <div key={mem.id} className="card-premium interactive-hover" style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem', borderRadius: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <img 
                       src={mem.avatarUrl} 
                       alt={mem.fullName} 
-                      style={{ width: '68px', height: '68px', borderRadius: '50%', objectFit: 'cover', border: '3px solid var(--bg-card)', cursor: 'pointer', backgroundColor: 'var(--bg-secondary)', boxShadow: 'var(--shadow-sm)' }}
+                      style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--accent-primary)', cursor: 'pointer' }} 
                       onClick={() => onOpenPublicProfile(mem)}
-                      title="Click to view full Instagram/LinkedIn profile"
                     />
-
-                    <span className="tag tag-accent" style={{ fontSize: '0.625rem', fontWeight: 800 }}>
-                      ⭐ {mem.rating} Rating
-                    </span>
-                  </div>
-
-                  {/* Name & Handle */}
-                  <div style={{ marginBottom: '0.5rem' }}>
-                    <div 
-                      style={{ fontWeight: 800, fontSize: '1.0625rem', color: 'var(--text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
-                      onClick={() => onOpenPublicProfile(mem)}
-                    >
-                      {mem.fullName}
-                      <CheckCircle size={14} style={{ color: 'var(--accent-primary)' }} />
-                    </div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                      @{mem.username} • Yr {mem.year}
+                    <div>
+                      <div 
+                        style={{ fontWeight: 800, fontSize: '0.9375rem', color: 'var(--text-primary)', cursor: 'pointer' }}
+                        onClick={() => onOpenPublicProfile(mem)}
+                      >
+                        {mem.fullName}
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{mem.college}</div>
+                      <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>{mem.department} (Yr {mem.year})</div>
                     </div>
                   </div>
 
-                  {/* College & Department */}
-                  <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '0.75rem', lineHeight: 1.3 }}>
-                    🏛️ {mem.college} • {mem.department}
-                  </div>
-
-                  {/* Skills Tags */}
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginBottom: '1rem' }}>
-                    {mem.skills.slice(0, 3).map((sk, i) => (
-                      <span key={i} className="tag tag-accent" style={{ fontSize: '0.6875rem' }}>
-                        {sk}
-                      </span>
-                    ))}
-                    {mem.skills.length > 3 && (
-                      <span className="tag" style={{ fontSize: '0.6875rem' }}>+{mem.skills.length - 3}</span>
-                    )}
-                  </div>
-
-                  {/* Mutuals & Doubts Stats */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1rem', paddingTop: '0.5rem', borderTop: '1px solid var(--border-color)' }}>
-                    <span>👥 {mem.mutuals} mutuals</span>
-                    <span>🎯 {mem.doubtsSolved} solved</span>
-                  </div>
-
-                  {/* Primary Action Buttons */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: 'auto' }}>
-                    
-                    {/* View Profile Button (Prominent) */}
-                    <button 
-                      onClick={() => onOpenPublicProfile(mem)}
-                      className="btn btn-secondary" 
-                      style={{ width: '100%', fontSize: '0.8125rem', padding: '0.55rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem', backgroundColor: 'var(--bg-tertiary)', border: '1px solid var(--border-color)' }}
-                    >
-                      <User size={14} /> View Full Profile 👤
-                    </button>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.375rem' }}>
-                      
-                      {/* Connect */}
-                      <button 
-                        onClick={() => handleSendConnect(mem.id)} 
-                        className={`btn ${mem.isConnected ? 'btn-secondary' : 'btn-accent'}`} 
-                        style={{ fontSize: '0.6875rem', padding: '0.45rem 0.25rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.2rem' }}
-                        disabled={mem.isConnected || mem.isPending}
-                      >
-                        {mem.isConnected ? 'Connected' : mem.isPending ? 'Pending' : 'Connect'}
-                      </button>
-
-                      {/* Follow */}
-                      <button 
-                        onClick={() => handleToggleFollow(mem.id)} 
-                        className="btn btn-secondary" 
-                        style={{ fontSize: '0.6875rem', padding: '0.45rem 0.25rem', fontWeight: 700, color: mem.isFollowing ? 'var(--accent-primary)' : 'inherit' }}
-                      >
-                        {mem.isFollowing ? 'Following' : '+ Follow'}
-                      </button>
-
-                      {/* Message */}
-                      <button 
-                        onClick={() => {
-                          setChatPeer(mem);
-                          setActiveChatId(`chat-${mem.id}`);
-                          setActiveTab('chat');
-                        }} 
-                        className="btn btn-secondary" 
-                        style={{ fontSize: '0.6875rem', padding: '0.45rem 0.25rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.2rem' }}
-                        title="Direct Message"
-                      >
-                        <MessageSquare size={12} /> Chat
-                      </button>
-
-                    </div>
-                  </div>
-
+                  <span className="tag" style={{ fontSize: '0.625rem' }}>{mem.degree || '2nd'}</span>
                 </div>
 
+                {/* Skills */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+                  {mem.skills.slice(0, 3).map((s, idx) => (
+                    <span key={idx} className="tag tag-accent" style={{ fontSize: '0.6875rem' }}>
+                      {s}
+                    </span>
+                  ))}
+                </div>
+
+                {/* Actions */}
+                <div style={{ display: 'flex', gap: '0.5rem', marginTop: 'auto', paddingTop: '0.625rem', borderTop: '1px solid var(--border-color)' }}>
+                  <button 
+                    onClick={() => onOpenPublicProfile(mem)} 
+                    className="btn btn-secondary" 
+                    style={{ flex: 1, fontSize: '0.75rem', padding: '0.4rem' }}
+                  >
+                    Profile
+                  </button>
+
+                  {mem.isConnected ? (
+                    <button 
+                      onClick={() => {
+                        setChatPeer(mem);
+                        setActiveChatId(`chat-${mem.id}`);
+                        setActiveTab('chat');
+                      }} 
+                      className="btn btn-accent" 
+                      style={{ flex: 1, fontSize: '0.75rem', padding: '0.4rem', gap: '4px' }}
+                    >
+                      <MessageSquare size={13} /> Chat
+                    </button>
+                  ) : mem.isPending ? (
+                    <button disabled className="btn btn-secondary" style={{ flex: 1, fontSize: '0.75rem', padding: '0.4rem', opacity: 0.6 }}>
+                      Pending...
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={() => handleSendConnect(mem.id, mem.fullName)} 
+                      className="btn btn-primary" 
+                      style={{ flex: 1, fontSize: '0.75rem', padding: '0.4rem', gap: '4px' }}
+                    >
+                      <UserPlus size={13} /> Connect
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
           </div>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* SUBTAB 2: PENDING INVITATIONS & REQUESTS                                  */}
-      {/* ========================================================================= */}
-      {activeSubTab === 'pending' && (
-        <div>
-          {pendingRequests.length === 0 ? (
-            <div className="card-premium" style={{ textAlign: 'center', padding: '3.5rem' }}>
-              <CheckCircle size={48} style={{ color: 'var(--success-color)', margin: '0 auto 1rem auto' }} />
-              <h3 className="font-serif" style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>All Caught Up!</h3>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>You have no pending connection requests at this time.</p>
-              <button onClick={() => setActiveSubTab('all')} className="btn btn-accent" style={{ marginTop: '1rem', fontWeight: 700 }}>
-                Explore Campus Directory
-              </button>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              {pendingRequests.map(req => (
-                <div key={req.id} className="card-premium" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.25rem', borderRadius: '20px' }}>
-                  <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center', flex: 1, minWidth: '280px' }}>
-                    <img 
-                      src={req.avatarUrl} 
-                      alt={req.fullName} 
-                      style={{ width: '64px', height: '64px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--accent-primary)', cursor: 'pointer' }} 
-                      onClick={() => onOpenPublicProfile(req)}
-                    />
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                        <span 
-                          style={{ fontWeight: 800, fontSize: '1.125rem', cursor: 'pointer' }}
-                          onClick={() => onOpenPublicProfile(req)}
-                        >
-                          {req.fullName}
-                        </span>
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>• {req.time}</span>
-                        <span className="tag tag-accent" style={{ fontSize: '0.625rem' }}>⭐ {req.rating || 4.9}</span>
-                      </div>
-                      <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{req.college} • {req.department} (Yr {req.year})</div>
-                      {req.note && (
-                        <div style={{ backgroundColor: 'var(--bg-tertiary)', padding: '0.625rem 1rem', borderRadius: 'var(--radius-md)', fontSize: '0.8125rem', color: 'var(--text-primary)', marginTop: '0.5rem', fontStyle: 'italic', borderLeft: '3px solid var(--accent-primary)' }}>
-                          "{req.note}"
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '0.625rem', alignItems: 'center' }}>
-                    <button 
-                      onClick={() => onOpenPublicProfile(req)} 
-                      className="btn btn-secondary" 
-                      style={{ padding: '0.625rem 1rem', fontSize: '0.8125rem', fontWeight: 700 }}
-                    >
-                      <User size={14} /> View Profile
-                    </button>
-
-                    <button 
-                      onClick={() => handleAcceptRequest(req)} 
-                      className="btn btn-accent" 
-                      style={{ padding: '0.625rem 1.25rem', fontWeight: 800, fontSize: '0.8125rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}
-                    >
-                      <CheckCircle2 size={16} /> Accept ✓
-                    </button>
-
-                    <button 
-                      onClick={() => handleIgnoreRequest(req.id)} 
-                      className="btn btn-secondary" 
-                      style={{ padding: '0.625rem 1rem', fontSize: '0.8125rem' }}
-                    >
-                      Ignore
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       )}
 
@@ -456,7 +676,6 @@ export function ConnectionsScreen({ token, setActiveTab, setActiveChatId, setCha
       {/* ========================================================================= */}
       {activeSubTab === 'connections' && (
         <div>
-          {/* Search Filter Bar */}
           <div className="card-premium" style={{ marginBottom: '1.5rem', padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <Search size={18} style={{ color: 'var(--text-muted)' }} />
             <input 
@@ -471,7 +690,7 @@ export function ConnectionsScreen({ token, setActiveTab, setActiveChatId, setCha
 
           <div className="grid-2">
             {connectedMembers.map(c => (
-              <div key={c.id} className="card-premium interactive-hover" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div key={c.id} className="card-premium interactive-hover" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', borderRadius: '16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                     <img 
@@ -506,14 +725,12 @@ export function ConnectionsScreen({ token, setActiveTab, setActiveChatId, setCha
                 </div>
 
                 {/* Skills Chips */}
-                <div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
-                    {c.skills.map((s, idx) => (
-                      <span key={idx} className="tag tag-accent" style={{ fontSize: '0.75rem' }}>
-                        {s}
-                      </span>
-                    ))}
-                  </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
+                  {c.skills.map((s, idx) => (
+                    <span key={idx} className="tag tag-accent" style={{ fontSize: '0.75rem' }}>
+                      {s}
+                    </span>
+                  ))}
                 </div>
 
                 {/* Actions Footer */}
@@ -544,69 +761,6 @@ export function ConnectionsScreen({ token, setActiveTab, setActiveChatId, setCha
                 </div>
               </div>
             ))}
-          </div>
-        </div>
-      )}
-
-      {/* INSTAGRAM-STYLE RECTANGLE OPENING DIALOG UPON ACCEPTING CONNECTION */}
-      {justConnectedModalPeer && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 4000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', backdropFilter: 'blur(8px)' }}>
-          <div className="card-premium" style={{ width: '100%', maxWidth: '460px', padding: '2.5rem 2rem', textAlign: 'center', borderRadius: '24px', backgroundColor: 'var(--bg-elevated)', border: '2px solid var(--accent-primary)', boxShadow: '0 25px 50px -12px rgba(0, 102, 255, 0.4)' }}>
-            
-            <div style={{ position: 'relative', width: '80px', height: '80px', margin: '0 auto 1.25rem auto' }}>
-              <img src={justConnectedModalPeer.avatarUrl} alt="Peer" style={{ width: '80px', height: '80px', borderRadius: '50%', border: '3px solid var(--accent-primary)', objectFit: 'cover' }} />
-              <div style={{ position: 'absolute', bottom: '0', right: '0', backgroundColor: '#10b981', color: '#ffffff', borderRadius: '50%', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 800 }}>
-                ✓
-              </div>
-            </div>
-
-            <div className="tag tag-accent" style={{ marginBottom: '0.75rem', fontSize: '0.75rem', fontWeight: 800 }}>
-              🎉 Connection Request Accepted!
-            </div>
-
-            <h3 className="font-serif" style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 0.5rem 0' }}>
-              You are now connected with {justConnectedModalPeer.fullName}
-            </h3>
-
-            <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1.75rem' }}>
-              You can now exchange direct WhatsApp-style study messages, share code snippets, and view their full academic profile!
-            </p>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              <button 
-                onClick={() => {
-                  setChatPeer(justConnectedModalPeer);
-                  setActiveChatId(`chat-${justConnectedModalPeer.id}`);
-                  setActiveTab('chat');
-                  setJustConnectedModalPeer(null);
-                }} 
-                className="btn btn-accent" 
-                style={{ padding: '0.875rem', fontWeight: 800, fontSize: '0.9375rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
-              >
-                <MessageSquare size={18} /> Say Hi (Direct Message) 💬
-              </button>
-              
-              <button 
-                onClick={() => {
-                  const p = justConnectedModalPeer;
-                  setJustConnectedModalPeer(null);
-                  onOpenPublicProfile(p);
-                }}
-                className="btn btn-secondary" 
-                style={{ padding: '0.625rem', fontWeight: 700 }}
-              >
-                👤 View {justConnectedModalPeer.fullName}'s Profile
-              </button>
-
-              <button 
-                onClick={() => setJustConnectedModalPeer(null)} 
-                className="btn-icon" 
-                style={{ padding: '0.5rem', color: 'var(--text-muted)', fontSize: '0.8125rem' }}
-              >
-                Close & Stay on Network
-              </button>
-            </div>
-
           </div>
         </div>
       )}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowUpRight, Award, BookOpen, Calendar, Filter, MessageSquare, Search, Star, Users } from 'lucide-react';
 import { getDefaultAvatarByGender, MALE_AVATAR_SVG, FEMALE_AVATAR_SVG, NEUTRAL_AVATAR_SVG } from '../../constants/avatars';
 
@@ -6,6 +6,23 @@ export function DiscoverScreen({ token, setActiveTab, setActiveChatId, setChatPe
   const [searchTopic, setSearchTopic] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('All');
   const [priceFilter, setPriceFilter] = useState('all'); // all, free, paid
+
+  // Real-time online status: { tutorId: true/false }
+  const [onlineStatus, setOnlineStatus] = useState(() => ({
+    't-1': true, 't-2': false, 't-3': true, 't-4': true, 't-5': false, 't-6': true
+  }));
+
+  // Toggle random tutor online/offline every 15s (simulates WebSocket presence events)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setOnlineStatus(prev => {
+        const keys = Object.keys(prev);
+        const randKey = keys[Math.floor(Math.random() * keys.length)];
+        return { ...prev, [randKey]: !prev[randKey] };
+      });
+    }, 15000);
+    return () => clearInterval(interval);
+  }, []);
 
   const tutors = [
     {
@@ -255,23 +272,43 @@ export function DiscoverScreen({ token, setActiveTab, setActiveChatId, setChatPe
 
             {/* Profile Info */}
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-              <img 
-                src={t.avatarUrl} 
-                alt={t.fullName} 
-                style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--accent-primary)', cursor: 'pointer' }}
-                onClick={() => onOpenPublicProfile(t)}
-              />
-              <div>
-                <div 
+              {/* Avatar with online status dot */}
+              <div style={{ position: 'relative', flexShrink: 0 }}>
+                <img
+                  src={t.avatarUrl}
+                  alt={t.fullName}
+                  style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--accent-primary)', cursor: 'pointer', display: 'block' }}
+                  onClick={() => onOpenPublicProfile(t)}
+                />
+                {/* Online presence dot */}
+                <span style={{
+                  position: 'absolute', bottom: '2px', right: '2px',
+                  width: '12px', height: '12px', borderRadius: '50%',
+                  backgroundColor: onlineStatus[t.id] ? '#10b981' : '#64748b',
+                  border: '2px solid var(--bg-elevated)',
+                  display: 'block',
+                  boxShadow: onlineStatus[t.id] ? '0 0 0 2px rgba(16,185,129,0.3)' : 'none',
+                  transition: 'background-color 0.5s ease'
+                }} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div
                   style={{ fontWeight: 800, fontSize: '1.0625rem', color: 'var(--text-primary)', cursor: 'pointer' }}
                   onClick={() => onOpenPublicProfile(t)}
                 >
                   {t.fullName}
                 </div>
                 <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>{t.college} • {t.department} (Yr {t.year})</div>
-                <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.75rem', marginTop: '0.25rem', fontWeight: 600 }}>
+                <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.75rem', marginTop: '0.25rem', fontWeight: 600, flexWrap: 'wrap' }}>
                   <span style={{ color: 'var(--warning-color)' }}>⭐ {t.rating}</span>
-                  <span style={{ color: 'var(--text-secondary)' }}>• 📚 {t.classesTaught} Classes Taught</span>
+                  <span style={{ color: 'var(--text-secondary)' }}>• 📚 {t.classesTaught} Classes</span>
+                  {onlineStatus[t.id] ? (
+                    <span style={{ color: '#10b981', fontWeight: 800, fontSize: '0.6875rem', backgroundColor: 'rgba(16,185,129,0.12)', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>
+                      ● Accepting Bookings Now
+                    </span>
+                  ) : (
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.6875rem' }}>● Offline</span>
+                  )}
                 </div>
               </div>
             </div>

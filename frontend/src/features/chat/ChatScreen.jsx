@@ -1,11 +1,54 @@
 import { useAuth } from '../../context/AuthContext';
 import React, { useState, useEffect, useRef } from 'react';
-import { BellOff, Calendar, Check, CheckCheck, ChevronLeft, Code, Copy, CornerUpLeft, Download, ExternalLink, FileText, Image, MessageSquare, Mic, MoreVertical, Paperclip, Phone, Play, Search, Send, Smile, Trash2, UserPlus, Video, X } from 'lucide-react';
+import { 
+  BellOff, 
+  Calendar, 
+  Check, 
+  CheckCheck, 
+  ChevronLeft, 
+  Code, 
+  Copy, 
+  CornerUpLeft, 
+  Download, 
+  ExternalLink, 
+  FileText, 
+  Image, 
+  Link2,
+  MessageSquare, 
+  Mic, 
+  MoreVertical, 
+  Paperclip, 
+  Phone, 
+  Play, 
+  Search, 
+  Send, 
+  Smile, 
+  Sparkles, 
+  Trash2, 
+  UserPlus, 
+  Video, 
+  X 
+} from 'lucide-react';
 import { getDefaultAvatarByGender, MALE_AVATAR_SVG, FEMALE_AVATAR_SVG, NEUTRAL_AVATAR_SVG } from '../../constants/avatars';
 
-export function ChatScreen({ token, activeChatId, setActiveChatId, chatPeer, setChatPeer, socket, wsMessages, setWsMessages, setActiveTab }) {
+export function ChatScreen({ 
+  token, 
+  activeChatId, 
+  setActiveChatId, 
+  chatPeer, 
+  setChatPeer, 
+  socket, 
+  wsMessages, 
+  setWsMessages, 
+  setActiveTab,
+  startWebRtcCall 
+}) {
   const { profile } = useAuth();
   
+  // File upload input references
+  const fileInputRef = useRef(null);
+  const imageInputRef = useRef(null);
+
   // Persistent or default contacts list
   const [contacts, setContacts] = useState([
     {
@@ -142,7 +185,7 @@ export function ChatScreen({ token, activeChatId, setActiveChatId, chatPeer, set
 
   const [inputText, setInputText] = useState('');
   const [searchContactFilter, setSearchContactFilter] = useState('');
-  const [chatCategoryFilter, setChatCategoryFilter] = useState('all'); // all, unread, mentors
+  const [chatCategoryFilter, setChatCategoryFilter] = useState('all'); // all, unread, online
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [showChatSettings, setShowChatSettings] = useState(false);
@@ -152,7 +195,19 @@ export function ChatScreen({ token, activeChatId, setActiveChatId, chatPeer, set
   const [activeMessageActionId, setActiveMessageActionId] = useState(null);
   const [isRecordingAudio, setIsRecordingAudio] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
-  const [callSimulationModal, setCallSimulationModal] = useState(null); // 'audio', 'video'
+
+  // Native File Upload State
+  const [pendingAttachedFile, setPendingAttachedFile] = useState(null);
+
+  // 1:1 In-App Meeting Invite Modal State
+  const [showMeetingInviteModal, setShowMeetingInviteModal] = useState(false);
+  const [meetingTopicInput, setMeetingTopicInput] = useState('');
+
+  // Code Snippet Modal State
+  const [showCodeSnippetModal, setShowCodeSnippetModal] = useState(false);
+  const [codeSnippetLang, setCodeSnippetLang] = useState('java');
+  const [codeSnippetText, setCodeSnippetText] = useState('');
+
   const chatBottomRef = useRef(null);
 
   useEffect(() => {
@@ -169,7 +224,49 @@ export function ChatScreen({ token, activeChatId, setActiveChatId, chatPeer, set
     return () => clearInterval(timer);
   }, [isRecordingAudio]);
 
+  // Handle Real File Selection from Native Dialog
+  const handleFileSelected = (e, forcedType = 'document') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const sizeFormatted = file.size > 1024 * 1024 
+      ? `${(file.size / (1024 * 1024)).toFixed(1)} MB` 
+      : `${Math.round(file.size / 1024)} KB`;
+
+    const isImg = file.type.startsWith('image/') || forcedType === 'image';
+    const fileUrl = URL.createObjectURL(file);
+
+    setPendingAttachedFile({
+      file,
+      fileName: file.name,
+      fileSize: sizeFormatted,
+      fileType: file.type || forcedType,
+      fileUrl,
+      isImage: isImg
+    });
+
+    setShowAttachMenu(false);
+    e.target.value = ''; // Reset input
+  };
+
   const handleSendMessage = (textToSend = inputText, type = 'text', extraData = {}) => {
+    // If there is a pending uploaded file, prioritize sending it
+    if (pendingAttachedFile && type === 'text') {
+      const isImg = pendingAttachedFile.isImage;
+      const msgType = isImg ? 'image' : 'file';
+      const msgText = isImg ? `📷 ${pendingAttachedFile.fileName}` : `📄 ${pendingAttachedFile.fileName}`;
+
+      handleSendMessage(msgText, msgType, {
+        fileName: pendingAttachedFile.fileName,
+        fileSize: pendingAttachedFile.fileSize,
+        fileUrl: pendingAttachedFile.fileUrl,
+        isImage: isImg
+      });
+
+      setPendingAttachedFile(null);
+      return;
+    }
+
     const text = textToSend.trim();
     if (!text && type === 'text') return;
 
@@ -191,47 +288,113 @@ export function ChatScreen({ token, activeChatId, setActiveChatId, chatPeer, set
     }));
 
     // Update contacts list preview
-    setContacts(prev => prev.map(c => c.id === activeContact.id ? { ...c, lastMessage: type === 'code' ? '💻 Shared Code Snippet' : (type === 'file' ? `📄 ${extraData.fileName || 'Shared Document'}` : text), lastTime: currentTime } : c));
+    setContacts(prev => prev.map(c => c.id === activeContact.id ? { 
+      ...c, 
+      lastMessage: type === 'code' ? '💻 Shared Code Snippet' : (type === 'meeting' ? '📹 1:1 Study Session Invite' : (type === 'file' || type === 'image' ? `📄 ${extraData.fileName || 'Shared Attachment'}` : text)), 
+      lastTime: currentTime 
+    } : c));
 
     setInputText('');
     setReplyingTo(null);
     setShowEmojiPicker(false);
     setShowAttachMenu(false);
 
-    // Simulate peer typing & auto-response
-    setTimeout(() => {
-      setContacts(prev => prev.map(c => c.id === activeContact.id ? { ...c, isTyping: true } : c));
-      
+    // Simulate peer typing & auto-response if not meeting invite
+    if (type !== 'meeting') {
       setTimeout(() => {
-        const replyTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const autoReplies = [
-          "Got it! That makes total sense.",
-          "Awesome explanation, thank you! 👍",
-          "Understood! Let's solve the next edge case together 🚀",
-          "Super helpful breakdown! Reviewing this right now."
-        ];
-        const randomReply = autoReplies[Math.floor(Math.random() * autoReplies.length)];
+        setContacts(prev => prev.map(c => c.id === activeContact.id ? { ...c, isTyping: true } : c));
         
-        const peerReply = {
-          id: `m-${Date.now() + 1}`,
-          sender: activeContact.fullName,
-          text: randomReply,
-          time: replyTime,
-          status: 'read',
-          type: 'text'
-        };
+        setTimeout(() => {
+          const replyTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          const autoReplies = [
+            "Got it! That makes total sense.",
+            "Awesome explanation, thank you! 👍",
+            "Understood! Let's solve the next edge case together 🚀",
+            "Super helpful breakdown! Reviewing this right now."
+          ];
+          const randomReply = autoReplies[Math.floor(Math.random() * autoReplies.length)];
+          
+          const peerReply = {
+            id: `m-${Date.now() + 1}`,
+            sender: activeContact.fullName,
+            text: randomReply,
+            time: replyTime,
+            status: 'read',
+            type: 'text'
+          };
 
-        setChatHistories(prev => ({
-          ...prev,
-          [activeContact.id]: [...(prev[activeContact.id] || []), peerReply]
-        }));
+          setChatHistories(prev => ({
+            ...prev,
+            [activeContact.id]: [...(prev[activeContact.id] || []), peerReply]
+          }));
 
-        setContacts(prev => prev.map(c => c.id === activeContact.id ? { ...c, isTyping: false, lastMessage: randomReply, lastTime: replyTime } : c));
-      }, 1500);
-    }, 800);
+          setContacts(prev => prev.map(c => c.id === activeContact.id ? { ...c, isTyping: false, lastMessage: randomReply, lastTime: replyTime } : c));
+        }, 1500);
+      }, 800);
+    }
   };
 
-  const handleDeleteMessage = (msgId, forEveryone = false) => {
+  const handleStartAudioCall = () => {
+    if (startWebRtcCall) {
+      startWebRtcCall(
+        activeContact.id, 
+        `dm-${activeContact.id}`, 
+        `1:1 Direct Audio Call with ${activeContact.fullName}`, 
+        activeContact.department || 'Peer Doubt',
+        'audio',
+        activeContact.fullName,
+        activeContact.avatarUrl
+      );
+    }
+  };
+
+  const handleStartVideoCall = () => {
+    if (startWebRtcCall) {
+      startWebRtcCall(
+        activeContact.id, 
+        `dm-${activeContact.id}`, 
+        `1:1 Direct Video Call with ${activeContact.fullName}`, 
+        activeContact.department || 'Peer Doubt',
+        'video',
+        activeContact.fullName,
+        activeContact.avatarUrl
+      );
+    }
+  };
+
+  const openMeetingModal = () => {
+    setMeetingTopicInput(`1:1 Peer Study Session with ${activeContact.fullName}`);
+    setShowMeetingInviteModal(true);
+    setShowAttachMenu(false);
+    setShowChatSettings(false);
+  };
+
+  const submitMeetingInvite = (e) => {
+    e.preventDefault();
+    const finalTopic = meetingTopicInput.trim() || `1:1 Doubt Session with ${activeContact.fullName}`;
+    const mRoomId = `dm-${activeContact.id}-${Date.now().toString().slice(-4)}`;
+    
+    handleSendMessage(
+      `👋 Join my 1:1 Live Study Session: ${finalTopic}`,
+      'meeting',
+      {
+        roomId: mRoomId,
+        meetingTitle: finalTopic,
+        subject: activeContact.department || 'Peer Study'
+      }
+    );
+    setShowMeetingInviteModal(false);
+  };
+
+  const submitCodeSnippet = (e) => {
+    e.preventDefault();
+    if (!codeSnippetText.trim()) return;
+    handleSendMessage(codeSnippetText.trim(), 'code', { codeLang: codeSnippetLang });
+    setCodeSnippetText('');
+    setShowCodeSnippetModal(false);
+  };
+
+  const handleDeleteMessage = (msgId) => {
     setChatHistories(prev => ({
       ...prev,
       [activeContact.id]: prev[activeContact.id].filter(m => m.id !== msgId)
@@ -254,15 +417,6 @@ export function ChatScreen({ token, activeChatId, setActiveChatId, chatPeer, set
     handleSendMessage(`🎙️ Voice Message (${recordingSeconds}s)`, 'voice', { duration: `${recordingSeconds}s` });
   };
 
-  const handleShareCodeSnippet = () => {
-    const sampleCode = `// Quick Java Solution for ${activeContact.fullName}\npublic static int binarySearch(int[] arr, int target) {\n    int left = 0, right = arr.length - 1;\n    while (left <= right) {\n        int mid = left + (right - left) / 2;\n        if (arr[mid] == target) return mid;\n        if (arr[mid] < target) left = mid + 1;\n        else right = mid - 1;\n    }\n    return -1;\n}`;
-    handleSendMessage(sampleCode, 'code', { codeLang: 'java' });
-  };
-
-  const handleShareStudyNotes = () => {
-    handleSendMessage('Operating Systems Memory Management Complete Notes (Paging, TLB, Virtual Memory)', 'file', { fileName: 'OS_Paging_Virtual_Memory_Notes.pdf', fileSize: '2.4 MB' });
-  };
-
   const filteredContacts = contacts.filter(c => {
     const matchesSearch = c.fullName.toLowerCase().includes(searchContactFilter.toLowerCase()) || c.college.toLowerCase().includes(searchContactFilter.toLowerCase()) || c.department.toLowerCase().includes(searchContactFilter.toLowerCase());
     if (chatCategoryFilter === 'unread') return matchesSearch && c.unread > 0;
@@ -278,23 +432,38 @@ export function ChatScreen({ token, activeChatId, setActiveChatId, chatPeer, set
   const EMOJI_LIST = ['👍', '🔥', '💡', '🚀', '💻', '🎓', '✅', '❤️', '👏', '🙌', '💯', '☕', '🧠', '✨'];
 
   return (
-    <div style={{ padding: '1.25rem 2rem 2.5rem 2rem', width: '100%', maxWidth: '1440px', margin: '0 auto', height: 'calc(100vh - 90px)', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ padding: 0, width: '100%', height: 'calc(100vh - 2px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       
-      {/* 2-COLUMN WHATSAPP & INSTAGRAM MESSENGER CONTAINER */}
-      <div className="card-premium" style={{ flex: 1, display: 'grid', gridTemplateColumns: '360px 1fr', padding: 0, overflow: 'hidden', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-lg)' }}>
+      {/* Hidden Native File & Image Input Elements */}
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        onChange={e => handleFileSelected(e, 'document')} 
+        style={{ display: 'none' }} 
+      />
+      <input 
+        type="file" 
+        ref={imageInputRef} 
+        accept="image/*" 
+        onChange={e => handleFileSelected(e, 'image')} 
+        style={{ display: 'none' }} 
+      />
+
+      {/* 2-COLUMN FULL-SCREEN WHATSAPP WEB STYLE CONTAINER */}
+      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '320px 1fr', padding: 0, overflow: 'hidden', border: 'none', borderRadius: 0, height: '100%', minHeight: 0 }}>
         
-        {/* LEFT COLUMN: CHATS & CONTACTS LIST (WHATSAPP WEB STYLE) */}
-        <div style={{ borderRight: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-secondary)' }}>
+        {/* LEFT COLUMN: CHATS & CONTACTS LIST */}
+        <div style={{ borderRight: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-secondary)', height: '100%', minHeight: 0 }}>
           
           {/* Header & Status Pill */}
-          <div style={{ padding: '1.25rem 1.25rem 0.875rem 1.25rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ padding: '1rem 1.25rem 0.75rem 1.25rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
               <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: 'var(--accent-light)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <MessageSquare size={18} />
               </div>
               <div>
                 <h2 className="font-serif" style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0 }}>Direct Messages</h2>
-                <div style={{ fontSize: '0.6875rem', color: 'var(--success-color)', fontWeight: 700 }}>● Instant Live Peer Chat</div>
+                <div style={{ fontSize: '0.6875rem', color: 'var(--success-color)', fontWeight: 700 }}>● 1:1 Peer Study Chat</div>
               </div>
             </div>
 
@@ -309,7 +478,7 @@ export function ChatScreen({ token, activeChatId, setActiveChatId, chatPeer, set
           </div>
 
           {/* Search Contacts */}
-          <div style={{ padding: '0.75rem 1.25rem', borderBottom: '1px solid var(--border-color)' }}>
+          <div style={{ padding: '0.625rem 1.25rem', borderBottom: '1px solid var(--border-color)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: 'var(--bg-tertiary)', padding: '0.45rem 0.875rem', borderRadius: 'var(--radius-full)', border: '1px solid var(--border-color)' }}>
               <Search size={14} style={{ color: 'var(--text-muted)' }} />
               <input 
@@ -322,7 +491,7 @@ export function ChatScreen({ token, activeChatId, setActiveChatId, chatPeer, set
             </div>
 
             {/* Quick Filter Pills */}
-            <div style={{ display: 'flex', gap: '0.375rem', marginTop: '0.625rem' }}>
+            <div style={{ display: 'flex', gap: '0.375rem', marginTop: '0.5rem' }}>
               {['all', 'unread', 'online'].map(cat => (
                 <button
                   key={cat}
@@ -415,14 +584,14 @@ export function ChatScreen({ token, activeChatId, setActiveChatId, chatPeer, set
 
         </div>
 
-        {/* RIGHT COLUMN: WHATSAPP / INSTAGRAM ACTIVE CHAT ROOM */}
-        <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-card)', position: 'relative' }}>
+        {/* RIGHT COLUMN: ACTIVE CHAT ROOM */}
+        <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-card)', position: 'relative', height: '100%', minHeight: 0 }}>
           
           {/* Active Chat Header */}
-          <div style={{ padding: '0.875rem 1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg-secondary)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
+          <div style={{ padding: '0.75rem 1.25rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg-secondary)', flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <div style={{ position: 'relative' }}>
-                <img src={activeContact.avatarUrl} alt="Avatar" style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px solid var(--accent-primary)', objectFit: 'cover' }} />
+                <img src={activeContact.avatarUrl} alt="Avatar" style={{ width: '38px', height: '38px', borderRadius: '50%', border: '2px solid var(--accent-primary)', objectFit: 'cover' }} />
                 <div style={{ position: 'absolute', bottom: '0', right: '0', width: '10px', height: '10px', borderRadius: '50%', backgroundColor: activeContact.status === 'online' ? '#10b981' : '#94a3b8', border: '2px solid var(--bg-card)' }}></div>
               </div>
               <div>
@@ -436,26 +605,30 @@ export function ChatScreen({ token, activeChatId, setActiveChatId, chatPeer, set
               </div>
             </div>
 
-            {/* Actions: Audio Call, 1-Click Video Classroom, Search in Chat, Settings */}
+            {/* Actions: Audio Call, 1-Click Video Call, Search, Options */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              
+              {/* Direct Audio Call */}
               <button 
-                onClick={() => setCallSimulationModal('audio')} 
+                onClick={handleStartAudioCall} 
                 className="btn btn-secondary" 
                 style={{ fontSize: '0.75rem', padding: '0.4rem 0.75rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
-                title="Start Audio Doubt Call"
+                title="Start 1:1 WhatsApp Audio Call"
               >
                 <Phone size={14} style={{ color: 'var(--success-color)' }} /> Audio
               </button>
 
+              {/* Direct Video Call */}
               <button 
-                onClick={() => setActiveTab('doubts')} 
+                onClick={handleStartVideoCall} 
                 className="btn btn-accent" 
                 style={{ fontSize: '0.75rem', padding: '0.4rem 0.875rem', display: 'flex', alignItems: 'center', gap: '0.35rem', fontWeight: 800 }}
-                title="Enter Live WebRTC Video Doubt Room"
+                title="Start 1:1 WhatsApp Video Call"
               >
                 <Video size={14} /> Video Call 🚀
               </button>
 
+              {/* Search in chat */}
               <button 
                 onClick={() => setShowSearchInChat(!showSearchInChat)} 
                 className="btn-icon" 
@@ -465,6 +638,7 @@ export function ChatScreen({ token, activeChatId, setActiveChatId, chatPeer, set
                 <Search size={15} />
               </button>
 
+              {/* Dropdown Options */}
               <div style={{ position: 'relative' }}>
                 <button 
                   onClick={() => setShowChatSettings(!showChatSettings)} 
@@ -474,31 +648,33 @@ export function ChatScreen({ token, activeChatId, setActiveChatId, chatPeer, set
                   <MoreVertical size={15} />
                 </button>
 
-                {/* Dropdown Options Menu */}
                 {showChatSettings && (
                   <div style={{
                     position: 'absolute',
                     right: 0,
                     top: '110%',
-                    width: '200px',
+                    width: '220px',
                     backgroundColor: 'var(--bg-elevated)',
                     border: '1px solid var(--border-color)',
                     borderRadius: 'var(--radius-md)',
                     boxShadow: 'var(--shadow-lg)',
                     padding: '0.5rem',
-                    zIndex: 200,
+                    zIndex: 2500,
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '0.25rem'
                   }}>
+                    <button onClick={openMeetingModal} className="dropdown-item">
+                      <Link2 size={14} style={{ color: 'var(--accent-primary)' }} /> Send 1:1 Meeting Invite
+                    </button>
+                    <button onClick={() => { setActiveTab('sessions'); setShowChatSettings(false); }} className="dropdown-item">
+                      <Calendar size={14} /> Schedule 1:1 Study Class
+                    </button>
                     <button onClick={() => { alert("🔔 Notifications muted for this chat."); setShowChatSettings(false); }} className="dropdown-item">
                       <BellOff size={14} /> Mute Notifications
                     </button>
                     <button onClick={handleClearChat} className="dropdown-item" style={{ color: 'var(--danger-color)' }}>
                       <Trash2 size={14} /> Clear Messages
-                    </button>
-                    <button onClick={() => { alert(`Exported conversation transcript with ${activeContact.fullName} as .txt`); setShowChatSettings(false); }} className="dropdown-item">
-                      <Download size={14} /> Export Transcript
                     </button>
                   </div>
                 )}
@@ -508,7 +684,7 @@ export function ChatScreen({ token, activeChatId, setActiveChatId, chatPeer, set
 
           {/* Search Inside Chat Drawer */}
           {showSearchInChat && (
-            <div style={{ padding: '0.5rem 1.5rem', backgroundColor: 'var(--bg-tertiary)', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{ padding: '0.5rem 1.5rem', backgroundColor: 'var(--bg-tertiary)', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '0.75rem', flexShrink: 0 }}>
               <Search size={14} style={{ color: 'var(--text-muted)' }} />
               <input 
                 type="text" 
@@ -525,7 +701,7 @@ export function ChatScreen({ token, activeChatId, setActiveChatId, chatPeer, set
             </div>
           )}
 
-          {/* Message Stream (WhatsApp Bubbles) */}
+          {/* Message Stream */}
           <div style={{
             flex: 1,
             padding: '1.25rem 1.75rem',
@@ -533,11 +709,12 @@ export function ChatScreen({ token, activeChatId, setActiveChatId, chatPeer, set
             display: 'flex',
             flexDirection: 'column',
             gap: '0.875rem',
-            background: 'var(--bg-card)'
+            background: 'var(--bg-card)',
+            minHeight: 0
           }}>
             
             {/* Encryption & Safety Watermark */}
-            <div style={{ textAlign: 'center', margin: '0.5rem 0 1rem 0' }}>
+            <div style={{ textAlign: 'center', margin: '0.25rem 0 0.75rem 0' }}>
               <span style={{ backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-muted)', fontSize: '0.6875rem', padding: '0.3rem 0.875rem', borderRadius: 'var(--radius-full)', border: '1px solid var(--border-color)', fontWeight: 600 }}>
                 🔒 End-to-End Academic Doubt Session • StudyLoop Safety Guaranteed
               </span>
@@ -586,7 +763,53 @@ export function ChatScreen({ token, activeChatId, setActiveChatId, chatPeer, set
                     )}
 
                     {/* Message Body by Type */}
-                    {msg.type === 'code' ? (
+                    {msg.type === 'meeting' ? (
+                      <div style={{
+                        backgroundColor: isMe ? 'rgba(0,0,0,0.25)' : 'var(--bg-secondary)',
+                        borderRadius: '12px',
+                        padding: '0.875rem 1rem',
+                        border: `1px solid ${isMe ? 'rgba(255,255,255,0.2)' : 'var(--border-color)'}`,
+                        minWidth: '260px'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                          <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--accent-gradient)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+                            <Video size={16} />
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '0.8125rem', fontWeight: 700 }}>1:1 Live Study Session</div>
+                            <div style={{ fontSize: '0.6875rem', opacity: 0.8 }}>WebRTC HD Peer Video Call</div>
+                          </div>
+                        </div>
+                        <div style={{ fontSize: '0.8125rem', marginBottom: '0.75rem', fontWeight: 600 }}>
+                          {msg.meetingTitle || 'Academic Doubt Discussion'}
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button 
+                            onClick={() => {
+                              if (startWebRtcCall) {
+                                startWebRtcCall(activeContact.id, msg.roomId || `dm-${activeContact.id}`, msg.meetingTitle || '1:1 Study Session', activeContact.department || 'Peer Doubt', 'meeting', activeContact.fullName, activeContact.avatarUrl);
+                              }
+                            }} 
+                            className="btn btn-accent" 
+                            style={{ flex: 1, padding: '0.4rem 0.75rem', fontSize: '0.75rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                          >
+                            <Video size={13} /> Join Meeting 🚀
+                          </button>
+                          <button 
+                            onClick={() => {
+                              const url = `${window.location.origin}/?room=${encodeURIComponent(msg.roomId || `dm-${activeContact.id}`)}`;
+                              navigator.clipboard?.writeText(url);
+                              alert("📋 Meeting link copied!");
+                            }}
+                            className="btn btn-secondary"
+                            style={{ padding: '0.4rem 0.6rem', fontSize: '0.75rem' }}
+                            title="Copy Link"
+                          >
+                            <Copy size={13} />
+                          </button>
+                        </div>
+                      </div>
+                    ) : msg.type === 'code' ? (
                       <div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem', fontSize: '0.6875rem', color: isMe ? '#dbeafe' : 'var(--text-muted)', fontWeight: 700 }}>
                           <span>💻 {msg.codeLang?.toUpperCase() || 'CODE'} SNIPPET</span>
@@ -611,18 +834,43 @@ export function ChatScreen({ token, activeChatId, setActiveChatId, chatPeer, set
                           {msg.text}
                         </pre>
                       </div>
+                    ) : msg.type === 'image' || msg.isImage ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        {msg.fileUrl && (
+                          <img 
+                            src={msg.fileUrl} 
+                            alt={msg.fileName || 'Shared Diagram'} 
+                            style={{ maxWidth: '320px', maxHeight: '240px', borderRadius: '8px', objectFit: 'cover', cursor: 'pointer', border: '1px solid var(--border-color)' }} 
+                            onClick={() => window.open(msg.fileUrl, '_blank')}
+                          />
+                        )}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 600 }}>
+                          <span>🖼️ {msg.fileName || 'Diagram_Image.png'}</span>
+                          {msg.fileUrl && (
+                            <a href={msg.fileUrl} download={msg.fileName || 'Diagram_Image.png'} style={{ color: isMe ? '#ffffff' : 'var(--accent-primary)', textDecoration: 'none' }}>
+                              <Download size={14} />
+                            </a>
+                          )}
+                        </div>
+                      </div>
                     ) : msg.type === 'file' ? (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', backgroundColor: isMe ? 'rgba(0,0,0,0.2)' : 'var(--bg-secondary)', padding: '0.625rem 0.875rem', borderRadius: '8px' }}>
                         <div style={{ width: '36px', height: '36px', borderRadius: '8px', backgroundColor: 'var(--accent-primary)', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <FileText size={18} />
                         </div>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontWeight: 700, fontSize: '0.8125rem' }}>{msg.fileName || 'Study_Document.pdf'}</div>
-                          <div style={{ fontSize: '0.6875rem', opacity: 0.8 }}>{msg.fileSize || '1.8 MB'} • Study Notes</div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontWeight: 700, fontSize: '0.8125rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{msg.fileName || 'Study_Document.pdf'}</div>
+                          <div style={{ fontSize: '0.6875rem', opacity: 0.8 }}>{msg.fileSize || '1.8 MB'} • Document Attachment</div>
                         </div>
-                        <button onClick={() => alert(`Downloading ${msg.fileName}...`)} className="btn-icon" style={{ color: 'inherit' }}>
-                          <Download size={15} />
-                        </button>
+                        {msg.fileUrl ? (
+                          <a href={msg.fileUrl} download={msg.fileName || 'Attachment.pdf'} className="btn-icon" style={{ color: 'inherit' }} title="Download File">
+                            <Download size={15} />
+                          </a>
+                        ) : (
+                          <button onClick={() => alert(`Downloading ${msg.fileName}...`)} className="btn-icon" style={{ color: 'inherit' }}>
+                            <Download size={15} />
+                          </button>
+                        )}
                       </div>
                     ) : msg.type === 'voice' ? (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: '180px' }}>
@@ -660,7 +908,7 @@ export function ChatScreen({ token, activeChatId, setActiveChatId, chatPeer, set
 
                   </div>
 
-                  {/* Hover Floating Action Bar (Reply, Copy, Delete) */}
+                  {/* Hover Action Bar */}
                   {activeMessageActionId === msg.id && (
                     <div style={{
                       position: 'absolute',
@@ -697,12 +945,28 @@ export function ChatScreen({ token, activeChatId, setActiveChatId, chatPeer, set
 
           {/* Replying Quote Bar */}
           {replyingTo && (
-            <div style={{ padding: '0.5rem 1.5rem', backgroundColor: 'var(--bg-tertiary)', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ padding: '0.5rem 1.5rem', backgroundColor: 'var(--bg-tertiary)', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
               <div style={{ borderLeft: '3px solid var(--accent-primary)', paddingLeft: '0.625rem', fontSize: '0.75rem' }}>
                 <span style={{ fontWeight: 700, color: 'var(--accent-primary)' }}>Replying to {replyingTo.sender}</span>
                 <div style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '400px' }}>{replyingTo.text}</div>
               </div>
               <button onClick={() => setReplyingTo(null)} className="btn-icon"><X size={14} /></button>
+            </div>
+          )}
+
+          {/* Pending Upload Attachment Bar */}
+          {pendingAttachedFile && (
+            <div style={{ padding: '0.5rem 1.25rem', backgroundColor: 'var(--bg-tertiary)', borderTop: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div style={{ width: '32px', height: '32px', borderRadius: '6px', backgroundColor: 'var(--accent-primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {pendingAttachedFile.isImage ? <Image size={16} /> : <FileText size={16} />}
+                </div>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: '0.8125rem', color: 'var(--text-primary)' }}>{pendingAttachedFile.fileName}</div>
+                  <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>{pendingAttachedFile.fileSize} • File Selected (Click Send 🚀)</div>
+                </div>
+              </div>
+              <button onClick={() => setPendingAttachedFile(null)} className="btn-icon"><X size={14} /></button>
             </div>
           )}
 
@@ -749,22 +1013,25 @@ export function ChatScreen({ token, activeChatId, setActiveChatId, chatPeer, set
               display: 'flex',
               flexDirection: 'column',
               gap: '0.35rem',
-              width: '220px'
+              width: '240px'
             }}>
-              <button onClick={handleShareCodeSnippet} className="dropdown-item" style={{ fontSize: '0.8125rem' }}>
+              <button onClick={openMeetingModal} className="dropdown-item" style={{ fontSize: '0.8125rem' }}>
+                <Video size={16} style={{ color: 'var(--accent-primary)' }} /> Send 1:1 Meeting Invite 🚀
+              </button>
+              <button onClick={() => { setShowCodeSnippetModal(true); setShowAttachMenu(false); }} className="dropdown-item" style={{ fontSize: '0.8125rem' }}>
                 <Code size={16} style={{ color: '#38bdf8' }} /> Share Code Snippet
               </button>
-              <button onClick={handleShareStudyNotes} className="dropdown-item" style={{ fontSize: '0.8125rem' }}>
-                <FileText size={16} style={{ color: '#10b981' }} /> Send Notes PDF
+              <button onClick={() => fileInputRef.current?.click()} className="dropdown-item" style={{ fontSize: '0.8125rem' }}>
+                <FileText size={16} style={{ color: '#10b981' }} /> Send Notes PDF / File
               </button>
-              <button onClick={() => { handleSendMessage('https://images.unsplash.com/photo-1515879218367-8466d910aaa4?w=600&auto=format&fit=crop&q=80', 'file', { fileName: 'Algorithm_Complexity_Graph.png' }); setShowAttachMenu(false); }} className="dropdown-item" style={{ fontSize: '0.8125rem' }}>
+              <button onClick={() => imageInputRef.current?.click()} className="dropdown-item" style={{ fontSize: '0.8125rem' }}>
                 <Image size={16} style={{ color: '#f59e0b' }} /> Share Diagram Image
               </button>
             </div>
           )}
 
-          {/* Bottom WhatsApp Input Bar */}
-          <div style={{ padding: '0.875rem 1.5rem', borderTop: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+          {/* Bottom Input Bar */}
+          <div style={{ padding: '0.75rem 1.25rem', borderTop: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', gap: '0.625rem', flexShrink: 0 }}>
             
             {/* Emoji Button */}
             <button 
@@ -782,7 +1049,7 @@ export function ChatScreen({ token, activeChatId, setActiveChatId, chatPeer, set
               type="button" 
               onClick={() => { setShowAttachMenu(!showAttachMenu); setShowEmojiPicker(false); }} 
               className="btn-icon" 
-              title="Attach Code / Notes / Media"
+              title="Attach File / Code / Diagram / Meeting"
               style={{ color: showAttachMenu ? 'var(--accent-primary)' : 'var(--text-secondary)' }}
             >
               <Paperclip size={19} />
@@ -805,14 +1072,14 @@ export function ChatScreen({ token, activeChatId, setActiveChatId, chatPeer, set
                 <input 
                   type="text" 
                   className="input" 
-                  placeholder={`Message ${activeContact.fullName} (Enter to send)...`} 
+                  placeholder={pendingAttachedFile ? `Sending file: ${pendingAttachedFile.fileName}...` : `Message ${activeContact.fullName} (Enter to send)...`} 
                   value={inputText} 
                   onChange={e => setInputText(e.target.value)} 
                   style={{ flex: 1, borderRadius: 'var(--radius-full)', padding: '0.55rem 1.25rem', fontSize: '0.875rem' }}
                 />
                 
-                {inputText.trim() ? (
-                  <button type="submit" className="btn btn-accent" style={{ borderRadius: '50%', width: '40px', height: '40px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                {(inputText.trim() || pendingAttachedFile) ? (
+                  <button type="submit" className="btn btn-accent" style={{ borderRadius: '50%', width: '38px', height: '38px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <Send size={16} />
                   </button>
                 ) : (
@@ -821,7 +1088,7 @@ export function ChatScreen({ token, activeChatId, setActiveChatId, chatPeer, set
                     onClick={() => setIsRecordingAudio(true)} 
                     className="btn btn-secondary" 
                     title="Record Voice Note"
-                    style={{ borderRadius: '50%', width: '40px', height: '40px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                    style={{ borderRadius: '50%', width: '38px', height: '38px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
                   >
                     <Mic size={17} />
                   </button>
@@ -835,20 +1102,127 @@ export function ChatScreen({ token, activeChatId, setActiveChatId, chatPeer, set
 
       </div>
 
-      {/* AUDIO CALL SIMULATION MODAL */}
-      {callSimulationModal && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.85)', zIndex: 4000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(8px)' }}>
-          <div className="card-premium" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem', textAlign: 'center', borderRadius: '24px', backgroundColor: 'var(--bg-elevated)' }}>
-            <img src={activeContact.avatarUrl} alt="Peer" style={{ width: '80px', height: '80px', borderRadius: '50%', border: '3px solid #10b981', objectFit: 'cover', margin: '0 auto 1.25rem auto' }} />
-            <h3 className="font-serif" style={{ fontSize: '1.35rem', fontWeight: 800, margin: '0 0 0.25rem 0' }}>{activeContact.fullName}</h3>
-            <div style={{ fontSize: '0.8125rem', color: '#10b981', fontWeight: 700, marginBottom: '1.5rem' }}>
-              📞 Live Doubt Audio Call Connected (00:34)
+      {/* 1:1 STUDY MEETING INVITE IN-APP MODAL */}
+      {showMeetingInviteModal && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.85)', zIndex: 4000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(8px)', padding: '1rem' }}>
+          <div className="card-premium" style={{ width: '100%', maxWidth: '440px', padding: '2rem', borderRadius: 'var(--radius-xl)', backgroundColor: 'var(--bg-elevated)', border: '1px solid var(--border-color)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '1.25rem' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'var(--accent-gradient)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+                <Video size={20} />
+              </div>
+              <div>
+                <h3 className="font-serif" style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0 }}>Invite to 1:1 Live Meeting</h3>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Direct WebRTC HD Video Room with {activeContact.fullName}</div>
+              </div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
-              <button onClick={() => setCallSimulationModal(null)} className="btn btn-danger" style={{ borderRadius: 'var(--radius-full)', padding: '0.625rem 1.5rem', fontWeight: 800 }}>
-                End Call 🔴
-              </button>
+
+            <form onSubmit={submitMeetingInvite} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                <label className="label">Meeting Topic / Question</label>
+                <input 
+                  type="text" 
+                  className="input" 
+                  value={meetingTopicInput} 
+                  onChange={e => setMeetingTopicInput(e.target.value)} 
+                  placeholder="e.g. Java Multithreading Doubt Walkthrough" 
+                  required 
+                />
+              </div>
+
+              <div>
+                <label className="label">Subject Tag</label>
+                <input 
+                  type="text" 
+                  className="input" 
+                  value={activeContact.department || 'Computer Science'} 
+                  readOnly 
+                  style={{ opacity: 0.8 }} 
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+                <button 
+                  type="button" 
+                  onClick={() => setShowMeetingInviteModal(false)} 
+                  className="btn btn-secondary" 
+                  style={{ flex: 1 }}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="btn btn-accent" 
+                  style={{ flex: 1, fontWeight: 800, gap: '6px' }}
+                >
+                  <Send size={15} /> Send Invite 🚀
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* CODE SNIPPET COMPOSER MODAL */}
+      {showCodeSnippetModal && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.85)', zIndex: 4000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(8px)', padding: '1rem' }}>
+          <div className="card-premium" style={{ width: '100%', maxWidth: '540px', padding: '2rem', borderRadius: 'var(--radius-xl)', backgroundColor: 'var(--bg-elevated)', border: '1px solid var(--border-color)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Code size={20} />
+                </div>
+                <div>
+                  <h3 className="font-serif" style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0 }}>Share Code Solution</h3>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Format & highlight code for {activeContact.fullName}</div>
+                </div>
+              </div>
+              <button onClick={() => setShowCodeSnippetModal(false)} className="btn-icon"><X size={16} /></button>
             </div>
+
+            <form onSubmit={submitCodeSnippet} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                <label className="label">Programming Language</label>
+                <select className="input" value={codeSnippetLang} onChange={e => setCodeSnippetLang(e.target.value)}>
+                  <option value="java">Java</option>
+                  <option value="python">Python</option>
+                  <option value="cpp">C++</option>
+                  <option value="javascript">JavaScript / React</option>
+                  <option value="sql">SQL</option>
+                  <option value="html">HTML / CSS</option>
+                  <option value="text">Plain Text</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="label">Code Snippet</label>
+                <textarea 
+                  className="input" 
+                  style={{ minHeight: '180px', fontFamily: "'Fira Code', monospace", fontSize: '0.8125rem', lineHeight: 1.5 }}
+                  placeholder={`// Paste your code solution here...\npublic class Solution {\n    public static void main(String[] args) {\n        System.out.println("Hello StudyLoop!");\n    }\n}`}
+                  value={codeSnippetText}
+                  onChange={e => setCodeSnippetText(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <button 
+                  type="button" 
+                  onClick={() => setShowCodeSnippetModal(false)} 
+                  className="btn-icon btn-secondary" 
+                  style={{ flex: 1, padding: '0.6rem' }}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="btn btn-accent" 
+                  style={{ flex: 2, fontWeight: 800, gap: '6px' }}
+                >
+                  <Send size={15} /> Send Code Snippet 🚀
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
@@ -856,4 +1230,3 @@ export function ChatScreen({ token, activeChatId, setActiveChatId, chatPeer, set
     </div>
   );
 }
-

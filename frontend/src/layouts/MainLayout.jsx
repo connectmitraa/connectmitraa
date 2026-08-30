@@ -51,11 +51,12 @@ export function MainLayout() {
       return hash;
     }
     const saved = localStorage.getItem('studyloop_active_tab');
-    if (saved && saved !== 'landing') {
+    // Never auto-restore 'dashboard' (profile/settings) — always send to Home Hub on fresh load
+    if (saved && saved !== 'landing' && saved !== 'dashboard' && saved !== 'settings' && saved !== 'profile') {
       return saved;
     }
     const savedUser = localStorage.getItem('studyloop_user');
-    return savedUser ? 'dashboard' : 'landing';
+    return savedUser ? 'landing' : 'landing';
   });
   const [postLoginRedirectTab, setPostLoginRedirectTab] = useState(null);
 
@@ -63,7 +64,8 @@ export function MainLayout() {
   useEffect(() => {
     const handleUrlChange = () => {
       const path = window.location.pathname.toLowerCase();
-      const hash = window.location.hash.toLowerCase().replace('#', '');
+      const rawHash = window.location.hash.toLowerCase().replace('#', '');
+      const hash = rawHash.includes('?') ? rawHash.split('?')[0] : rawHash;
       if (path.includes('/admin') || hash === 'admin') {
         setActiveTab('admin');
       } else if (hash && hash.length > 0) {
@@ -72,6 +74,18 @@ export function MainLayout() {
     };
     window.addEventListener('popstate', handleUrlChange);
     window.addEventListener('hashchange', handleUrlChange);
+
+    // Auto-Join Shared Meeting Link on load
+    const urlParams = new URLSearchParams(window.location.search);
+    const hashQuery = window.location.hash.includes('?') ? window.location.hash.split('?')[1] : '';
+    const hashParams = new URLSearchParams(hashQuery);
+    const targetRoomId = urlParams.get('room') || urlParams.get('meetingId') || hashParams.get('room') || hashParams.get('meetingId');
+    if (targetRoomId) {
+      setActiveTab('doubts');
+      setActiveRoomId(targetRoomId);
+      startWebRtcCall(null, targetRoomId, 'Live Academic Study Session', 'Peer Learning');
+    }
+
     return () => {
       window.removeEventListener('popstate', handleUrlChange);
       window.removeEventListener('hashchange', handleUrlChange);
@@ -214,15 +228,14 @@ export function MainLayout() {
     } catch(e) {}
   }, [token]);
 
-  const startWebRtcCall = async (targetUserId, doubtRoomId = null) => {
+  const startWebRtcCall = async (targetUserId, doubtRoomId = 'doubt-room-live', roomTitle = 'Live Academic Doubt Session', subject = 'Engineering & CS', callMode = 'meeting', peerName = '', peerAvatar = '') => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ video: callMode !== 'audio', audio: true });
       setLocalStream(stream);
       if (localVideoRef.current) localVideoRef.current.srcObject = stream;
-      setWebrtcCall({ peerId: targetUserId, isIncoming: false, roomId: doubtRoomId });
+      setWebrtcCall({ peerId: targetUserId, isIncoming: false, roomId: doubtRoomId, roomTitle, subject, callMode, peerName, peerAvatar });
     } catch (e) {
-      alert("Camera / Mic simulation active. Connecting study room video call...");
-      setWebrtcCall({ peerId: targetUserId, isIncoming: false, roomId: doubtRoomId, isSimulated: true });
+      setWebrtcCall({ peerId: targetUserId, isIncoming: false, roomId: doubtRoomId, roomTitle, subject, callMode, peerName, peerAvatar, isSimulated: true });
     }
   };
 
@@ -455,10 +468,10 @@ export function MainLayout() {
       </nav>
 
       {/* MAIN SCREEN DISPATCHER */}
-      <main className="main-content" style={{ padding: activeTab === 'reels' ? 0 : undefined, backgroundColor: activeTab === 'reels' ? '#09090b' : 'var(--bg-primary)' }}>
+      <main className="main-content" style={{ padding: (activeTab === 'reels' || activeTab === 'chat') ? 0 : undefined, backgroundColor: activeTab === 'reels' ? '#09090b' : 'var(--bg-primary)' }}>
         
         {/* TOP FAR-RIGHT USER CORNER BAR */}
-        {activeTab !== 'reels' && (
+        {activeTab !== 'reels' && activeTab !== 'chat' && (
           <div style={{
             display: 'flex',
             alignItems: 'center',
@@ -591,6 +604,10 @@ export function MainLayout() {
             webrtcCall={webrtcCall} 
             localStream={localStream}
             remoteStream={remoteStream}
+            user={user}
+            profile={profile}
+            socket={socket}
+            token={token}
           />
         )}
 
@@ -705,7 +722,7 @@ export function MainLayout() {
             />
           )}
           {activeTab === 'wallet' && <WalletScreen token={token} />}
-          {activeTab === 'connections' && <ConnectionsScreen token={token} setActiveTab={setActiveTab} setActiveChatId={setActiveChatId} setChatPeer={setChatPeer} onOpenPublicProfile={openPublicProfile} />}
+          {activeTab === 'connections' && <ConnectionsScreen token={token} setActiveTab={setActiveTab} setActiveChatId={setActiveChatId} setChatPeer={setChatPeer} onOpenPublicProfile={openPublicProfile} startWebRtcCall={startWebRtcCall} />}
           {activeTab === 'doubts' && (
             <DoubtRoomsScreen 
               token={token} 
@@ -729,6 +746,7 @@ export function MainLayout() {
               wsMessages={wsMessages}
               setWsMessages={setWsMessages}
               setActiveTab={setActiveTab}
+              startWebRtcCall={startWebRtcCall}
             />
           )}
           {activeTab === 'reels' && (
