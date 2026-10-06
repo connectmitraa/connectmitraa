@@ -483,19 +483,7 @@ export function MainLayout() {
               <span className="rail-label">Chat</span>
             </button>
 
-            {/* 7. Feed */}
-            <button
-              className={`studyloop-rail-item ${activeTab === 'feed' ? 'active' : ''}`}
-              onClick={() => { setActiveTab('feed'); setActiveRoomId(null); }}
-              title="Feed"
-            >
-              <div className="rail-icon">
-                <BookOpen size={20} strokeWidth={activeTab === 'feed' ? 2.3 : 1.9} />
-              </div>
-              <span className="rail-label">Feed</span>
-            </button>
-
-            {/* 8. Ranks */}
+            {/* 7. Ranks */}
             <button
               className={`studyloop-rail-item ${activeTab === 'leaderboard' ? 'active' : ''}`}
               onClick={() => { setActiveTab('leaderboard'); setActiveRoomId(null); }}
@@ -568,22 +556,13 @@ export function MainLayout() {
           {/* Nav Links (Names next to Icons - no category headers) */}
           <div className="studyloop-expanded-nav">
             <button
-              className={`studyloop-nav-row ${(activeTab === 'landing' || activeTab === 'home') ? 'active' : ''}`}
+              className={`studyloop-nav-row ${(activeTab === 'landing' || activeTab === 'home' || activeTab === 'feed') ? 'active' : ''}`}
               onClick={() => { setActiveTab('landing'); setActiveRoomId(null); }}
             >
               <div className="row-icon">
-                <Home size={19} strokeWidth={(activeTab === 'landing' || activeTab === 'home') ? 2.3 : 1.8} />
+                <Home size={19} strokeWidth={(activeTab === 'landing' || activeTab === 'home' || activeTab === 'feed') ? 2.3 : 1.8} />
               </div>
               <span className="row-label">Home</span>
-            </button>
-            <button
-              className={`studyloop-nav-row ${activeTab === 'feed' ? 'active' : ''}`}
-              onClick={() => { setActiveTab('feed'); setActiveRoomId(null); }}
-            >
-              <div className="row-icon">
-                <BookOpen size={19} strokeWidth={activeTab === 'feed' ? 2.3 : 1.8} />
-              </div>
-              <span className="row-label">Campus Feed</span>
             </button>
             <button
               className={`studyloop-nav-row ${activeTab === 'connections' ? 'active' : ''}`}
@@ -1159,7 +1138,7 @@ export function MainLayout() {
 
         {/* TAB ROUTING */}
         <Suspense fallback={<LoadingFallback />}>
-          {(activeTab === 'landing' || activeTab === 'home') && (
+          {(activeTab === 'landing' || activeTab === 'home' || activeTab === 'feed') && (
             <HomeHubScreen 
               setActiveTab={setActiveTab}
               setActiveRoomId={setActiveRoomId}
@@ -1176,7 +1155,6 @@ export function MainLayout() {
               setTheme={setTheme}
             />
           )}
-          {activeTab === 'feed' && <FeedScreen setActiveTab={setActiveTab} setActiveRoomId={setActiveRoomId} token={token} />}
           {activeTab === 'leaderboard' && <LeaderboardScreen token={token} onOpenPublicProfile={openPublicProfile} />}
           {(activeTab === 'dashboard' || activeTab === 'profile') && <SettingsScreen token={token} setActiveTab={setActiveTab} theme={theme} setTheme={setTheme} />}
           {activeTab === 'classes_history' && <ClassHistoryScreen setActiveTab={setActiveTab} />}
