@@ -1139,20 +1139,10 @@ export function MainLayout() {
         {/* TAB ROUTING */}
         <Suspense fallback={<LoadingFallback />}>
           {(activeTab === 'landing' || activeTab === 'home' || activeTab === 'feed') && (
-            <HomeHubScreen 
+            <FeedScreen 
               setActiveTab={setActiveTab}
               setActiveRoomId={setActiveRoomId}
-              openPublicProfile={openPublicProfile}
-              onOpenPublicProfile={openPublicProfile}
-              startWebRtcCall={startWebRtcCall}
-              onOpenBookingModal={(tutor) => setBookingModalTutor(tutor)}
-              bookedSessions={bookedSessions}
-              onLaunchClassroom={(s) => {
-                setActiveClassroomSession(s);
-                setActiveTab('classroom');
-              }}
-              theme={theme}
-              setTheme={setTheme}
+              token={token}
             />
           )}
           {activeTab === 'leaderboard' && <LeaderboardScreen token={token} onOpenPublicProfile={openPublicProfile} />}

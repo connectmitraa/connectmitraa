@@ -1,293 +1,578 @@
-import { getDefaultAvatarByGender, MALE_AVATAR_SVG, FEMALE_AVATAR_SVG, NEUTRAL_AVATAR_SVG } from '../../constants/avatars';
 import React, { useState, useEffect } from 'react';
 import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../context/AuthContext';
 import { 
   AlertCircle, 
+  ArrowRight, 
   ArrowUpRight, 
   BookOpen, 
   Calendar, 
+  Check, 
   CheckCircle, 
   CheckCircle2, 
   Clock, 
   Copy, 
   Download, 
   FileText, 
+  Globe, 
+  Link2, 
+  Lock, 
   MessageSquare, 
   Plus, 
   Search, 
+  Share2, 
   Shield, 
   Star, 
+  Users, 
   Video, 
   X, 
-  XCircle 
+  XCircle, 
+  Zap 
 } from 'lucide-react';
+import { getDefaultAvatarByGender, MALE_AVATAR_SVG, FEMALE_AVATAR_SVG } from '../../constants/avatars';
 
-export function MySessionsScreen({ bookedSessions, onLaunchClassroom, onOpenReviewModal, setActiveTab }) {
-  const [sessionsTab, setSessionsTab] = useState(() => localStorage.getItem('studyloop_sessions_tab') || 'upcoming');
+export function MySessionsScreen({ bookedSessions = [], onLaunchClassroom, onOpenReviewModal, setActiveTab }) {
+  const { profile } = useAuth();
   const toast = useToast();
 
-  useEffect(() => {
-    localStorage.setItem('studyloop_sessions_tab', sessionsTab);
-  }, [sessionsTab]);
+  const [activeTabMode, setActiveTabMode] = useState('upcoming'); // 'upcoming', 'public_classes', 'notes'
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(null); // class object when sharing
 
-  // Completed sessions history with peer notes and key takeaways (zero video storage overhead)
-  const completedSessionsNotes = [
-    {
-      id: 'notes-1',
-      title: 'Java OOP: Inheritance, Dynamic Dispatch & @Override Deep Dive',
-      tutorName: 'Bhavna Patel',
-      tutorCollege: 'IIT Madras',
-      tutorAvatar: FEMALE_AVATAR_SVG,
-      department: 'Computer Science',
-      duration: '30 Mins',
-      completedDate: '28 Aug 2026',
-      rating: 5.0,
-      subject: 'Java & OOP',
-      tags: ['#Inheritance', '#DynamicMethodDispatch', '#SuperKeyword', '#Polymorphism'],
-      doubtNotes: 'Clarified runtime method dispatch in bytecode and super() initialization sequence.',
-      keyTakeaways: [
-        'super() must be the first statement in derived constructor.',
-        'Dynamic dispatch resolves methods at runtime using the object type on heap.',
-        'Static methods are resolved at compile time using reference type.'
-      ]
-    },
-    {
-      id: 'notes-2',
-      title: 'Dynamic Programming: 0/1 Knapsack & Memory Optimization',
-      tutorName: 'Rohan Deshmukh',
-      tutorCollege: 'IIT Bombay',
-      tutorAvatar: MALE_AVATAR_SVG,
-      department: 'Computer Science',
-      duration: '45 Mins',
-      completedDate: '26 Aug 2026',
-      rating: 4.9,
-      subject: 'Data Structures & Algorithms',
-      tags: ['#DynamicProgramming', '#Knapsack', '#Memoization', '#SpaceOptimization'],
-      doubtNotes: 'Step-by-step conversion of recursive tree to 1D space optimized table.',
-      keyTakeaways: [
-        'Choice diagram: include current weight if w <= W, or exclude.',
-        'Space can be reduced from O(N*W) to O(W) by iterating capacity backwards.',
-        'Avoid integer overflow when summing high value bounds.'
-      ]
-    }
+  // Create class form state
+  const [classTitle, setClassTitle] = useState('');
+  const [classSubject, setClassSubject] = useState('Java & Data Structures');
+  const [classDate, setClassDate] = useState('Today');
+  const [classTime, setClassTime] = useState('6:00 PM');
+  const [classType, setClassType] = useState('public'); // 'public' | 'private'
+  const [classLanguage, setClassLanguage] = useState('Telugu / English');
+  const [classPasscode, setClassPasscode] = useState('1337');
+
+  // List of website peers for direct chat sharing
+  const campusPeers = [
+    { id: 'c-1', fullName: 'Bhavna Patel', college: 'IIT Madras', avatarUrl: FEMALE_AVATAR_SVG },
+    { id: 'c-2', fullName: 'Chaitanya Reddy', college: 'BITS Pilani', avatarUrl: MALE_AVATAR_SVG },
+    { id: 'c-3', fullName: 'Rohan Deshmukh', college: 'IIT Bombay', avatarUrl: MALE_AVATAR_SVG },
+    { id: 'c-4', fullName: 'Divya Nambiar', college: 'NIT Trichy', avatarUrl: FEMALE_AVATAR_SVG }
   ];
 
+  // Scheduled & Created classes list
+  const [classList, setClassList] = useState([
+    {
+      id: 'class-101',
+      title: 'Java Multithreading & Producer-Consumer Locks Masterclass',
+      subject: 'Java & Concurrency',
+      mentorName: 'Aarav Sharma',
+      mentorCollege: 'IIT Madras',
+      mentorAvatar: MALE_AVATAR_SVG,
+      date: 'Today',
+      time: '6:30 PM',
+      type: 'public',
+      language: 'Telugu / English',
+      meetLink: 'https://studyloop.app/class?room=class-101',
+      attendees: 8
+    },
+    {
+      id: 'class-102',
+      title: 'Google & Microsoft SDE-1 OA Graph DP Cheatsheet & Live Coding',
+      subject: 'Algorithms & DSA',
+      mentorName: 'Bhavna Patel',
+      mentorCollege: 'IIT Madras',
+      mentorAvatar: FEMALE_AVATAR_SVG,
+      date: 'Tomorrow',
+      time: '8:00 PM',
+      type: 'public',
+      language: 'English',
+      meetLink: 'https://studyloop.app/class?room=class-102',
+      attendees: 15
+    },
+    {
+      id: 'class-103',
+      title: '1:1 Private Mentoring: Spring Boot JWT & Microservices',
+      subject: 'Backend Architecture',
+      mentorName: 'Rohan Deshmukh',
+      mentorCollege: 'IIT Bombay',
+      mentorAvatar: MALE_AVATAR_SVG,
+      date: 'Thursday',
+      time: '7:00 PM',
+      type: 'private',
+      language: 'Telugu / English',
+      meetLink: 'https://studyloop.app/class?room=class-103',
+      passcode: '9082',
+      attendees: 2
+    }
+  ]);
+
+  // Handle Create Class
+  const handleCreateClass = (e) => {
+    e.preventDefault();
+    if (!classTitle.trim()) return;
+
+    const newClassId = `class-${Date.now().toString().slice(-4)}`;
+    const newClass = {
+      id: newClassId,
+      title: classTitle.trim(),
+      subject: classSubject,
+      mentorName: profile?.fullName || 'Aarav Sharma',
+      mentorCollege: profile?.college || 'IIT Madras',
+      mentorAvatar: getDefaultAvatarByGender(profile?.gender, profile?.avatarUrl),
+      date: classDate,
+      time: classTime,
+      type: classType,
+      language: classLanguage,
+      meetLink: `https://studyloop.app/class?room=${newClassId}`,
+      passcode: classType === 'private' ? classPasscode : null,
+      attendees: 1
+    };
+
+    setClassList([newClass, ...classList]);
+    setShowCreateModal(false);
+    setClassTitle('');
+    toast.success(`🎉 ${classType === 'public' ? 'Public' : 'Private'} Class Created! Meeting link is ready.`);
+  };
+
+  // Share to Chat
+  const handleShareToPeerChat = (peer, targetClass) => {
+    toast.success(`💬 Meet link sent to ${peer.fullName}'s chat!`);
+    navigator.clipboard.writeText(targetClass.meetLink);
+    setShowShareModal(null);
+    if (setActiveTab) {
+      setActiveTab('chat');
+    }
+  };
+
   return (
-    <div className="studyloop-page-container" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-      
-      {/* Top Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+    <div className="studyloop-page-container" style={{ maxWidth: '1200px', margin: '0 auto', padding: '16px 20px' }}>
+
+      {/* ── TOP HEADER ── */}
+      <div style={{
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        flexWrap: 'wrap', gap: '16px', marginBottom: '22px'
+      }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <h1 className="font-serif" style={{ fontSize: '2rem', fontWeight: 800, margin: 0 }}>
-              1:1 Peer Study Sessions
-            </h1>
-            <span className="tag" style={{ background: '#10b981', color: '#fff', fontSize: '0.75rem', fontWeight: 800, padding: '0.2rem 0.6rem' }}>
-              🛡️ 10-Min Free Demo Active
-            </span>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: 'var(--accent-light)', color: 'var(--accent-primary)', padding: '3px 10px', borderRadius: '999px', fontSize: '0.72rem', fontWeight: 800, marginBottom: '6px' }}>
+            🎓 Live Study Sessions & Peer Classrooms
           </div>
-          <p style={{ color: 'var(--text-secondary)', margin: '0.35rem 0 0 0', fontSize: '0.875rem' }}>
-            Manage upcoming live doubt sessions, collaborate in real-time WebRTC study rooms, and review peer study notes.
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 900, color: 'var(--text-primary)', margin: '0 0 4px 0', letterSpacing: '-0.02em' }}>
+            Classes & Video Mentoring
+          </h1>
+          <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '0.86rem' }}>
+            Create public or private study classes, share meeting links with website friends, or learn from mentors.
           </p>
         </div>
 
-        <button 
-          onClick={() => setActiveTab('connections')} 
-          className="btn btn-primary"
-          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 800 }}
-        >
-          <Plus size={18} /> Find Campus Mentors
-        </button>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <button 
+            onClick={() => setActiveTab('discover')} 
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              padding: '10px 16px', borderRadius: '10px', border: '1px solid var(--border-color)',
+              backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)',
+              fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer'
+            }}
+          >
+            <Search size={15} /> Find Campus Mentors
+          </button>
+
+          <button 
+            onClick={() => setShowCreateModal(true)} 
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              padding: '10px 18px', borderRadius: '10px', border: 'none',
+              backgroundColor: 'var(--accent-primary)', color: '#ffffff',
+              fontSize: '0.84rem', fontWeight: 800, cursor: 'pointer',
+              boxShadow: '0 4px 14px rgba(0, 102, 255, 0.25)'
+            }}
+          >
+            <Plus size={16} /> Create New Class 🚀
+          </button>
+        </div>
       </div>
 
-      {/* Tabs */}
-      <div style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
-        <button
-          onClick={() => setSessionsTab('upcoming')}
-          style={{
-            background: 'none',
-            border: 'none',
-            padding: '0.6rem 1.25rem',
-            fontWeight: 800,
-            fontSize: '0.9375rem',
-            cursor: 'pointer',
-            color: sessionsTab === 'upcoming' ? 'var(--primary-color)' : 'var(--text-secondary)',
-            borderBottom: sessionsTab === 'upcoming' ? '2px solid var(--primary-color)' : 'none',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem'
-          }}
-        >
-          <Calendar size={17} /> Upcoming Live Sessions ({bookedSessions.length})
-        </button>
-
-        <button
-          onClick={() => setSessionsTab('notes')}
-          style={{
-            background: 'none',
-            border: 'none',
-            padding: '0.6rem 1.25rem',
-            fontWeight: 800,
-            fontSize: '0.9375rem',
-            cursor: 'pointer',
-            color: sessionsTab === 'notes' ? 'var(--primary-color)' : 'var(--text-secondary)',
-            borderBottom: sessionsTab === 'notes' ? '2px solid var(--primary-color)' : 'none',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem'
-          }}
-        >
-          <FileText size={17} /> Completed Sessions & Peer Notes ({completedSessionsNotes.length})
-        </button>
+      {/* ── TABS ── */}
+      <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', marginBottom: '20px' }}>
+        {[
+          { id: 'upcoming', label: `📅 All Scheduled Classes (${classList.length})` },
+          { id: 'public_classes', label: `🌐 Campus Public Classes (${classList.filter(c => c.type === 'public').length})` },
+          { id: 'notes', label: '📜 Completed Notes & Archive' }
+        ].map(t => (
+          <button
+            key={t.id}
+            onClick={() => setActiveTabMode(t.id)}
+            style={{
+              padding: '8px 16px', borderRadius: '8px', border: 'none',
+              backgroundColor: activeTabMode === t.id ? 'var(--accent-primary)' : 'transparent',
+              color: activeTabMode === t.id ? '#fff' : 'var(--text-secondary)',
+              fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s'
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
 
-      {/* TAB 1: UPCOMING SESSIONS */}
-      {sessionsTab === 'upcoming' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {bookedSessions.length === 0 ? (
-            <div className="card-premium" style={{ textAlign: 'center', padding: '3.5rem 1.5rem' }}>
-              <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>🧑‍🏫</div>
-              <h3 className="font-serif" style={{ fontSize: '1.25rem', margin: '0 0 0.5rem 0' }}>No Upcoming Study Sessions</h3>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', maxWidth: '440px', margin: '0 auto 1.5rem auto' }}>
-                Need help with DSA, Semester Exams, or Placement Interviews? Connect with verified seniors across campuses with our 10-Minute Free Demo.
-              </p>
-              <button onClick={() => setActiveTab('connections')} className="btn btn-primary">
-                Browse Campus Mentors
-              </button>
-            </div>
-          ) : (
-            bookedSessions.map(session => (
-              <div key={session.id} className="card-premium" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.5rem' }}>
-                
-                <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center', flex: 1, minWidth: '300px' }}>
-                  <img src={session.tutorAvatar} alt={session.tutorName} style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--primary-color)' }} />
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem', flexWrap: 'wrap' }}>
-                      <span className="tag tag-accent">{session.duration}</span>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{session.time}</span>
-                      {session.sessionType === 'swap' ? (
-                        <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.12)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
-                          🔄 Peer Skill Swap (100% Free Barter)
-                        </span>
-                      ) : (
-                        <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#10b981' }}>
-                          ⭐ 10-Min Free Demo Included (₹{session.fee || 50})
-                        </span>
-                      )}
-                      {session.languages && session.languages.length > 0 && (
-                        <span style={{ fontSize: '0.7rem', backgroundColor: 'var(--bg-tertiary)', padding: '2px 6px', borderRadius: '4px', fontWeight: 700, color: 'var(--accent-primary)' }}>
-                          🗣️ {session.languages.join(' / ')}
-                        </span>
-                      )}
+      {/* ── CLASSES GRID ── */}
+      {activeTabMode !== 'notes' ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '16px' }}>
+          {classList
+            .filter(c => activeTabMode === 'upcoming' || c.type === 'public')
+            .map(cls => (
+              <div
+                key={cls.id}
+                style={{
+                  backgroundColor: 'var(--bg-secondary)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '16px',
+                  padding: '20px',
+                  boxShadow: 'var(--shadow-sm)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  gap: '14px'
+                }}
+              >
+                <div>
+                  {/* Card Header: Type Badge & Date */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                    <span style={{
+                      fontSize: '0.72rem', fontWeight: 800, padding: '3px 10px', borderRadius: '999px',
+                      backgroundColor: cls.type === 'public' ? 'rgba(0,102,255,0.1)' : 'rgba(245,158,11,0.1)',
+                      color: cls.type === 'public' ? 'var(--accent-primary)' : '#d97706',
+                      display: 'inline-flex', alignItems: 'center', gap: '4px'
+                    }}>
+                      {cls.type === 'public' ? <Globe size={12} /> : <Lock size={12} />}
+                      {cls.type === 'public' ? 'Public Class (Campus)' : 'Private Class (Passcode)'}
+                    </span>
+
+                    <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      <Clock size={12} /> {cls.date} • {cls.time}
+                    </span>
+                  </div>
+
+                  {/* Title & Subject */}
+                  <h3 style={{ margin: '0 0 6px 0', fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.35 }}>
+                    {cls.title}
+                  </h3>
+                  <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', marginBottom: '12px' }}>
+                    Subject: <strong style={{ color: 'var(--text-primary)' }}>{cls.subject}</strong> • 🗣️ Spoken: <strong style={{ color: 'var(--text-primary)' }}>{cls.language}</strong>
+                  </div>
+
+                  {/* Mentor Info */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: 'var(--bg-tertiary)', padding: '10px 12px', borderRadius: '10px' }}>
+                    <img src={cls.mentorAvatar} alt="" style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-primary)' }}>{cls.mentorName}</div>
+                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{cls.mentorCollege}</div>
                     </div>
-                    <h3 className="font-serif" style={{ fontSize: '1.25rem', margin: '0 0 0.25rem 0' }}>
-                      {session.topic}
-                    </h3>
-                    {session.sessionType === 'swap' && session.swapOfferSubject && (
-                      <div style={{ fontSize: '0.8rem', color: '#059669', fontWeight: 700, margin: '2px 0 4px 0' }}>
-                        🤝 Barter: You teach <strong>{session.swapOfferSubject}</strong> ⮀ Mentor teaches <strong>{session.topic}</strong>
-                      </div>
-                    )}
-                    <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
-                      Mentor: <strong>{session.tutorName}</strong> ({session.tutorCollege}) {session.sessionType !== 'swap' && <>• Direct UPI: <code>{session.tutorUpi || `${session.tutorName.toLowerCase().replace(/\s+/g, '')}@upi`}</code></>}
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                      👥 {cls.attendees} Attending
                     </div>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                  {session.status === 'confirmed' ? (
-                    <button 
-                      onClick={() => onLaunchClassroom(session)} 
-                      className="btn btn-primary" 
-                      style={{ padding: '0.75rem 1.5rem', fontWeight: 800, fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                    >
-                      <Video size={18} /> Enter Live Classroom 🚀
-                    </button>
-                  ) : session.rated ? (
-                    <div style={{ backgroundColor: 'var(--bg-tertiary)', padding: '0.5rem 1rem', borderRadius: 'var(--radius-md)', fontSize: '0.8125rem', color: '#10b981', fontWeight: 700 }}>
-                      ✓ Completed & Rated 5.0 ⭐
-                    </div>
-                  ) : (
-                    <button 
-                      onClick={() => onOpenReviewModal(session)} 
-                      className="btn btn-secondary" 
-                      style={{ padding: '0.75rem 1.25rem', fontWeight: 700, fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                    >
-                      <Star size={16} /> Rate Concept Clarity ⭐
-                    </button>
-                  )}
+                {/* Action Buttons: Enter Classroom + Share Meet Link */}
+                <div style={{ display: 'flex', gap: '8px', paddingTop: '10px', borderTop: '1px solid var(--border-color)' }}>
+                  <button
+                    onClick={() => {
+                      if (onLaunchClassroom) {
+                        onLaunchClassroom(cls);
+                      } else {
+                        toast.success(`Launching Classroom for ${cls.title}! 🚀`);
+                      }
+                    }}
+                    style={{
+                      flex: 1, padding: '9px 14px', borderRadius: '8px', border: 'none',
+                      backgroundColor: 'var(--accent-primary)', color: '#ffffff',
+                      fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'
+                    }}
+                  >
+                    <Video size={14} /> Enter Class 🚀
+                  </button>
+
+                  <button
+                    onClick={() => setShowShareModal(cls)}
+                    style={{
+                      padding: '9px 12px', borderRadius: '8px', border: '1px solid var(--border-color)',
+                      backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)',
+                      fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', gap: '4px'
+                    }}
+                    title="Share Meet Link with website friends"
+                  >
+                    <Share2 size={14} /> Share Link
+                  </button>
                 </div>
 
               </div>
-            ))
-          )}
+            ))}
+        </div>
+      ) : (
+        /* Completed Notes Archive */
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {[
+            { title: 'Java OOP: Polymorphism & Dynamic Dispatch', tutor: 'Bhavna Patel', college: 'IIT Madras', rating: 5.0, date: '2 days ago' },
+            { title: 'Dynamic Programming 0/1 Knapsack Space Reduction', tutor: 'Rohan Deshmukh', college: 'IIT Bombay', rating: 4.9, date: '4 days ago' }
+          ].map((note, idx) => (
+            <div key={idx} style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h4 style={{ margin: '0 0 4px 0', fontSize: '0.94rem', fontWeight: 800, color: 'var(--text-primary)' }}>{note.title}</h4>
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Taught by {note.tutor} ({note.college}) • ⭐ {note.rating} • {note.date}</div>
+              </div>
+              <button
+                onClick={() => toast.success('📥 Downloading session notes PDF!')}
+                style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'none', color: 'var(--text-primary)', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}
+              >
+                <Download size={13} /> Notes PDF
+              </button>
+            </div>
+          ))}
         </div>
       )}
 
-      {/* TAB 2: COMPLETED SESSIONS & PEER NOTES */}
-      {sessionsTab === 'notes' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          <div className="card-premium" style={{ background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%)', border: '1px solid rgba(16, 185, 129, 0.25)', padding: '1.25rem 1.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <CheckCircle2 size={24} style={{ color: '#10b981', flexShrink: 0 }} />
-              <div>
-                <div style={{ fontWeight: 800, fontSize: '0.9375rem', color: 'var(--text-primary)' }}>
-                  Zero-Storage Peer Study Repository
-                </div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
-                  Live 1:1 sessions are conducted peer-to-peer over secure WebRTC. Key takeaways and revision notes are saved directly in your personal student library without consuming cloud video storage.
+      {/* ── CREATE CLASS MODAL (PUBLIC / PRIVATE WITH MEET LINK) ── */}
+      {showCreateModal && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 3000,
+          backgroundColor: 'rgba(15, 23, 42, 0.75)', backdropFilter: 'blur(6px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px'
+        }}>
+          <div style={{
+            backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)',
+            borderRadius: '16px', width: '100%', maxWidth: '520px', padding: '24px',
+            boxShadow: 'var(--shadow-lg)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '1.4rem' }}>🎓</span>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                    Create Class & Meeting Link
+                  </h3>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                    Host a live audio/video class with whiteboard & compiler
+                  </div>
                 </div>
               </div>
+              <button onClick={() => setShowCreateModal(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                <X size={18} />
+              </button>
             </div>
-          </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem' }}>
-            {completedSessionsNotes.map(item => (
-              <div key={item.id} className="card-premium" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span className="tag tag-accent">{item.subject}</span>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{item.completedDate}</span>
+            <form onSubmit={handleCreateClass}>
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '6px' }}>
+                  Class Title / Topic *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={classTitle}
+                  onChange={e => setClassTitle(e.target.value)}
+                  placeholder="e.g. React Hooks Deep Dive, Java Memory Model, DSA Graphs"
+                  style={{
+                    width: '100%', padding: '9px 12px', borderRadius: '8px',
+                    border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)',
+                    color: 'var(--text-primary)', fontSize: '0.82rem', boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '6px' }}>
+                    Subject
+                  </label>
+                  <input
+                    type="text"
+                    value={classSubject}
+                    onChange={e => setClassSubject(e.target.value)}
+                    style={{
+                      width: '100%', padding: '8px 10px', borderRadius: '8px',
+                      border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)',
+                      color: 'var(--text-primary)', fontSize: '0.8rem', boxSizing: 'border-box'
+                    }}
+                  />
                 </div>
 
                 <div>
-                  <h3 style={{ fontSize: '1.05rem', fontWeight: 800, margin: '0 0 0.4rem 0' }}>{item.title}</h3>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                    Taught by <strong>{item.tutorName}</strong> ({item.tutorCollege}) • ⭐ {item.rating}
-                  </div>
-                </div>
-
-                <div style={{ padding: '0.75rem', backgroundColor: 'var(--bg-tertiary)', borderRadius: 'var(--radius-sm)' }}>
-                  <div style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
-                    Key Concepts Mastered
-                  </div>
-                  <ul style={{ margin: 0, paddingLeft: '1.1rem', fontSize: '0.78rem', color: 'var(--text-primary)', lineHeight: 1.45 }}>
-                    {item.keyTakeaways.map((point, pIdx) => (
-                      <li key={pIdx} style={{ marginBottom: '0.25rem' }}>{point}</li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div style={{ display: 'flex', gap: '0.5rem', marginTop: 'auto' }}>
-                  <button 
-                    onClick={() => toast.success(`Downloading PDF notes for ${item.title}...`)}
-                    className="btn btn-secondary"
-                    style={{ flex: 1, fontSize: '0.78rem', fontWeight: 700, padding: '0.5rem' }}
-                  >
-                    <Download size={14} style={{ marginRight: '0.35rem' }} /> Download Summary
-                  </button>
-                  <button 
-                    onClick={() => {
-                      setActiveTab('connections');
-                      toast.info(`Redirecting to connect with ${item.tutorName}...`);
+                  <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '6px' }}>
+                    Spoken Language
+                  </label>
+                  <select
+                    value={classLanguage}
+                    onChange={e => setClassLanguage(e.target.value)}
+                    style={{
+                      width: '100%', padding: '8px 10px', borderRadius: '8px',
+                      border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)',
+                      color: 'var(--text-primary)', fontSize: '0.8rem'
                     }}
-                    className="btn btn-primary"
-                    style={{ fontSize: '0.78rem', fontWeight: 700, padding: '0.5rem 1rem' }}
                   >
-                    Book Again
-                  </button>
+                    <option value="Telugu / English">🗣️ Telugu / English</option>
+                    <option value="English">🗣️ English Only</option>
+                    <option value="Telugu">🗣️ Telugu (తెలుగు)</option>
+                    <option value="Hindi">🗣️ Hindi (हिंदी)</option>
+                  </select>
                 </div>
               </div>
-            ))}
+
+              {/* Public vs Private Class Selector */}
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '6px' }}>
+                  Class Privacy Mode
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div
+                    onClick={() => setClassType('public')}
+                    style={{
+                      padding: '10px', borderRadius: '8px', cursor: 'pointer',
+                      border: classType === 'public' ? '1.5px solid var(--accent-primary)' : '1px solid var(--border-color)',
+                      backgroundColor: classType === 'public' ? 'var(--accent-light)' : 'var(--bg-tertiary)'
+                    }}
+                  >
+                    <div style={{ fontWeight: 800, fontSize: '0.8rem', color: classType === 'public' ? 'var(--accent-primary)' : 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <Globe size={13} /> Public Class
+                    </div>
+                    <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                      Broadcast to all campus students
+                    </div>
+                  </div>
+
+                  <div
+                    onClick={() => setClassType('private')}
+                    style={{
+                      padding: '10px', borderRadius: '8px', cursor: 'pointer',
+                      border: classType === 'private' ? '1.5px solid var(--accent-primary)' : '1px solid var(--border-color)',
+                      backgroundColor: classType === 'private' ? 'var(--accent-light)' : 'var(--bg-tertiary)'
+                    }}
+                  >
+                    <div style={{ fontWeight: 800, fontSize: '0.8rem', color: classType === 'private' ? 'var(--accent-primary)' : 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <Lock size={13} /> Private Class
+                    </div>
+                    <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                      Only people with link / passcode
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {classType === 'private' && (
+                <div style={{ marginBottom: '14px' }}>
+                  <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '6px' }}>
+                    Private Passcode
+                  </label>
+                  <input
+                    type="text"
+                    value={classPasscode}
+                    onChange={e => setClassPasscode(e.target.value)}
+                    placeholder="e.g. 1337"
+                    style={{
+                      width: '100%', padding: '8px 10px', borderRadius: '8px',
+                      border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)',
+                      color: 'var(--text-primary)', fontSize: '0.8rem', boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+              )}
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '16px' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(false)}
+                  style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-primary)', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  style={{ padding: '8px 20px', borderRadius: '8px', border: 'none', background: 'var(--accent-primary)', color: '#fff', fontSize: '0.82rem', fontWeight: 800, cursor: 'pointer' }}
+                >
+                  Create Class & Get Link 🚀
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── SHARE TO CHAT MODAL ── */}
+      {showShareModal && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 3000,
+          backgroundColor: 'rgba(15, 23, 42, 0.75)', backdropFilter: 'blur(6px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px'
+        }}>
+          <div style={{
+            backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)',
+            borderRadius: '16px', width: '100%', maxWidth: '440px', padding: '20px',
+            boxShadow: 'var(--shadow-lg)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Share2 size={16} style={{ color: 'var(--accent-primary)' }} />
+                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                  Share Meet Link to Peer Chat
+                </h3>
+              </div>
+              <button onClick={() => setShowShareModal(null)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Meet link copy box */}
+            <div style={{ display: 'flex', gap: '6px', alignItems: 'center', backgroundColor: 'var(--bg-tertiary)', padding: '8px 12px', borderRadius: '8px', marginBottom: '14px', border: '1px solid var(--border-color)' }}>
+              <input
+                readOnly
+                value={showShareModal.meetLink}
+                style={{ flex: 1, background: 'none', border: 'none', fontSize: '0.76rem', color: 'var(--accent-primary)', fontWeight: 700, outline: 'none' }}
+              />
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(showShareModal.meetLink);
+                  toast.success('🔗 Meet link copied to clipboard!');
+                }}
+                style={{ background: 'none', border: 'none', color: 'var(--text-primary)', fontSize: '0.74rem', fontWeight: 700, cursor: 'pointer' }}
+              >
+                Copy
+              </button>
+            </div>
+
+            <div style={{ fontSize: '0.74rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '8px' }}>
+              SEND DIRECTLY TO CAMPUS FRIENDS:
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '220px', overflowY: 'auto' }}>
+              {campusPeers.map(peer => (
+                <div
+                  key={peer.id}
+                  style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    padding: '8px 10px', backgroundColor: 'var(--bg-tertiary)', borderRadius: '8px',
+                    border: '1px solid var(--border-color)'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <img src={peer.avatarUrl} alt="" style={{ width: '30px', height: '30px', borderRadius: '50%' }} />
+                    <div>
+                      <div style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-primary)' }}>{peer.fullName}</div>
+                      <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>{peer.college}</div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => handleShareToPeerChat(peer, showShareModal)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '4px',
+                      padding: '5px 10px', borderRadius: '6px', border: 'none',
+                      backgroundColor: 'var(--accent-primary)', color: '#fff',
+                      fontSize: '0.74rem', fontWeight: 700, cursor: 'pointer'
+                    }}
+                  >
+                    <Send size={11} /> Send in Chat
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
