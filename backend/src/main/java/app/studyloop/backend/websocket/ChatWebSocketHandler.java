@@ -668,9 +668,6 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         public String getEmoji() { return emoji; }
         public void setEmoji(String emoji) { this.emoji = emoji; }
 
-        private Boolean isCameraOff;
-        private Boolean isScreenSharing;
-        private String emoji;
         private String action; // MUTE_ALL, LOWER_ALL_HANDS, LOCK_SCREEN_SHARE, UNLOCK_SCREEN_SHARE
 
         public String getAction() { return action; }

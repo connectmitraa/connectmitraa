@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/doubts")
+@RequestMapping({"/api/doubts", "/api/doubt-rooms"})
 public class DoubtRoomController {
 
     private final DoubtRoomRepository doubtRoomRepository;
@@ -29,6 +29,20 @@ public class DoubtRoomController {
         this.doubtRoomRepository = doubtRoomRepository;
         this.profileRepository = profileRepository;
         this.gamificationService = gamificationService;
+    }
+
+    @GetMapping
+    public ResponseEntity<List<DoubtRoom>> getAllDoubtRooms(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @RequestParam(name = "allColleges", defaultValue = "false") boolean allColleges) {
+        return getLiveDoubtRooms(principal, allColleges);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<DoubtRoom> getDoubtRoomById(@PathVariable UUID id) {
+        return doubtRoomRepository.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
@@ -120,7 +134,7 @@ public class DoubtRoomController {
         return ResponseEntity.badRequest().body("You are not the registered helper for this doubt room.");
     }
 
-    @PostMapping("/{id}/solve")
+    @PostMapping({ "/{id}/solve", "/{id}/close" })
     public ResponseEntity<?> solveDoubtRoom(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable UUID id) {

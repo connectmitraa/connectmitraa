@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   BookOpen, 
   CheckCircle2, 
@@ -17,6 +17,8 @@ import {
   Video, 
   Zap 
 } from 'lucide-react';
+import { DoubtRoomsAPI } from '../../lib/api';
+import { useToast } from '../../context/ToastContext';
 
 export function DoubtRoomsScreen({ token, activeRoomId, setActiveRoomId, socket, wsMessages, setWsMessages, startWebRtcCall, webrtcCall }) {
   const [rooms, setRooms] = useState([
@@ -72,52 +74,53 @@ export function DoubtRoomsScreen({ token, activeRoomId, setActiveRoomId, socket,
   const [searchQuery, setSearchQuery] = useState('');
   const [newTopic, setNewTopic] = useState('');
   const [newSubject, setNewSubject] = useState('Java');
-  const [newVisibility, setNewVisibility] = useState('public'); // 'public' | 'private'
+  const [newVisibility, setNewVisibility] = useState('public');
   const [newMaxParticipants, setNewMaxParticipants] = useState('10');
-  const [newRoomFlash, setNewRoomFlash] = useState(null); // { title } flash badge
+  const [newRoomFlash, setNewRoomFlash] = useState(null);
+  const toast = useToast();
 
-  // ── Live participant count ticker for LIVE rooms (simulates WebSocket presence) ──
+  // Load rooms from backend on mount
+  const fetchRooms = useCallback(async () => {
+    if (!token) return;
+    try {
+      const data = await DoubtRoomsAPI.getAll(token);
+      if (Array.isArray(data) && data.length > 0) {
+        setRooms(data.map(r => ({
+          id: r.id,
+          title: r.title || r.topic,
+          subject: r.subject,
+          college: r.college || r.creatorCollege || 'Campus',
+          participants: r.participantCount || r.participants || 1,
+          creator: r.creatorName || r.creator || 'Student',
+          status: r.status === 'OPEN' ? 'live' : (r.status === 'CLOSED' ? 'completed' : r.status?.toLowerCase() || 'live'),
+          visibility: r.visibility?.toLowerCase() || 'public',
+          startedAt: r.createdAt ? new Date(r.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : 'Just now',
+        })));
+      }
+    } catch (e) {
+      // Backend offline — use hardcoded rooms as fallback
+      console.log('DoubtRooms: using fallback data', e.message);
+    }
+  }, [token]);
+
+  useEffect(() => { fetchRooms(); }, [fetchRooms]);
+
+  // Subtle live participant count animation (visual polish only)
   useEffect(() => {
     const interval = setInterval(() => {
       setRooms(prev => prev.map(r => {
         if (r.status !== 'live') return r;
-        const delta = Math.random() > 0.45 ? 1 : -1;
-        const next = Math.max(1, r.participants + delta);
-        return { ...r, participants: next };
+        const delta = Math.random() > 0.5 ? 1 : -1;
+        return { ...r, participants: Math.max(1, r.participants + delta) };
       }));
-    }, Math.random() * 4000 + 5000); // 5–9s random interval
+    }, 12000);
     return () => clearInterval(interval);
   }, []);
 
-  // ── Simulated new room arriving from network every ~25s ──
-  const newRoomTopics = [
-    { title: 'OS Scheduling: FCFS vs Round Robin deadlock analysis', subject: 'Operating Systems', college: 'IIT Delhi' },
-    { title: 'Calculus: Lagrange multipliers and constrained optimization', subject: 'Calculus', college: 'IIT Bombay' },
-    { title: 'Python asyncio event loop with FastAPI concurrency patterns', subject: 'Python', college: 'IIIT Hyderabad' },
-  ];
-  const newRoomIdx = useRef(0);
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const tpl = newRoomTopics[newRoomIdx.current % newRoomTopics.length];
-      newRoomIdx.current++;
-      const r = {
-        id: `room-auto-${Date.now()}`,
-        title: tpl.title, subject: tpl.subject, college: tpl.college,
-        participants: Math.floor(Math.random() * 3) + 1,
-        creator: ['Priya M.', 'Arjun K.', 'Nandini R.'][newRoomIdx.current % 3],
-        status: 'live', visibility: 'public', startedAt: 'Just now'
-      };
-      setRooms(prev => [r, ...prev]);
-      setNewRoomFlash(r.title.slice(0, 50) + '…');
-      setTimeout(() => setNewRoomFlash(null), 4000);
-    }, 25000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const handleCreateRoom = (e) => {
+  const handleCreateRoom = async (e) => {
     e.preventDefault();
     if (!newTopic.trim()) return;
-    const newR = {
+    const localRoom = {
       id: `room-${Date.now()}`,
       title: newTopic.trim(),
       subject: newSubject,
@@ -128,14 +131,25 @@ export function DoubtRoomsScreen({ token, activeRoomId, setActiveRoomId, socket,
       visibility: newVisibility,
       startedAt: 'Just now'
     };
-    
-    if (newVisibility === 'public') {
-      setRooms(prev => [newR, ...prev]);
+    try {
+      const created = await DoubtRoomsAPI.create(token, {
+        title: newTopic.trim(),
+        subject: newSubject,
+        visibility: newVisibility.toUpperCase(),
+        maxParticipants: parseInt(newMaxParticipants),
+      });
+      localRoom.id = created?.id || localRoom.id;
+    } catch (e) {
+      // Backend offline — use local room
     }
-    setActiveRoomId(newR.id);
+    if (newVisibility === 'public') {
+      setRooms(prev => [localRoom, ...prev]);
+    }
+    setActiveRoomId(localRoom.id);
     setNewTopic('');
+    toast.success('🔔 Doubt room created! Inviting peers now...');
     if (startWebRtcCall) {
-      startWebRtcCall(null, newR.id, newR.title, newR.subject);
+      startWebRtcCall(null, localRoom.id, localRoom.title, localRoom.subject);
     }
   };
 
@@ -157,7 +171,7 @@ export function DoubtRoomsScreen({ token, activeRoomId, setActiveRoomId, socket,
   });
 
   return (
-    <div style={{ padding: '1.5rem 2.5rem', width: '100%', maxWidth: '1400px', margin: '0 auto' }}>
+    <div className="studyloop-page-container">
       
       {/* Top Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.75rem' }}>
@@ -225,7 +239,7 @@ export function DoubtRoomsScreen({ token, activeRoomId, setActiveRoomId, socket,
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: '2rem' }}>
+      <div className="studyloop-feed-grid">
         
         {/* Rooms Stream */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -272,6 +286,9 @@ export function DoubtRoomsScreen({ token, activeRoomId, setActiveRoomId, socket,
                         </span>
                       )}
                       <span className="tag tag-accent">{r.subject}</span>
+                      <span style={{ fontSize: '0.72rem', backgroundColor: 'var(--bg-tertiary)', padding: '2px 7px', borderRadius: '4px', fontWeight: 700, color: 'var(--accent-primary)', border: '1px solid var(--border-color)' }}>
+                        🗣️ {r.language || 'Telugu / English'}
+                      </span>
                       <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{r.college}</span>
                     </div>
 
@@ -279,7 +296,7 @@ export function DoubtRoomsScreen({ token, activeRoomId, setActiveRoomId, socket,
                       {r.title}
                     </h3>
                     
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
                       <span>Host: <strong style={{ color: 'var(--text-primary)' }}>{r.creator}</strong></span>
                       {isLive ? (
                         <span>👥 {r.participants} active peers</span>
@@ -290,11 +307,24 @@ export function DoubtRoomsScreen({ token, activeRoomId, setActiveRoomId, socket,
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                     {isLive ? (
-                      <button onClick={() => handleEnterRoom(r)} className="btn btn-primary" style={{ padding: '0.5rem 1.25rem', fontSize: '0.8125rem', gap: '6px' }}>
-                        <Video size={14} /> Join Meeting 🚀
-                      </button>
+                      <>
+                        <button onClick={() => handleEnterRoom(r)} className="btn btn-primary" style={{ padding: '0.5rem 1.25rem', fontSize: '0.8125rem', gap: '6px' }}>
+                          <Video size={14} /> Join Meeting 🚀
+                        </button>
+                        <button 
+                          onClick={() => {
+                            setRooms(prev => prev.map(room => room.id === r.id ? { ...room, status: 'completed', duration: '28m' } : room));
+                            toast.success(`Doubt "${r.title.slice(0, 30)}..." marked as Resolved! ✅`);
+                          }}
+                          className="btn btn-secondary" 
+                          style={{ padding: '0.5rem 0.75rem', fontSize: '0.75rem', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)' }}
+                          title="Mark doubt as resolved"
+                        >
+                          <CheckCircle2 size={14} /> Resolved
+                        </button>
+                      </>
                     ) : (
                       <button onClick={() => handleEnterRoom(r)} className="btn btn-secondary" style={{ padding: '0.5rem 1.25rem', fontSize: '0.8125rem', gap: '6px' }}>
                         <RotateCcw size={14} /> Reopen / Rejoin 🔄

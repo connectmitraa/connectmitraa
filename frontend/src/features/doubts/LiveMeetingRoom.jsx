@@ -46,6 +46,42 @@ import {
 
 const REACTION_EMOJIS = ['❤️', '🎉', '👏', '💡', '🔥', '👍'];
 
+// Web Audio API Synthetic Chimes for Live Meetings
+const playMeetingAudio = (type = 'chime') => {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    if (type === 'hand') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(440, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15);
+      gain.gain.setValueAtTime(0.1, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.25);
+    } else if (type === 'join') {
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+      osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.08, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.3);
+    } else if (type === 'chat') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(800, ctx.currentTime);
+      gain.gain.setValueAtTime(0.06, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.1);
+    }
+  } catch (e) {}
+};
+
 export function LiveMeetingRoom({
   roomId = 'doubt-room-live',
   roomTitle = 'Live Academic Doubt Session',
@@ -222,6 +258,7 @@ export function LiveMeetingRoom({
               time: timeStr
             }]);
             showToast(`👋 ${data.userName} joined the study session`);
+            playMeetingAudio('join');
           }
         }
 
@@ -254,6 +291,7 @@ export function LiveMeetingRoom({
             setHandRaised(true);
           } else {
             showToast(`✋ ${data.userName || 'A student'} raised their hand`);
+            playMeetingAudio('hand');
           }
         } else if (data.type === 'USER_LOWERED_HAND') {
           setParticipants(prev => prev.map(p => 
@@ -318,6 +356,9 @@ export function LiveMeetingRoom({
           }]);
           if (activeDrawer !== 'chat') {
             setUnreadChatCount(prev => prev + 1);
+            if (data.senderId !== currentUserId) {
+              playMeetingAudio('chat');
+            }
           }
         }
 

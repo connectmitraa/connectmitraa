@@ -1,5 +1,6 @@
 import { useAuth } from '../../context/AuthContext';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useToast } from '../../context/ToastContext';
 import { Activity, AlertCircle, ArrowRight, ArrowUpRight, Award, Ban, BarChart2, BarChart3, Building2, Check, CheckCheck, CheckCircle, CheckCircle2, DollarSign, Eye, FileText, Filter, HelpCircle, History, LogOut, Megaphone, MessageSquare, RefreshCw, Search, Settings, Shield, ShieldAlert, Trash2, TrendingUp, Tv2, Users, X, XCircle } from 'lucide-react';
 import { getDefaultAvatarByGender } from '../../constants/avatars';
 
@@ -21,7 +22,7 @@ export function AdminConsoleScreen({ onBackToStudent }) {
           </div>
         </div>
 
-        {/* SWITCH BACK TO STUDENT VIEW BUTTON (LINKEDIN / UNSTOP STYLE) */}
+        {/* SWITCH BACK TO STUDENT VIEW BUTTON */}
         <button
           onClick={onBackToStudent}
           className="btn btn-secondary"
@@ -119,6 +120,7 @@ function AdminSidebarLink({ active, icon, label, count, onClick }) {
 
 // --- ADMIN TAB 1: REAL-TIME LIVE PROBLEM & DOUBT MANAGER ---
 function AdminDoubtOversightTab({ token }) {
+  const toast = useToast();
   const [rooms, setRooms] = useState([
     { id: 'room-101', title: 'Java Multithreading Synchronized Locks issue in Producer-Consumer', subject: 'Java', college: 'IIT Madras', creator: 'Aarav Sharma', helper: 'Bhavna Patel', status: 'SOLVED', createdAt: '10m ago' },
     { id: 'room-102', title: 'React useEffect Infinite Re-render Cycle with Object Dependencies', subject: 'React', college: 'IIT Madras', creator: 'Chaitanya Reddy', helper: 'Aarav Sharma', status: 'SOLVED', createdAt: '25m ago' },
@@ -134,13 +136,13 @@ function AdminDoubtOversightTab({ token }) {
 
   const handleResolveDoubt = (roomId) => {
     setRooms(prev => prev.map(r => r.id === roomId ? { ...r, status: 'SOLVED', helper: r.helper.includes('Waiting') ? 'Admin Moderator' : r.helper } : r));
-    alert("✅ Doubt marked as SOLVED! Tutor awarded +10 XP and +5 Peer Coins in real-time.");
+    toast.success("✅ Doubt marked as SOLVED! Tutor awarded +10 XP and +5 Peer Coins in real-time.");
   };
 
   const handleDeleteDoubt = (roomId) => {
     if (confirm("Are you sure you want to remove this doubt question from the live platform?")) {
       setRooms(prev => prev.filter(r => r.id !== roomId));
-      alert("🗑️ Question removed from live doubt feed.");
+      toast.info("🗑️ Question removed from live doubt feed.");
     }
   };
 
@@ -149,7 +151,7 @@ function AdminDoubtOversightTab({ token }) {
     if (!announcementText.trim()) return;
     setActiveAnnouncement(announcementText.trim());
     setAnnouncementText('');
-    alert("📢 Campus Announcement broadcasted live to all students!");
+    toast.success("📢 Campus Announcement broadcasted live to all students!");
   };
 
   const filteredRooms = rooms.filter(r => {
@@ -318,12 +320,12 @@ function AdminUserModerationTab({ token }) {
 
   const handleToggleTutor = (userId) => {
     setUsers(prev => prev.map(u => u.id === userId ? { ...u, isVerifiedTutor: !u.isVerifiedTutor } : u));
-    alert("⭐ Verified Campus Tutor status updated!");
+    toast.success("⭐ Verified Campus Tutor status updated!");
   };
 
   const handleGiftBonus = (userId) => {
     setUsers(prev => prev.map(u => u.id === userId ? { ...u, xp: u.xp + 50, coins: u.coins + 10 } : u));
-    alert("🪙 Gifted +50 XP and +10 Peer Coins to student!");
+    toast.success("🪙 Gifted +50 XP and +10 Peer Coins to student!");
   };
 
   const filteredUsers = users.filter(u => 
@@ -443,13 +445,13 @@ function AdminReelsModerationTab({ token }) {
 
   const handleToggleFeature = (id) => {
     setReels(prev => prev.map(r => r.id === id ? { ...r, isFeatured: !r.isFeatured } : r));
-    alert("📌 Reel featured status updated for campus feed!");
+    toast.success("📌 Reel featured status updated for campus feed!");
   };
 
   const handleDeleteReel = (id) => {
     if (confirm("Delete this educational reel from the community library?")) {
       setReels(prev => prev.filter(r => r.id !== id));
-      alert("🗑️ Reel deleted.");
+      toast.info("🗑️ Reel deleted.");
     }
   };
 
@@ -626,7 +628,7 @@ function AdminBadgeConfiguratorTab({ token }) {
     setBadges(prev => [...prev, { id: `b-${Date.now()}`, name, desc, criteria, val: parseInt(val) }]);
     setName('');
     setDesc('');
-    alert("New Campus Badge rule created!");
+    toast.success("New Campus Badge rule created!");
   };
 
   return (

@@ -70,8 +70,15 @@ public class ProfileController {
         if (updatedData.getBio() != null) profile.setBio(updatedData.getBio());
         if (updatedData.getSkills() != null) profile.setSkills(updatedData.getSkills());
         if (updatedData.getTeachingSkills() != null) profile.setTeachingSkills(updatedData.getTeachingSkills());
-        if (updatedData.getLearningGoals() != null) profile.setLearningGoals(updatedData.getLearningGoals());
         if (updatedData.getProfileVisibility() != null) profile.setProfileVisibility(updatedData.getProfileVisibility());
+        if (updatedData.getUpiId() != null) profile.setUpiId(updatedData.getUpiId());
+        if (updatedData.getUpiQrUrl() != null) profile.setUpiQrUrl(updatedData.getUpiQrUrl());
+        if (updatedData.getCollegeEmail() != null) profile.setCollegeEmail(updatedData.getCollegeEmail());
+        if (updatedData.getCollegeIdCard() != null) profile.setCollegeIdCard(updatedData.getCollegeIdCard());
+        if (updatedData.getVerificationStatus() != null) profile.setVerificationStatus(updatedData.getVerificationStatus());
+        if (updatedData.getTargetGoal() != null) profile.setTargetGoal(updatedData.getTargetGoal());
+        if (updatedData.getHourlyRate() != null) profile.setHourlyRate(updatedData.getHourlyRate());
+        if (updatedData.getFreeDemoAvailable() != null) profile.setFreeDemoAvailable(updatedData.getFreeDemoAvailable());
 
         profile.setLastActiveAt(Instant.now());
         Profile savedProfile = profileRepository.save(profile);

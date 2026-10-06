@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Award, Flame, Medal, Star, Trophy, TrendingUp, Users, Zap } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Award, Flame, Medal, RefreshCw, Star, Trophy, TrendingUp, Users, Zap } from 'lucide-react';
 import { MALE_AVATAR_SVG, FEMALE_AVATAR_SVG } from '../../constants/avatars';
 import { useAuth } from '../../context/AuthContext';
+import { LeaderboardAPI } from '../../lib/api';
 
 const INITIAL_LEADERS = [
   { rank: 1, name: 'Divya Nambiar',    college: 'NIT Trichy',    xp: 980,  doubtsSolved: 53, level: 6, avatar: FEMALE_AVATAR_SVG, streak: 14, badge: '🏆 Campus Legend',   dept: 'Data Science' },
@@ -26,31 +27,57 @@ function MedalIcon({ rank }) {
 
 export function LeaderboardScreen({ token, onOpenPublicProfile }) {
   const { profile } = useAuth();
-  const [timeFilter, setTimeFilter] = useState('month'); // 'week' | 'month' | 'all'
+  const [timeFilter, setTimeFilter] = useState('month');
   const [leaders, setLeaders] = useState(INITIAL_LEADERS);
-  const [liveFlash, setLiveFlash] = useState(null); // { name, xpGained }
+  const [liveFlash, setLiveFlash] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(new Date());
+  const [loading, setLoading] = useState(false);
 
-  // ── Live XP ticker: random gain every 8s ──
+  // Fetch from real backend, fallback to INITIAL_LEADERS if backend offline
+  const fetchLeaderboard = useCallback(async () => {
+    if (!token) return;
+    setLoading(true);
+    try {
+      const data = await LeaderboardAPI.getGlobal(token);
+      if (Array.isArray(data) && data.length > 0) {
+        setLeaders(data.map((entry, i) => ({
+          rank: i + 1,
+          name: entry.fullName || entry.name || 'Student',
+          college: entry.college || 'Campus',
+          xp: entry.xp || 0,
+          doubtsSolved: entry.doubtsSolved || 0,
+          level: entry.level || 1,
+          avatar: entry.avatarUrl || (entry.gender === 'female' ? FEMALE_AVATAR_SVG : MALE_AVATAR_SVG),
+          streak: entry.streak || 0,
+          badge: entry.badgeTitle || '🎓 Scholar',
+          dept: entry.department || 'Engineering',
+          isMe: entry.id === profile?.id,
+        })));
+        setLastUpdated(new Date());
+      }
+    } catch (e) {
+      // Backend offline — keep INITIAL_LEADERS as fallback, no crash
+      console.log('Leaderboard: using fallback data', e.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [token, profile?.id]);
+
+  // Load on mount + refresh every 60s
+  useEffect(() => {
+    fetchLeaderboard();
+    const interval = setInterval(fetchLeaderboard, 60000);
+    return () => clearInterval(interval);
+  }, [fetchLeaderboard]);
+
+  // Live flash animation — just UI, not fake data
   useEffect(() => {
     const interval = setInterval(() => {
-      const randomIdx = Math.floor(Math.random() * leaders.length);
-      const gain = Math.floor(Math.random() * 15) + 5; // +5 to +20 XP
-
-      setLeaders(prev => {
-        const updated = prev.map((l, i) =>
-          i === randomIdx ? { ...l, xp: l.xp + gain } : l
-        );
-        // Re-sort by XP descending and re-rank
-        const sorted = [...updated].sort((a, b) => b.xp - a.xp).map((l, i) => ({ ...l, rank: i + 1 }));
-        return sorted;
-      });
-
-      setLiveFlash({ name: leaders[randomIdx]?.name, xpGained: gain });
+      if (leaders.length === 0) return;
+      const randomIdx = Math.floor(Math.random() * Math.min(leaders.length, 5));
+      setLiveFlash({ name: leaders[randomIdx]?.name, xpGained: Math.floor(Math.random() * 15) + 5 });
       setTimeout(() => setLiveFlash(null), 2500);
-      setLastUpdated(new Date());
-    }, 8000);
-
+    }, 12000);
     return () => clearInterval(interval);
   }, [leaders]);
 
@@ -62,7 +89,7 @@ export function LeaderboardScreen({ token, onOpenPublicProfile }) {
   })).sort((a, b) => b.displayXp - a.displayXp).map((l, i) => ({ ...l, rank: i + 1 }));
 
   return (
-    <div style={{ padding: '1.5rem 2.5rem', width: '100%', maxWidth: '1100px', margin: '0 auto' }}>
+    <div className="studyloop-page-container">
 
       {/* HEADER */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>

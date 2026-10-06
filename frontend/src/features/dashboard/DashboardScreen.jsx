@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { ProfileAPI, GamificationAPI } from '../../lib/api';
+import { useToast } from '../../context/ToastContext';
 import { AlertCircle, ArrowUpRight, Award, Bell, BookOpen, Bookmark, Briefcase, Calendar, Camera, Check, CheckCircle, ChevronRight, Clock, Code, Download, Edit, ExternalLink, Eye, FileText, Filter, Flame, Github, Globe, GraduationCap, Grid, Heart, MapPin, MessageSquare, Pencil, Plus, PlusCircle, Search, Send, Settings, Share2, Shield, Sparkles, Star, Trash2, TrendingUp, Trophy, Tv2, Upload, UploadCloud, UserCheck, Users, Video, X, Zap } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getDefaultAvatarByGender, MALE_AVATAR_SVG, FEMALE_AVATAR_SVG, NEUTRAL_AVATAR_SVG } from '../../constants/avatars';
@@ -17,6 +19,7 @@ import { ResumePreviewModal } from '../../components/profile/ResumePreviewModal'
 
 export function DashboardScreen({ token, setActiveTab, onOpenUserList, onStartChat }) {
   const { user, profile: authProfile, updateProfileState, testAccounts } = useAuth();
+  const toast = useToast();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   
@@ -351,7 +354,7 @@ export function DashboardScreen({ token, setActiveTab, onOpenUserList, onStartCh
     fetchDashboardData();
   }, [user, authProfile]);
 
-  // Calculate LinkedIn / Naukri Profile Completeness in Percentage
+  // Calculate StudyLoop Profile Completeness in Percentage
   const calculateDashboardProfileStrength = () => {
     let score = 0;
     const items = [];
@@ -431,7 +434,7 @@ export function DashboardScreen({ token, setActiveTab, onOpenUserList, onStartCh
     };
     saveUpdatedProfile(updated);
     setShowAddEducationModal(false);
-    alert("🎓 Education entry added to profile!");
+    toast.success("🎓 Education entry added to profile!");
   };
 
   const handleDeleteEducation = (eduId) => {
@@ -450,7 +453,7 @@ export function DashboardScreen({ token, setActiveTab, onOpenUserList, onStartCh
     };
     saveUpdatedProfile(updated);
     setShowAddCertificateModal(false);
-    alert("📜 License & Certificate added to profile!");
+    toast.success("📜 License & Certificate added to profile!");
   };
 
   const handleDeleteCertificate = (certId) => {
@@ -469,7 +472,7 @@ export function DashboardScreen({ token, setActiveTab, onOpenUserList, onStartCh
     };
     saveUpdatedProfile(updated);
     setShowAddAchievementModal(false);
-    alert("🏆 Honor & Achievement added to profile!");
+    toast.success("🏆 Honor & Achievement added to profile!");
   };
 
   const handleDeleteAchievement = (achId) => {
@@ -488,7 +491,7 @@ export function DashboardScreen({ token, setActiveTab, onOpenUserList, onStartCh
     };
     saveUpdatedProfile(updated);
     setShowAddProjectModal(false);
-    alert("💻 Technical Project added to portfolio!");
+    toast.success("💻 Technical Project added to portfolio!");
   };
 
   const handleDeleteProject = (projId) => {
@@ -512,11 +515,11 @@ export function DashboardScreen({ token, setActiveTab, onOpenUserList, onStartCh
     }
     saveUpdatedProfile(updated);
     setShowAddSkillModal(false);
-    alert("⭐ Skill added successfully!");
+    toast.success("⭐ Skill added successfully!");
   };
 
   const handleEndorseSkill = (skill) => {
-    alert(`👍 You endorsed ${profile.fullName} for ${skill}! (+1 Skill Trust Point)`);
+    toast.success(`👍 You endorsed ${profile.fullName} for ${skill}! (+1 Skill Trust Point)`);
   };
 
   // Resume Upload Handler
@@ -528,7 +531,7 @@ export function DashboardScreen({ token, setActiveTab, onOpenUserList, onStartCh
     };
     saveUpdatedProfile(updated);
     setShowResumeUploadModal(false);
-    alert(`📄 Resume updated to "${fileName}"!`);
+    toast.success(`📄 Resume updated to "${fileName}"!`);
   };
 
 
@@ -557,7 +560,7 @@ export function DashboardScreen({ token, setActiveTab, onOpenUserList, onStartCh
       localStorage.setItem(`studyloop_profile_${updatedProf.id}`, JSON.stringify(updatedProf));
     }
     setShowEditModal(false);
-    alert("✨ Profile updated successfully!");
+    toast.success("✨ Profile updated successfully!");
   };
 
   const handleSaveAvatar = (newAvatarUrl) => {
@@ -574,7 +577,7 @@ export function DashboardScreen({ token, setActiveTab, onOpenUserList, onStartCh
       coins: (profile.coins || 45) + 1
     };
     saveUpdatedProfile(updatedProf);
-    alert("🔥 Daily Streak claimed! +2 XP & +1 Peer Coin added to your wallet.");
+    toast.success("🔥 Daily Streak claimed! +2 XP & +1 Peer Coin added to your wallet.");
   };
 
   const handleAcceptRequest = (req) => {
@@ -593,7 +596,7 @@ export function DashboardScreen({ token, setActiveTab, onOpenUserList, onStartCh
         rating: 5.0
       }
     ]);
-    alert(`🎉 Connected with ${req.fullName}!`);
+    toast.success(`🎉 Connected with ${req.fullName}!`);
   };
 
   const handleIgnoreRequest = (reqId) => {
@@ -634,7 +637,7 @@ export function DashboardScreen({ token, setActiveTab, onOpenUserList, onStartCh
   const handlePublishContent = (e) => {
     e.preventDefault();
     if (!uploadTitle.trim()) {
-      alert("Please enter a title for your content!");
+      toast.warning("Please enter a title for your content!");
       return;
     }
 
@@ -652,7 +655,7 @@ export function DashboardScreen({ token, setActiveTab, onOpenUserList, onStartCh
       };
       setReelsList(prev => [newReel, ...prev]);
       setActiveTabName('reels');
-      alert("📱 Educational Reel published successfully!");
+      toast.success("📱 Educational Reel published successfully!");
     } else if (uploadType === 'video') {
       const newVid = {
         id: `vid-${Date.now()}`,
@@ -666,7 +669,7 @@ export function DashboardScreen({ token, setActiveTab, onOpenUserList, onStartCh
       };
       setVideosList(prev => [newVid, ...prev]);
       setActiveTabName('videos');
-      alert("🎥 Long Lecture Video published!");
+      toast.success("🎥 Long Lecture Video published!");
     } else {
       const newPost = {
         id: `post-${Date.now()}`,
@@ -677,7 +680,7 @@ export function DashboardScreen({ token, setActiveTab, onOpenUserList, onStartCh
       };
       setPostsList(prev => [newPost, ...prev]);
       setActiveTabName('posts');
-      alert("🖼️ Study Post published!");
+      toast.success("🖼️ Study Post published!");
     }
 
     setShowUploadModal(false);
@@ -695,14 +698,24 @@ export function DashboardScreen({ token, setActiveTab, onOpenUserList, onStartCh
   return (
     <div style={{ padding: '1.5rem 2.5rem 4rem 2.5rem', width: '100%', maxWidth: '1400px', margin: '0 auto' }}>
       
-      {/* 1. LINKEDIN-STYLE PROFILE COVER & HEADER CARD */}
+      {/* 1. STUDYLOOP PROFILE COVER & HEADER CARD */}
       <div className="card-premium" style={{ marginBottom: '2rem', padding: 0, overflow: 'hidden', position: 'relative' }}>
         
         {/* COVER BANNER */}
-        <div style={{ height: '180px', width: '100%', background: 'linear-gradient(135deg, #0066FF 0%, #00C6FF 50%, #4F46E5 100%)', position: 'relative' }}>
+        <div style={{ height: '210px', width: '100%', background: 'linear-gradient(135deg, #0066FF 0%, #00C6FF 45%, #4F46E5 80%, #a855f7 100%)', position: 'relative', overflow: 'hidden' }}>
+          {/* Decorative mesh circles */}
+          <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '200px', height: '200px', borderRadius: '50%', background: 'rgba(255,255,255,0.06)', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', bottom: '-50px', left: '30%', width: '180px', height: '180px', borderRadius: '50%', background: 'rgba(255,255,255,0.04)', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', top: '20px', left: '20px', display: 'flex', gap: '0.5rem' }}>
+            <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.5)', animation: 'pulse-dot 2s infinite' }} />
+            <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.35)', animation: 'pulse-dot 2s 0.3s infinite' }} />
+            <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.2)', animation: 'pulse-dot 2s 0.6s infinite' }} />
+          </div>
           <button 
-            onClick={() => alert("📸 Cover photo upload: Select custom background banner")}
-            style={{ position: 'absolute', top: '1rem', right: '1rem', backgroundColor: 'rgba(0,0,0,0.6)', color: '#ffffff', border: 'none', borderRadius: 'var(--radius-full)', padding: '0.4rem 0.875rem', fontSize: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.375rem', cursor: 'pointer' }}
+            onClick={() => toast.info("📸 Cover photo upload — coming soon!")}
+            style={{ position: 'absolute', top: '1rem', right: '1rem', backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 'var(--radius-full)', padding: '0.375rem 0.875rem', fontSize: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.375rem', cursor: 'pointer', transition: 'background 0.2s' }}
+            onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.7)'}
+            onMouseLeave={e => e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.5)'}
           >
             <Camera size={14} /> Edit Cover
           </button>
@@ -711,15 +724,16 @@ export function DashboardScreen({ token, setActiveTab, onOpenUserList, onStartCh
         {/* PROFILE INTRO BODY */}
         <div style={{ padding: '0 2rem 2rem 2rem', position: 'relative' }}>
           
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '1rem', marginTop: '-60px', marginBottom: '1.25rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '1rem', marginTop: '-70px', marginBottom: '1.25rem' }}>
             
-            {/* AVATAR + 100% COMPLETION GREEN MARK + FLOATING EDIT PENCIL */}
+            {/* AVATAR + COMPLETION BADGE + EDIT PENCIL */}
             <div style={{ position: 'relative' }}>
               <div 
                 onClick={() => setShowPhotoPreview(true)}
+                className={dashboardProfileStrength.score === 100 ? 'avatar-ring-pulse' : ''}
                 style={{
-                  width: '130px',
-                  height: '130px',
+                  width: '140px',
+                  height: '140px',
                   borderRadius: '50%',
                   padding: '4px',
                   background: 'var(--bg-card)',
@@ -727,7 +741,7 @@ export function DashboardScreen({ token, setActiveTab, onOpenUserList, onStartCh
                   alignItems: 'center',
                   justifyContent: 'center',
                   boxShadow: dashboardProfileStrength.score === 100 
-                    ? '0 0 0 3px #10b981, 0 0 20px rgba(16, 185, 129, 0.4)' 
+                    ? undefined
                     : 'var(--shadow-lg)',
                   cursor: 'pointer',
                   position: 'relative'
@@ -882,24 +896,29 @@ export function DashboardScreen({ token, setActiveTab, onOpenUserList, onStartCh
             </div>
 
             {/* COUNTERS STRIP */}
-            <div style={{ display: 'flex', gap: '2rem', fontSize: '0.9375rem', color: 'var(--text-primary)', marginTop: '0.75rem', borderTop: '1px solid var(--border-color)', paddingTop: '0.875rem' }}>
-              <div><strong>{postsList.length}</strong> <span style={{ color: 'var(--text-secondary)' }}>posts</span></div>
-              <div><strong>{reelsList.length}</strong> <span style={{ color: 'var(--text-secondary)' }}>shorts</span></div>
-              <div 
-                onClick={() => onOpenUserList && onOpenUserList('Followers', profile.id)} 
-                style={{ cursor: 'pointer' }}
-              >
-                <strong>{profile.followersCount !== undefined ? profile.followersCount : 148}</strong> <span style={{ color: 'var(--text-secondary)', textDecoration: 'underline' }}>followers</span>
-              </div>
-              <div 
-                onClick={() => onOpenUserList && onOpenUserList('Following', profile.id)} 
-                style={{ cursor: 'pointer' }}
-              >
-                <strong>{profile.followingCount !== undefined ? profile.followingCount : 92}</strong> <span style={{ color: 'var(--text-secondary)', textDecoration: 'underline' }}>following</span>
-              </div>
-              <div style={{ color: 'var(--accent-primary)', fontWeight: 700 }}>
-                ⚡ {profile.xp || 650} XP • Lvl {profile.level || 4}
-              </div>
+            <div style={{ display: 'flex', gap: '0', fontSize: '0.875rem', color: 'var(--text-primary)', marginTop: '0.75rem', borderTop: '1px solid var(--border-color)', paddingTop: '0.875rem', flexWrap: 'wrap' }}>
+              {[
+                { label: 'Posts', value: postsList.length },
+                { label: 'Shorts', value: reelsList.length },
+                { label: 'Followers', value: profile.followersCount !== undefined ? profile.followersCount : 148, clickable: true, onClick: () => onOpenUserList && onOpenUserList('Followers', profile.id) },
+                { label: 'Following', value: profile.followingCount !== undefined ? profile.followingCount : 92, clickable: true, onClick: () => onOpenUserList && onOpenUserList('Following', profile.id) },
+                { label: 'Classes Taught', value: profile.classesTaught || 24, accent: true },
+                { label: 'XP · Lvl ' + (profile.level || 4), value: (profile.xp || 650), accent: true },
+              ].map((stat, i) => (
+                <div key={i}
+                  onClick={stat.onClick}
+                  style={{
+                    paddingRight: '2rem', cursor: stat.clickable ? 'pointer' : 'default',
+                    borderRight: i < 5 ? '1px solid var(--border-color)' : 'none',
+                    marginRight: '2rem',
+                    paddingTop: '0.25rem', paddingBottom: '0.25rem',
+                    color: stat.accent ? 'var(--accent-primary)' : 'inherit'
+                  }}
+                >
+                  <strong style={{ fontSize: '1rem' }}>{stat.value}</strong>{' '}
+                  <span style={{ color: stat.accent ? 'var(--accent-primary)' : 'var(--text-secondary)', textDecoration: stat.clickable ? 'underline' : 'none' }}>{stat.label}</span>
+                </div>
+              ))}
             </div>
 
             {/* ABOUT / BIO */}
@@ -926,9 +945,97 @@ export function DashboardScreen({ token, setActiveTab, onOpenUserList, onStartCh
         </div>
       </div>
 
+      {/* ═══════════════════════════════════════════════════════════════
+          2. GAMING STATS DASHBOARD — Classes · Earnings · Rank · XP
+      ═══════════════════════════════════════════════════════════════ */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(4, 1fr)',
+        gap: '1rem',
+        marginBottom: '2rem'
+      }}>
+        {[
+          {
+            icon: '🎓',
+            label: 'Classes Conducted',
+            value: profile.classesTaught || 24,
+            sub: 'Total 1:1 sessions',
+            color: '#0066FF',
+            glow: 'rgba(0,102,255,0.25)',
+            bg: 'linear-gradient(135deg, #0066FF 0%, #00C6FF 100%)'
+          },
+          {
+            icon: '💰',
+            label: 'Total Earned',
+            value: '₹' + ((profile.totalEarned || 3600)).toLocaleString('en-IN'),
+            sub: 'From peer tutoring',
+            color: '#10b981',
+            glow: 'rgba(16,185,129,0.25)',
+            bg: 'linear-gradient(135deg, #10b981 0%, #06b6d4 100%)'
+          },
+          {
+            icon: '🏆',
+            label: 'Leaderboard Rank',
+            value: '#' + (profile.campusRank || 1),
+            sub: 'In ' + (profile.department || 'Comp. Sci.'),
+            color: '#f59e0b',
+            glow: 'rgba(245,158,11,0.25)',
+            bg: 'linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)'
+          },
+          {
+            icon: '⚡',
+            label: 'XP · Level ' + (profile.level || 4),
+            value: (profile.xp || 650) + ' XP',
+            sub: xpProgress + '% to next level',
+            color: '#6366f1',
+            glow: 'rgba(99,102,241,0.25)',
+            bg: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)'
+          },
+        ].map((stat, i) => (
+          <div key={i} style={{
+            borderRadius: 'var(--radius-lg)',
+            background: stat.bg,
+            padding: '1.5rem 1.25rem',
+            color: '#fff',
+            boxShadow: `0 8px 32px ${stat.glow}, 0 2px 8px rgba(0,0,0,0.15)`,
+            position: 'relative',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.5rem',
+            transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+            cursor: 'default'
+          }}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = `0 16px 40px ${stat.glow}, 0 4px 12px rgba(0,0,0,0.2)`; }}
+          onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = `0 8px 32px ${stat.glow}, 0 2px 8px rgba(0,0,0,0.15)`; }}
+          >
+            {/* Decorative glow orb */}
+            <div style={{
+              position: 'absolute', top: '-20px', right: '-20px',
+              width: '90px', height: '90px', borderRadius: '50%',
+              backgroundColor: 'rgba(255,255,255,0.12)'
+            }} />
+            <div style={{ fontSize: '2rem', lineHeight: 1 }}>{stat.icon}</div>
+            <div style={{ fontSize: '1.875rem', fontWeight: 900, letterSpacing: '-0.5px', lineHeight: 1.1 }}>
+              {stat.value}
+            </div>
+            <div style={{ fontSize: '0.8125rem', fontWeight: 700, opacity: 0.95, letterSpacing: '0.02em' }}>
+              {stat.label}
+            </div>
+            <div style={{ fontSize: '0.6875rem', opacity: 0.75, fontWeight: 500 }}>
+              {stat.sub}
+            </div>
+            {/* XP progress mini-bar only for last stat */}
+            {i === 3 && (
+              <div style={{ marginTop: '0.25rem', height: '5px', borderRadius: '99px', backgroundColor: 'rgba(255,255,255,0.25)', overflow: 'hidden' }}>
+                <div style={{ width: `${xpProgress}%`, height: '100%', backgroundColor: 'rgba(255,255,255,0.85)', borderRadius: '99px', transition: 'width 1s ease' }} />
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
 
-
-      {/* 3. CAREER & RESUME HUB CARD (LINKEDIN / NAUKRI STANDARD) */}
+      {/* 3. CAREER & RESUME HUB CARD (STUDYLOOP STANDARD) */}
       <div className="card-premium" style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.25rem', backgroundColor: 'rgba(0, 102, 255, 0.03)', border: '1px solid rgba(0, 102, 255, 0.2)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <div style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--accent-light)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -965,7 +1072,7 @@ export function DashboardScreen({ token, setActiveTab, onOpenUserList, onStartCh
         </div>
       </div>
 
-      {/* 3. EDUCATION SECTION CARD (LINKEDIN STANDARD) */}
+      {/* 3. EDUCATION SECTION CARD (STUDYLOOP STANDARD) */}
       <div className="card-premium" style={{ marginBottom: '2rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
@@ -1015,7 +1122,7 @@ export function DashboardScreen({ token, setActiveTab, onOpenUserList, onStartCh
         </div>
       </div>
 
-      {/* 4. LICENSES & CERTIFICATIONS SECTION CARD (LINKEDIN STANDARD) */}
+      {/* 4. LICENSES & CERTIFICATIONS SECTION CARD (STUDYLOOP STANDARD) */}
       <div className="card-premium" style={{ marginBottom: '2rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
@@ -1070,12 +1177,12 @@ export function DashboardScreen({ token, setActiveTab, onOpenUserList, onStartCh
         </div>
       </div>
 
-      {/* 5. HONORS & ACHIEVEMENTS SECTION CARD (UNSTOP STANDARD) */}
+      {/* 5. HONORS & ACHIEVEMENTS SECTION CARD (STUDYLOOP STANDARD) */}
       <div className="card-premium" style={{ marginBottom: '2rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
             <Trophy size={22} style={{ color: '#ea580c' }} />
-            <h3 className="font-serif" style={{ fontSize: '1.25rem', margin: 0, fontWeight: 800 }}>Honors & Hackathon Achievements (Unstop Style)</h3>
+            <h3 className="font-serif" style={{ fontSize: '1.25rem', margin: 0, fontWeight: 800 }}>Honors & Hackathon Achievements</h3>
           </div>
           <button 
             onClick={() => setShowAddAchievementModal(true)} 

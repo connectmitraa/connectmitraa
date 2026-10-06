@@ -21,6 +21,9 @@ public class Connection {
     @Column(length = 20)
     private String status = "PENDING"; // PENDING, ACCEPTED, REJECTED, BLOCKED
 
+    @Column(length = 500)
+    private String note;
+
     @Column(name = "created_at", updatable = false)
     private Instant createdAt = Instant.now();
 
@@ -49,6 +52,9 @@ public class Connection {
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public String getNote() { return note; }
+    public void setNote(String note) { this.note = note; }
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }

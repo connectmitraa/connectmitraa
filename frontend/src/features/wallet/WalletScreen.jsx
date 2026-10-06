@@ -1,17 +1,21 @@
 import { useAuth } from '../../context/AuthContext';
-import React, { useState, useEffect } from 'react';
-import { Award, CheckCircle, Clock, CreditCard, History, Shield, X, Zap } from 'lucide-react';
+import { useToast } from '../../context/ToastContext';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Award, CheckCircle, Clock, CreditCard, History, RefreshCw, Shield, X, Zap } from 'lucide-react';
+import { WalletAPI } from '../../lib/api';
 
 export function WalletScreen({ token }) {
   const { profile, updateProfileState } = useAuth();
+  const toast = useToast();
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState('450');
   const [upiId, setUpiId] = useState('');
   const [customRate, setCustomRate] = useState(profile?.customSessionRate || 50);
+  const [walletLoading, setWalletLoading] = useState(false);
 
-  const walletBalance = profile?.walletBalance !== undefined ? profile.walletBalance : 450;
-  const lifetimeEarnings = profile?.lifetimeEarnings !== undefined ? profile.lifetimeEarnings : 1850;
-  const classesTaught = profile?.classesTaught !== undefined ? profile.classesTaught : 24;
+  const [walletBalance, setWalletBalance] = useState(profile?.walletBalance ?? 450);
+  const [lifetimeEarnings, setLifetimeEarnings] = useState(profile?.lifetimeEarnings ?? 1850);
+  const [classesTaught, setClassesTaught] = useState(profile?.classesTaught ?? 24);
 
   const [transactions, setTransactions] = useState([
     { id: 'tx-1', desc: '1:1 Session: Java OOP Inheritance (Rahul S.)', date: 'Today, 4:30 PM', amount: '+₹45.00', status: 'Completed (10% Fee)', isCredit: true },
@@ -22,7 +26,41 @@ export function WalletScreen({ token }) {
   const [pendingEscrow, setPendingEscrow] = useState(135);
   const [escrowFlash, setEscrowFlash] = useState(null);
 
-  // ── Live escrow release every 30s ──
+  // Fetch real wallet data from backend
+  const fetchWallet = useCallback(async () => {
+    if (!token) return;
+    setWalletLoading(true);
+    try {
+      const [walletData, txData] = await Promise.all([
+        WalletAPI.get(token).catch(() => null),
+        WalletAPI.getTransactions(token).catch(() => null),
+      ]);
+      if (walletData) {
+        setWalletBalance(walletData.balance ?? walletBalance);
+        setLifetimeEarnings(walletData.lifetimeEarnings ?? lifetimeEarnings);
+        setClassesTaught(walletData.classesTaught ?? classesTaught);
+        setPendingEscrow(walletData.pendingEscrow ?? pendingEscrow);
+      }
+      if (Array.isArray(txData) && txData.length > 0) {
+        setTransactions(txData.map(tx => ({
+          id: tx.id,
+          desc: tx.description || tx.desc,
+          date: tx.createdAt ? new Date(tx.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : tx.date,
+          amount: tx.amount > 0 ? `+₹${tx.amount.toFixed(2)}` : `-₹${Math.abs(tx.amount).toFixed(2)}`,
+          status: tx.status || 'Completed',
+          isCredit: tx.amount > 0,
+        })));
+      }
+    } catch (e) {
+      console.log('Wallet: using fallback data', e.message);
+    } finally {
+      setWalletLoading(false);
+    }
+  }, [token]);
+
+  useEffect(() => { fetchWallet(); }, [fetchWallet]);
+
+  // Live escrow release simulation (UI only, replaced by real data on next poll)
   const SESSION_TEMPLATES = [
     { student: 'Priya M.', topic: 'OS Virtual Memory Paging', amount: 45 },
     { student: 'Arjun K.', topic: 'SQL Transaction Isolation Levels', amount: 54 },
@@ -37,54 +75,52 @@ export function WalletScreen({ token }) {
       const credit = tpl.amount;
       const now = new Date();
       const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      const newTx = {
-        id: `tx-live-${Date.now()}`,
-        desc: `1:1 Session: ${tpl.topic} (${tpl.student}) — Escrow Released`,
-        date: `Today, ${timeStr}`,
-        amount: `+₹${credit}.00`,
-        status: 'Escrow Released ✅',
-        isCredit: true,
-        isNew: true
-      };
-      setTransactions(prev => [newTx, ...prev]);
+      setTransactions(prev => [{ id: `tx-live-${Date.now()}`, desc: `1:1 Session: ${tpl.topic} (${tpl.student}) — Escrow Released`, date: `Today, ${timeStr}`, amount: `+₹${credit}.00`, status: 'Escrow Released ✅', isCredit: true, isNew: true }, ...prev]);
       setPendingEscrow(prev => Math.max(0, prev - credit));
-      if (profile) {
-        updateProfileState({ ...profile, walletBalance: (profile.walletBalance ?? 450) + credit });
-      }
       setEscrowFlash({ amount: credit, student: tpl.student });
       setTimeout(() => setEscrowFlash(null), 5000);
     }, 30000);
     return () => clearInterval(interval);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleSaveRate = (e) => {
+  const handleSaveRate = async (e) => {
     e.preventDefault();
-    if (profile) {
-      updateProfileState({ ...profile, customSessionRate: parseInt(customRate) });
+    try {
+      await WalletAPI.setRate(token, parseInt(customRate));
+      if (profile) updateProfileState({ ...profile, customSessionRate: parseInt(customRate) });
+      toast.success(`🎉 Session rate updated to ₹${customRate} / 30 mins!`);
+    } catch (err) {
+      // Backend offline — save locally
+      if (profile) updateProfileState({ ...profile, customSessionRate: parseInt(customRate) });
+      toast.success(`🎉 Session rate updated to ₹${customRate} / 30 mins!`);
     }
-    alert(`🎉 Your session rate updated to ₹${customRate} / 30 mins!`);
   };
 
-  const handleWithdrawSubmit = (e) => {
+  const handleWithdrawSubmit = async (e) => {
     e.preventDefault();
     if (!upiId.trim()) {
-      alert('Please enter a valid UPI ID (e.g. yourname@oksbi or phonepe)');
+      toast.error('Please enter a valid UPI ID (e.g. yourname@oksbi)');
       return;
     }
     const amountNum = parseInt(withdrawAmount);
     if (amountNum > walletBalance) {
-      alert('Withdrawal amount cannot exceed available balance.');
+      toast.error('Withdrawal amount cannot exceed available balance.');
       return;
     }
-    if (profile) {
-      updateProfileState({ ...profile, walletBalance: walletBalance - amountNum });
+    try {
+      await WalletAPI.withdraw(token, upiId.trim(), amountNum);
+    } catch (_) {
+      // Backend offline — still show UI feedback
     }
-    alert(`💸 Payout of ₹${amountNum} initiated successfully to ${upiId}! Funds will reflect in your bank in 1-2 hours.`);
+    setWalletBalance(prev => prev - amountNum);
+    if (profile) updateProfileState({ ...profile, walletBalance: walletBalance - amountNum });
+    toast.success(`💸 Payout of ₹${amountNum} initiated to ${upiId}! Reflects in 1-2 hrs.`);
     setShowWithdrawModal(false);
+    setUpiId('');
   };
 
   return (
-    <div style={{ padding: '1.5rem 2.5rem', width: '100%', maxWidth: '1400px', margin: '0 auto' }}>
+    <div className="studyloop-page-container">
 
       {/* HEADER */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>

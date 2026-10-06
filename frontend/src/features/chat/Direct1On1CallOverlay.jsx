@@ -16,6 +16,43 @@ import {
 } from 'lucide-react';
 import { FEMALE_AVATAR_SVG, MALE_AVATAR_SVG } from '../../constants/avatars';
 
+// Web Audio API Ringing Tone generator
+const playRingTone = () => {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(440, ctx.currentTime);
+    osc.frequency.setValueAtTime(480, ctx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.04, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.4);
+  } catch (e) {}
+};
+
+const playDisconnectChime = () => {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(400, ctx.currentTime);
+    osc.frequency.setValueAtTime(200, ctx.currentTime + 0.15);
+    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.3);
+  } catch (e) {}
+};
+
 export function Direct1On1CallOverlay({ 
   webrtcCall, 
   onEndCall, 
@@ -36,13 +73,24 @@ export function Direct1On1CallOverlay({
   const peerAvatar = webrtcCall?.peerAvatar || (peerName.toLowerCase().includes('bhavna') || peerName.toLowerCase().includes('divya') ? FEMALE_AVATAR_SVG : MALE_AVATAR_SVG);
 
   useEffect(() => {
-    const t1 = setTimeout(() => setCallState('ringing'), 1000);
-    const t2 = setTimeout(() => setCallState('connected'), 2500);
+    const t1 = setTimeout(() => {
+      setCallState('ringing');
+      playRingTone();
+    }, 800);
+    const t2 = setTimeout(() => setCallState('connected'), 2600);
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
     };
   }, []);
+
+  useEffect(() => {
+    let ringInterval;
+    if (callState === 'ringing') {
+      ringInterval = setInterval(playRingTone, 1600);
+    }
+    return () => clearInterval(ringInterval);
+  }, [callState]);
 
   useEffect(() => {
     let timer;
@@ -94,7 +142,7 @@ export function Direct1On1CallOverlay({
       overflow: 'hidden'
     }}>
       
-      {/* WHATSAPP-STYLE ENCRYPTED TOP HEADER */}
+      {/* STUDYLOOP ENCRYPTED PEER CALL TOP HEADER */}
       <div style={{
         position: 'absolute',
         top: 0,
@@ -113,7 +161,7 @@ export function Direct1On1CallOverlay({
           </div>
           <div>
             <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#f8fafc' }}>
-              {callMode === 'audio' ? 'WhatsApp Voice Call' : 'WhatsApp HD Video Call'}
+              {callMode === 'audio' ? 'StudyLoop Voice Call' : 'StudyLoop HD Video Call'}
             </div>
             <div style={{ fontSize: '0.6875rem', color: '#10b981', fontWeight: 700 }}>
               🔒 End-to-End Encrypted 1:1 Peer Session
@@ -128,7 +176,7 @@ export function Direct1On1CallOverlay({
 
       {/* CALL BODY CONTENT */}
       {callMode === 'audio' || isCameraOff ? (
-        /* 1:1 AUDIO CALL LAYOUT (WHATSAPP VOICE CALL) */
+        /* 1:1 AUDIO CALL LAYOUT (STUDYLOOP VOICE CALL) */
         <div style={{
           flex: 1,
           display: 'flex',
@@ -180,7 +228,7 @@ export function Direct1On1CallOverlay({
           </div>
         </div>
       ) : (
-        /* 1:1 VIDEO CALL LAYOUT (WHATSAPP VIDEO CALL) */
+        /* 1:1 VIDEO CALL LAYOUT (STUDYLOOP VIDEO CALL) */
         <div style={{ flex: 1, position: 'relative', backgroundColor: '#000000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           
           {/* Main Remote Video View */}
@@ -224,7 +272,7 @@ export function Direct1On1CallOverlay({
         </div>
       )}
 
-      {/* BOTTOM FLOATING WHATSAPP CALL CONTROLS */}
+      {/* BOTTOM FLOATING STUDYLOOP CALL CONTROLS */}
       <div style={{
         position: 'absolute',
         bottom: '2.5rem',
@@ -306,7 +354,10 @@ export function Direct1On1CallOverlay({
 
         {/* RED END CALL BUTTON */}
         <button 
-          onClick={onEndCall} 
+          onClick={() => {
+            playDisconnectChime();
+            onEndCall();
+          }} 
           style={{
             width: '56px',
             height: '56px',

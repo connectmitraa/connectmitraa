@@ -48,11 +48,11 @@ export function LandingScreen({ setActiveTab, loginSimulated, loginAdmin, testAc
     e.preventDefault();
     if (!signupEmail) return;
     if (signupPassword && confirmPassword && signupPassword !== confirmPassword) {
-      alert("Passwords do not match! Please check your password input.");
+      toast.error("Passwords do not match! Please check your password input.");
       return;
     }
     if (!agreeTerms) {
-      alert("Please agree to the Terms & Conditions to proceed.");
+      toast.warning("Please agree to the Terms & Conditions to proceed.");
       return;
     }
     loginSimulated(signupEmail);
@@ -168,9 +168,9 @@ export function LandingScreen({ setActiveTab, loginSimulated, loginAdmin, testAc
           </div>
         </header>
 
-        {/* HERO SECTION (UNSTOP + CHEGG + LINKEDIN HYBRID) */}
+        {/* HERO SECTION — StudyLoop Campus Social Learning OS */}
         <section style={{ padding: '4.5rem 3rem 5rem 3rem', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
-          <div className="unstop-hero-grid">
+          <div className="studyloop-hero-grid">
             {/* Left Hero Content */}
             <div>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', backgroundColor: 'var(--accent-light)', border: '1px solid var(--border-color)', padding: '0.375rem 1rem', borderRadius: 'var(--radius-full)', fontSize: '0.8125rem', fontWeight: 800, color: 'var(--accent-primary)', marginBottom: '1.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -215,14 +215,14 @@ export function LandingScreen({ setActiveTab, loginSimulated, loginAdmin, testAc
 
               {/* Verified Trust Badges */}
               <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-                <span className="badge-unstop-pill"><CheckCircle size={14} style={{ color: 'var(--success-color)' }} /> Verified Campus Tutors</span>
-                <span className="badge-unstop-pill badge-unstop-purple"><Video size={14} /> WebRTC Screen Sharing</span>
-                <span className="badge-unstop-pill badge-unstop-green"><ShieldAlert size={14} /> Instant Doubt Match</span>
+                <span className="badge-studyloop-pill"><CheckCircle size={14} style={{ color: 'var(--success-color)' }} /> Verified Campus Tutors</span>
+                <span className="badge-studyloop-pill badge-studyloop-purple"><Video size={14} /> WebRTC Screen Sharing</span>
+                <span className="badge-studyloop-pill badge-studyloop-green"><ShieldAlert size={14} /> Instant Doubt Match</span>
               </div>
             </div>
 
             {/* Right Interactive Quick Action Widget */}
-            <div className="unstop-quick-widget card-premium">
+            <div className="studyloop-quick-widget card-premium">
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <div className="live-dot" style={{ backgroundColor: '#22c55e', boxShadow: '0 0 10px #22c55e' }}></div>
@@ -432,7 +432,7 @@ export function LandingScreen({ setActiveTab, loginSimulated, loginAdmin, testAc
               <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.6, maxWidth: '360px', marginBottom: '1.5rem' }}>
                 StudyLoop is the premier peer-to-peer campus learning network for universities, student tutors, and engineering academies.
               </p>
-              <form onSubmit={e => { e.preventDefault(); alert(`Subscribed ${newsletterEmail} to StudyLoop updates!`); setNewsletterEmail(''); }} style={{ display: 'flex', gap: '0.5rem', maxWidth: '360px' }}>
+              <form onSubmit={e => { e.preventDefault(); toast.success(`Subscribed ${newsletterEmail} to StudyLoop updates!`); setNewsletterEmail(''); }} style={{ display: 'flex', gap: '0.5rem', maxWidth: '360px' }}>
                 <input 
                   type="email" 
                   className="input" 

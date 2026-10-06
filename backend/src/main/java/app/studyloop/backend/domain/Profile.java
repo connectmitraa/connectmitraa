@@ -76,6 +76,30 @@ public class Profile {
     @Column(name = "profile_visibility")
     private String profileVisibility = "public";
 
+    @Column(name = "upi_id")
+    private String upiId = "student@upi";
+
+    @Column(name = "upi_qr_url")
+    private String upiQrUrl;
+
+    @Column(name = "college_email")
+    private String collegeEmail;
+
+    @Column(name = "college_id_card")
+    private String collegeIdCard;
+
+    @Column(name = "verification_status")
+    private String verificationStatus = "VERIFIED";
+
+    @Column(name = "target_goal")
+    private String targetGoal = "Placements & DSA Prep";
+
+    @Column(name = "hourly_rate")
+    private Integer hourlyRate = 50;
+
+    @Column(name = "free_demo_available")
+    private Boolean freeDemoAvailable = true;
+
     @Column(name = "last_active_at")
     private Instant lastActiveAt = Instant.now();
 
@@ -201,6 +225,30 @@ public class Profile {
 
     public String getProfileVisibility() { return profileVisibility; }
     public void setProfileVisibility(String profileVisibility) { this.profileVisibility = profileVisibility; }
+
+    public String getUpiId() { return upiId; }
+    public void setUpiId(String upiId) { this.upiId = upiId; }
+
+    public String getUpiQrUrl() { return upiQrUrl; }
+    public void setUpiQrUrl(String upiQrUrl) { this.upiQrUrl = upiQrUrl; }
+
+    public String getCollegeEmail() { return collegeEmail; }
+    public void setCollegeEmail(String collegeEmail) { this.collegeEmail = collegeEmail; }
+
+    public String getCollegeIdCard() { return collegeIdCard; }
+    public void setCollegeIdCard(String collegeIdCard) { this.collegeIdCard = collegeIdCard; }
+
+    public String getVerificationStatus() { return verificationStatus; }
+    public void setVerificationStatus(String verificationStatus) { this.verificationStatus = verificationStatus; }
+
+    public String getTargetGoal() { return targetGoal; }
+    public void setTargetGoal(String targetGoal) { this.targetGoal = targetGoal; }
+
+    public Integer getHourlyRate() { return hourlyRate; }
+    public void setHourlyRate(Integer hourlyRate) { this.hourlyRate = hourlyRate; }
+
+    public Boolean getFreeDemoAvailable() { return freeDemoAvailable; }
+    public void setFreeDemoAvailable(Boolean freeDemoAvailable) { this.freeDemoAvailable = freeDemoAvailable; }
 
     @JsonProperty("privacySettings")
     public void unpackPrivacySettings(Map<String, Object> privacySettings) {

@@ -8,14 +8,16 @@ public class ConnectionDto {
     private Long connectionId;
     private Profile profile;
     private String status;
+    private String note;
     private Instant createdAt;
 
     public ConnectionDto() {}
 
-    public ConnectionDto(Long connectionId, Profile profile, String status, Instant createdAt) {
+    public ConnectionDto(Long connectionId, Profile profile, String status, String note, Instant createdAt) {
         this.connectionId = connectionId;
         this.profile = profile;
         this.status = status;
+        this.note = note;
         this.createdAt = createdAt;
     }
 
@@ -43,6 +45,14 @@ public class ConnectionDto {
         this.status = status;
     }
 
+    public String getNote() {
+        return note;
+    }
+
+    public void setNote(String note) {
+        this.note = note;
+    }
+
     public Instant getCreatedAt() {
         return createdAt;
     }
@@ -59,6 +69,7 @@ public class ConnectionDto {
         private Long connectionId;
         private Profile profile;
         private String status;
+        private String note;
         private Instant createdAt;
 
         public Builder connectionId(Long connectionId) {
@@ -76,13 +87,18 @@ public class ConnectionDto {
             return this;
         }
 
+        public Builder note(String note) {
+            this.note = note;
+            return this;
+        }
+
         public Builder createdAt(Instant createdAt) {
             this.createdAt = createdAt;
             return this;
         }
 
         public ConnectionDto build() {
-            return new ConnectionDto(connectionId, profile, status, createdAt);
+            return new ConnectionDto(connectionId, profile, status, note, createdAt);
         }
     }
 }

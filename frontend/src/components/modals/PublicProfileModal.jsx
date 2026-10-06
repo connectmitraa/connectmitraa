@@ -58,7 +58,7 @@ export function PublicProfileModal({ user, currentUserId, token, onClose, onStar
   const handleToggleConnect = () => {
     if (connectionStatus === 'not_connected') {
       setConnectionStatus('pending');
-      alert(`🤝 Connection request sent to ${fullName}!`);
+      toast.success(`🤝 Connection request sent to ${fullName}!`);
     } else if (connectionStatus === 'pending') {
       setConnectionStatus('not_connected');
     }
@@ -70,7 +70,7 @@ export function PublicProfileModal({ user, currentUserId, token, onClose, onStar
     if (profile) {
       updateProfileState({ ...profile, coins: (profile.coins || 45) + 5, xp: (profile.xp || 650) + 10 });
     }
-    alert(`🌟 You endorsed ${fullName} for ${skill}! +5 Peer Coins and +10 XP awarded.`);
+    toast.success(`🌟 You endorsed ${fullName} for ${skill}! +5 Peer Coins and +10 XP awarded.`);
   };
 
   return (
@@ -174,7 +174,7 @@ export function PublicProfileModal({ user, currentUserId, token, onClose, onStar
             </div>
           </div>
 
-          {/* INSTAGRAM & LINKEDIN METRIC COUNTERS BAR */}
+          {/* STUDYLOOP PROFILE METRIC COUNTERS BAR */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '0.75rem', backgroundColor: 'var(--bg-tertiary)', padding: '0.875rem 1.25rem', borderRadius: 'var(--radius-lg)', marginBottom: '1.5rem', border: '1px solid var(--border-color)' }}>
             
             <div 
@@ -215,7 +215,7 @@ export function PublicProfileModal({ user, currentUserId, token, onClose, onStar
 
           </div>
 
-          {/* SUBTAB SELECTOR (INSTA / LINKEDIN TABS) */}
+          {/* SUBTAB SELECTOR — STUDYLOOP PROFILE TABS */}
           <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', marginBottom: '1.25rem', gap: '1.5rem' }}>
             <button
               onClick={() => setProfileTab('overview')}

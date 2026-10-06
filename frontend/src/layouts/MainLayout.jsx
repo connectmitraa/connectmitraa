@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
-import { Activity, ArrowRight, Award, Bell, BookOpen, Building2, Calendar, Check, CheckCircle, ChevronDown, ChevronRight, Compass, DollarSign, ExternalLink, Film, Grid, HelpCircle, Home, Infinity, Laptop, LifeBuoy, LogIn, LogOut, Menu, MessageSquare, Moon, Radio, Search, Settings, Shield, Sparkles, Star, Sun, Trophy, Tv2, UserCheck, UserPlus, Users, Video, Wallet, X, Zap } from 'lucide-react';
+import { Activity, ArrowRight, Award, Bell, BookOpen, Building2, Calendar, Check, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Compass, DollarSign, ExternalLink, Film, GraduationCap, Grid, HelpCircle, Home, Infinity, Laptop, LifeBuoy, LogIn, LogOut, Menu, MessageSquare, Moon, PanelLeftClose, PanelLeftOpen, Radio, Search, Settings, Shield, Sparkles, Star, Sun, Trophy, Tv2, User, UserCheck, UserPlus, Users, Video, Wallet, X, Zap } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getDefaultAvatarByGender, MALE_AVATAR_SVG, FEMALE_AVATAR_SVG, NEUTRAL_AVATAR_SVG } from '../constants/avatars';
-import { SidebarLink } from '../components/common/SidebarLink';
+import { SidebarLink, SidebarCategoryLabel } from '../components/common/SidebarLink';
 import { LoadingFallback } from '../components/common/LoadingFallback';
+import { useToast } from '../context/ToastContext';
+import { getWsUrl } from '../lib/api';
 
 // Modals (Synchronous for instant popup interaction)
 import { PublicProfileModal } from '../components/modals/PublicProfileModal';
@@ -15,18 +17,19 @@ import { ReviewSessionModal } from '../components/modals/ReviewSessionModal';
 
 // Features (Lazy Loaded for High-Performance Code Splitting)
 const LandingScreen = lazy(() => import('../features/landing/LandingScreen').then(m => ({ default: m.LandingScreen })));
-const DashboardScreen = lazy(() => import('../features/dashboard/DashboardScreen').then(m => ({ default: m.DashboardScreen })));
+const HomeHubScreen = lazy(() => import('../features/dashboard/HomeHubScreen').then(m => ({ default: m.HomeHubScreen })));
 const ConnectionsScreen = lazy(() => import('../features/connections/ConnectionsScreen').then(m => ({ default: m.ConnectionsScreen })));
 const ChatScreen = lazy(() => import('../features/chat/ChatScreen').then(m => ({ default: m.ChatScreen })));
 const DoubtRoomsScreen = lazy(() => import('../features/doubts/DoubtRoomsScreen').then(m => ({ default: m.DoubtRoomsScreen })));
 const RtcCallOverlay = lazy(() => import('../features/doubts/RtcCallOverlay').then(m => ({ default: m.RtcCallOverlay })));
-const ReelsScreen = lazy(() => import('../features/reels/ReelsScreen').then(m => ({ default: m.ReelsScreen })));
 const MySessionsScreen = lazy(() => import('../features/sessions/MySessionsScreen').then(m => ({ default: m.MySessionsScreen })));
 const LiveClassroomScreen = lazy(() => import('../features/sessions/LiveClassroomScreen').then(m => ({ default: m.LiveClassroomScreen })));
 const DiscoverScreen = lazy(() => import('../features/discover/DiscoverScreen').then(m => ({ default: m.DiscoverScreen })));
 const WalletScreen = lazy(() => import('../features/wallet/WalletScreen').then(m => ({ default: m.WalletScreen })));
 const LeaderboardScreen = lazy(() => import('../features/leaderboard/LeaderboardScreen').then(m => ({ default: m.LeaderboardScreen })));
 const SettingsScreen = lazy(() => import('../features/settings/SettingsScreen').then(m => ({ default: m.SettingsScreen })));
+const ClassHistoryScreen = lazy(() => import('../features/settings/ClassHistoryScreen').then(m => ({ default: m.ClassHistoryScreen })));
+const CampusPrivacySettingsScreen = lazy(() => import('../features/settings/CampusPrivacySettingsScreen').then(m => ({ default: m.CampusPrivacySettingsScreen })));
 const AdminConsoleScreen = lazy(() => import('../features/admin/AdminConsoleScreen').then(m => ({ default: m.AdminConsoleScreen })));
 const AdminGateScreen = lazy(() => import('../features/admin/AdminGateScreen').then(m => ({ default: m.AdminGateScreen })));
 const ContactSupportScreen = lazy(() => import('../features/support/ContactSupportScreen').then(m => ({ default: m.ContactSupportScreen })));
@@ -34,6 +37,7 @@ const FeedScreen = lazy(() => import('../features/support/FeedScreen').then(m =>
 
 export function MainLayout() {
   const { user, profile, updateProfileState, token, loading, logout, loginSimulated, loginAdmin, testAccounts, isAdminMode, setIsAdminMode } = useAuth();
+  const toast = useToast();
   const [theme, setTheme] = useState(() => localStorage.getItem('studyloop_theme') || 'light');
   
   useEffect(() => {
@@ -51,7 +55,6 @@ export function MainLayout() {
       return hash;
     }
     const saved = localStorage.getItem('studyloop_active_tab');
-    // Never auto-restore 'dashboard' (profile/settings) — always send to Home Hub on fresh load
     if (saved && saved !== 'landing' && saved !== 'dashboard' && saved !== 'settings' && saved !== 'profile') {
       return saved;
     }
@@ -119,10 +122,33 @@ export function MainLayout() {
   const [activeChatId, setActiveChatId] = useState(null);
   const [chatPeer, setChatPeer] = useState(null);
   const [showHeaderDropdown, setShowHeaderDropdown] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const headerDropdownRef = useRef(null);
+  const [sidebarMode, setSidebarMode] = useState(() => {
+    return localStorage.getItem('studyloop_sidebar_mode') || 'rail';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('studyloop_sidebar_mode', sidebarMode);
+  }, [sidebarMode]);
   
   const [viewingPublicProfile, setViewingPublicProfile] = useState(null);
   const [userListModalData, setUserListModalData] = useState(null);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  // Close header dropdown on clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (headerDropdownRef.current && !headerDropdownRef.current.contains(event.target)) {
+        setShowHeaderDropdown(false);
+      }
+    };
+    if (showHeaderDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showHeaderDropdown]);
 
   const openPublicProfile = (userObj) => {
     if (!userObj) return;
@@ -203,9 +229,7 @@ export function MainLayout() {
   useEffect(() => {
     if (!token) return;
     try {
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}/ws/chat?token=${token}`;
-      const ws = new WebSocket(wsUrl);
+      const ws = new WebSocket(getWsUrl(token));
 
       ws.onopen = () => {
         setSocket(ws);
@@ -314,8 +338,9 @@ export function MainLayout() {
     );
   }
 
-  // --- DEDICATED SEPARATE FULL-PAGE STUDENT PROFILE & SETTINGS (LINKEDIN / NAUKRI SEPARATE PAGE STYLE) ---
-  if (activeTab === 'dashboard' || activeTab === 'settings' || activeTab === 'profile') {
+  // --- DEDICATED SEPARATE FULL-PAGE SCREENS ---
+  // 1. Student Scholar Profile (Original Grand Profile Screen — NO shorts/posts)
+  if (activeTab === 'profile' || activeTab === 'dashboard' || activeTab === 'edit_profile') {
     return (
       <Suspense fallback={<LoadingFallback />}>
         <SettingsScreen 
@@ -328,270 +353,654 @@ export function MainLayout() {
     );
   }
 
+  // 2. 1:1 Live Classes & Teaching Studio (Dedicated Separate Page)
+  if (activeTab === 'classes_history') {
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-primary)' }}>
+          <ClassHistoryScreen setActiveTab={setActiveTab} />
+        </div>
+      </Suspense>
+    );
+  }
+
+  // 3. Campus Privacy & Account Security Center (Dedicated Separate Page like LinkedIn)
+  if (activeTab === 'privacy_settings' || activeTab === 'settings') {
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-primary)' }}>
+          <CampusPrivacySettingsScreen setActiveTab={setActiveTab} />
+        </div>
+      </Suspense>
+    );
+  }
+
   return (
-    <div className="app-container fixed-app-container">
-      {/* SIDEBAR NAVIGATION */}
-      <nav className="sidebar" style={{
-        width: isSidebarCollapsed ? '76px' : '260px',
-        padding: isSidebarCollapsed ? '1rem 0.5rem' : '1.25rem 1rem'
-      }}>
-        {/* LOGO HEADER */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: isSidebarCollapsed ? 'center' : 'space-between', marginBottom: '1.25rem' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem', cursor: 'pointer' }} onClick={() => { setActiveTab('landing'); setActiveRoomId(null); }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <div style={{
-                width: '34px',
-                height: '34px',
-                borderRadius: '10px',
-                background: 'var(--accent-gradient)',
+    <div className="studyloop-app-container">
+      {/* ── 1. STUDYLOOP DUAL-MODE SIDEBAR (Rail View vs Expanded Categories View) ── */}
+      {sidebarMode === 'rail' ? (
+        /* MODE 1: SLEEK COMPACT RAIL (Exact User Image, Unstop Style) */
+        <aside className="studyloop-rail-sidebar">
+          {/* Brand Logo (Top Blue Button with SL) */}
+          <div 
+            className="studyloop-rail-logo"
+            onClick={() => { setActiveTab('landing'); setActiveRoomId(null); }}
+            title="StudyLoop Campus Home"
+          >
+            <span className="font-serif" style={{ color: '#ffffff', fontWeight: 900, fontSize: '1.15rem' }}>SL</span>
+          </div>
+
+          {/* Expand Switch Button (Mode Toggle) */}
+          <button
+            className="studyloop-rail-mode-switch"
+            onClick={() => setSidebarMode('expanded')}
+            title="Expand Sidebar (Names & Categories)"
+          >
+            <PanelLeftOpen size={16} />
+          </button>
+
+          {/* 10 Vertical Navigation Rail Items (Exact Names & Icons from Image) */}
+          <nav style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', gap: '3px' }}>
+            {/* 1. Home */}
+            <button
+              className={`studyloop-rail-item ${(activeTab === 'landing' || activeTab === 'home') ? 'active' : ''}`}
+              onClick={() => { setActiveTab('landing'); setActiveRoomId(null); }}
+              title="Home"
+            >
+              <div className="rail-icon">
+                <Home size={20} strokeWidth={(activeTab === 'landing' || activeTab === 'home') ? 2.3 : 1.9} />
+              </div>
+              <span className="rail-label">Home</span>
+            </button>
+
+            {/* 2. Network */}
+            <button
+              className={`studyloop-rail-item ${activeTab === 'connections' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('connections'); setActiveRoomId(null); }}
+              title="Network"
+            >
+              <div className="rail-icon">
+                <Users size={20} strokeWidth={activeTab === 'connections' ? 2.3 : 1.9} />
+              </div>
+              <span className="rail-label">Network</span>
+            </button>
+
+            {/* 3. Mentors */}
+            <button
+              className={`studyloop-rail-item ${activeTab === 'discover' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('discover'); setActiveRoomId(null); }}
+              title="Mentors"
+            >
+              <div className="rail-icon">
+                <Search size={20} strokeWidth={activeTab === 'discover' ? 2.3 : 1.9} />
+              </div>
+              <span className="rail-label">Mentors</span>
+            </button>
+
+            {/* 4. Doubts */}
+            <button
+              className={`studyloop-rail-item ${activeTab === 'doubts' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('doubts'); setActiveRoomId(null); }}
+              title="Live Doubt Rooms"
+            >
+              <div className="rail-icon" style={{ position: 'relative' }}>
+                <HelpCircle size={20} strokeWidth={activeTab === 'doubts' ? 2.3 : 1.9} />
+                <span style={{
+                  position: 'absolute',
+                  top: '-2px',
+                  right: '-3px',
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  backgroundColor: '#10b981',
+                  boxShadow: '0 0 5px rgba(16, 185, 129, 0.9)'
+                }} />
+              </div>
+              <span className="rail-label">Doubts</span>
+            </button>
+
+            {/* 5. Classes */}
+            <button
+              className={`studyloop-rail-item ${activeTab === 'sessions' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('sessions'); setActiveRoomId(null); }}
+              title="Classes"
+            >
+              <div className="rail-icon">
+                <Calendar size={20} strokeWidth={activeTab === 'sessions' ? 2.3 : 1.9} />
+              </div>
+              <span className="rail-label">Classes</span>
+            </button>
+
+            {/* 6. Chat */}
+            <button
+              className={`studyloop-rail-item ${activeTab === 'chat' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('chat'); setActiveRoomId(null); }}
+              title="Chat"
+            >
+              <div className="rail-icon">
+                <MessageSquare size={20} strokeWidth={activeTab === 'chat' ? 2.3 : 1.9} />
+              </div>
+              <span className="rail-label">Chat</span>
+            </button>
+
+            {/* 7. Feed */}
+            <button
+              className={`studyloop-rail-item ${activeTab === 'feed' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('feed'); setActiveRoomId(null); }}
+              title="Feed"
+            >
+              <div className="rail-icon">
+                <BookOpen size={20} strokeWidth={activeTab === 'feed' ? 2.3 : 1.9} />
+              </div>
+              <span className="rail-label">Feed</span>
+            </button>
+
+            {/* 8. Ranks */}
+            <button
+              className={`studyloop-rail-item ${activeTab === 'leaderboard' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('leaderboard'); setActiveRoomId(null); }}
+              title="Ranks"
+            >
+              <div className="rail-icon">
+                <Trophy size={20} strokeWidth={activeTab === 'leaderboard' ? 2.3 : 1.9} />
+              </div>
+              <span className="rail-label">Ranks</span>
+            </button>
+
+            {/* 9. Wallet */}
+            <button
+              className={`studyloop-rail-item ${activeTab === 'wallet' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('wallet'); setActiveRoomId(null); }}
+              title="Wallet"
+            >
+              <div className="rail-icon">
+                <Wallet size={20} strokeWidth={activeTab === 'wallet' ? 2.3 : 1.9} />
+              </div>
+              <span className="rail-label">Wallet</span>
+            </button>
+
+            {/* 10. Support */}
+            <button
+              className={`studyloop-rail-item ${activeTab === 'contact' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('contact'); }}
+              title="Support"
+            >
+              <div className="rail-icon">
+                <LifeBuoy size={20} strokeWidth={activeTab === 'contact' ? 2.3 : 1.9} />
+              </div>
+              <span className="rail-label">Support</span>
+            </button>
+          </nav>
+        </aside>
+      ) : (
+        /* MODE 2: EXPANDED FULL SIDEBAR (Names beside icons + Categories) */
+        <aside className="studyloop-expanded-sidebar">
+          {/* Header with Brand & Collapse Button */}
+          <div className="studyloop-expanded-header">
+            <div 
+              onClick={() => { setActiveTab('landing'); setActiveRoomId(null); }}
+              style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}
+              title="StudyLoop Campus Home"
+            >
+              <div className="studyloop-expanded-logo">
+                SL
+              </div>
+              <div>
+                <div style={{ fontWeight: 800, fontSize: '0.98rem', color: 'var(--text-primary)', lineHeight: 1.15 }}>
+                  Study<span style={{ color: 'var(--accent-primary)' }}>Loop</span>
+                </div>
+                <div style={{ fontSize: '0.66rem', color: 'var(--text-muted)', fontWeight: 600, marginTop: '1px' }}>
+                  Campus Network
+                </div>
+              </div>
+            </div>
+
+            {/* Collapse button back to Unstop-style compact rail */}
+            <button
+              className="studyloop-expanded-close-btn"
+              onClick={() => setSidebarMode('rail')}
+              title="Collapse to compact rail (Unstop style)"
+            >
+              <PanelLeftClose size={17} />
+            </button>
+          </div>
+
+          {/* Nav Links (Names next to Icons - no category headers) */}
+          <div className="studyloop-expanded-nav">
+            <button
+              className={`studyloop-nav-row ${(activeTab === 'landing' || activeTab === 'home') ? 'active' : ''}`}
+              onClick={() => { setActiveTab('landing'); setActiveRoomId(null); }}
+            >
+              <div className="row-icon">
+                <Home size={19} strokeWidth={(activeTab === 'landing' || activeTab === 'home') ? 2.3 : 1.8} />
+              </div>
+              <span className="row-label">Home</span>
+            </button>
+            <button
+              className={`studyloop-nav-row ${activeTab === 'feed' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('feed'); setActiveRoomId(null); }}
+            >
+              <div className="row-icon">
+                <BookOpen size={19} strokeWidth={activeTab === 'feed' ? 2.3 : 1.8} />
+              </div>
+              <span className="row-label">Campus Feed</span>
+            </button>
+            <button
+              className={`studyloop-nav-row ${activeTab === 'connections' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('connections'); setActiveRoomId(null); }}
+            >
+              <div className="row-icon">
+                <Users size={19} strokeWidth={activeTab === 'connections' ? 2.3 : 1.8} />
+              </div>
+              <span className="row-label">Network</span>
+            </button>
+            <button
+              className={`studyloop-nav-row ${activeTab === 'discover' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('discover'); setActiveRoomId(null); }}
+            >
+              <div className="row-icon">
+                <Search size={19} strokeWidth={activeTab === 'discover' ? 2.3 : 1.8} />
+              </div>
+              <span className="row-label">Mentors</span>
+            </button>
+            <button
+              className={`studyloop-nav-row ${activeTab === 'doubts' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('doubts'); setActiveRoomId(null); }}
+            >
+              <div className="row-icon" style={{ position: 'relative' }}>
+                <HelpCircle size={19} strokeWidth={activeTab === 'doubts' ? 2.3 : 1.8} />
+                <span style={{
+                  position: 'absolute',
+                  top: '-1px',
+                  right: '-2px',
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  backgroundColor: '#10b981',
+                  boxShadow: '0 0 5px rgba(16, 185, 129, 0.9)'
+                }} />
+              </div>
+              <span className="row-label">Doubts</span>
+              <span style={{
+                fontSize: '0.62rem',
+                fontWeight: 700,
+                color: '#10b981',
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                padding: '1px 6px',
+                borderRadius: '999px',
+                marginLeft: 'auto'
+              }}>Live</span>
+            </button>
+            <button
+              className={`studyloop-nav-row ${activeTab === 'sessions' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('sessions'); setActiveRoomId(null); }}
+            >
+              <div className="row-icon">
+                <Calendar size={19} strokeWidth={activeTab === 'sessions' ? 2.3 : 1.8} />
+              </div>
+              <span className="row-label">Classes</span>
+            </button>
+            <button
+              className={`studyloop-nav-row ${activeTab === 'chat' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('chat'); setActiveRoomId(null); }}
+            >
+              <div className="row-icon">
+                <MessageSquare size={19} strokeWidth={activeTab === 'chat' ? 2.3 : 1.8} />
+              </div>
+              <span className="row-label">Chat</span>
+            </button>
+            <button
+              className={`studyloop-nav-row ${activeTab === 'leaderboard' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('leaderboard'); setActiveRoomId(null); }}
+            >
+              <div className="row-icon">
+                <Trophy size={19} strokeWidth={activeTab === 'leaderboard' ? 2.3 : 1.8} />
+              </div>
+              <span className="row-label">Ranks</span>
+            </button>
+            <button
+              className={`studyloop-nav-row ${activeTab === 'wallet' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('wallet'); setActiveRoomId(null); }}
+            >
+              <div className="row-icon">
+                <Wallet size={19} strokeWidth={activeTab === 'wallet' ? 2.3 : 1.8} />
+              </div>
+              <span className="row-label">Wallet</span>
+            </button>
+            <button
+              className={`studyloop-nav-row ${activeTab === 'contact' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('contact'); }}
+            >
+              <div className="row-icon">
+                <LifeBuoy size={19} strokeWidth={activeTab === 'contact' ? 2.3 : 1.8} />
+              </div>
+              <span className="row-label">Support</span>
+            </button>
+          </div>
+        </aside>
+      )}
+
+      {/* ── 2. STUDYLOOP MAIN CONTENT CANVAS WITH STICKY TOP BAR ── */}
+      <div className="studyloop-main-area">
+        {/* StudyLoop Top Bar (Breadcrumb, Search Box, Campus Tag, Notifications, Me Profile) */}
+        <header className="studyloop-top-bar">
+          {/* Breadcrumb path */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+            <span 
+              onClick={() => { setActiveTab('landing'); setActiveRoomId(null); }}
+              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', color: 'var(--text-secondary)' }}
+              title="Home"
+            >
+              <Home size={15} />
+            </span>
+            <span style={{ color: 'var(--border-color)' }}>/</span>
+            <span style={{ fontWeight: 700, color: 'var(--text-primary)', textTransform: 'capitalize' }}>
+              {activeTab === 'landing' || activeTab === 'home' ? 'Campus Feed' : activeTab}
+            </span>
+          </div>
+
+          {/* Centered Search Box */}
+          <div className="studyloop-search-box">
+            <Search size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+            <input 
+              type="text" 
+              placeholder="Search doubts, notes, mentors, OA problems..." 
+              style={{
+                border: 'none',
+                background: 'transparent',
+                outline: 'none',
+                width: '100%',
+                fontSize: '0.84rem',
+                color: 'var(--text-primary)',
+                fontFamily: 'inherit'
+              }}
+            />
+          </div>
+
+          {/* Right Top Bar Utilities */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {/* Campus Badge (Like Unstop "For Business" badge) */}
+            <div 
+              title={`Verified ${profile?.college || 'IIT Madras'} Campus Hub`}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                backgroundColor: 'var(--accent-light)',
+                color: 'var(--accent-primary)',
+                padding: '4px 10px',
+                borderRadius: '999px',
+                fontSize: '0.72rem',
+                fontWeight: 700,
+                border: '1px solid rgba(0, 102, 255, 0.18)',
+                cursor: 'pointer'
+              }}
+            >
+              <GraduationCap size={13} />
+              <span>{profile?.college ? (profile.college.length > 14 ? profile.college.substring(0, 14) + '..' : profile.college) : 'IIT Madras'}</span>
+            </div>
+
+            {/* Theme Toggle Button */}
+            <button
+              onClick={() => setTheme(prev => prev === 'light' ? 'dark' : 'light')}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'var(--text-secondary)',
+                width: '32px',
+                height: '32px',
+                borderRadius: '8px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: 'var(--shadow-sm)'
-              }}>
-                <span className="font-serif" style={{ color: '#ffffff', fontWeight: 800, fontSize: '1rem' }}>SL</span>
-              </div>
-              {!isSidebarCollapsed && (
-                <span style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>StudyLoop</span>
-              )}
-            </div>
-            {!isSidebarCollapsed && (
-              <span style={{ fontSize: '0.5625rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.16em', paddingLeft: '2.5rem', textTransform: 'uppercase' }}>
-                LEARN • BUILD • EVOLVE
-              </span>
-            )}
-          </div>
-          {!isSidebarCollapsed && (
-            <button 
-              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)} 
-              title="Collapse Sidebar"
-              className="btn-icon"
-              style={{ padding: '0.375rem' }}
+                transition: 'all 0.15s'
+              }}
+              onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
+              onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+              title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
             >
-              <Grid size={16} />
+              {theme === 'light' ? <Moon size={17} /> : <Sun size={17} />}
             </button>
-          )}
-        </div>
 
-        {/* COLLAPSED EXPAND BUTTON */}
-        {isSidebarCollapsed && (
-          <button 
-            onClick={() => setIsSidebarCollapsed(false)} 
-            title="Expand Sidebar"
-            className="btn-icon"
-            style={{ width: '100%', marginBottom: '1rem' }}
-          >
-            <ChevronRight size={18} />
-          </button>
-        )}
+            {/* Chat Direct Shortcut */}
+            <button
+              onClick={() => { setActiveTab('chat'); setActiveRoomId(null); }}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'var(--text-secondary)',
+                width: '32px',
+                height: '32px',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                position: 'relative',
+                transition: 'all 0.15s'
+              }}
+              onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
+              onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+              title="Messaging & Chats"
+            >
+              <MessageSquare size={17} />
+            </button>
 
-        {/* GROUPED SIDEBAR NAVIGATION LINKS */}
-        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflowY: 'auto', paddingRight: '0.25rem' }}>
-          
-          {/* SECTION 1: ACADEMICS & PEER LEARNING */}
-          {!isSidebarCollapsed && (
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              fontSize: '0.6875rem', 
-              fontWeight: 800, 
-              letterSpacing: '0.08em', 
-              color: 'var(--accent-primary)', 
-              marginTop: '0.75rem', 
-              marginBottom: '0.5rem',
-              textTransform: 'uppercase'
-            }}>
-              PEER LEARNING & DOUBTS
-              <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border-color)', marginLeft: '0.5rem' }}></div>
-            </div>
-          )}
-          <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'landing'} icon={<Home size={18} />} label="Home Hub" onClick={() => { setActiveTab('landing'); setActiveRoomId(null); }} />
-          <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'discover'} icon={<Search size={18} />} label="Find Peer Tutors (Topics)" onClick={() => { setActiveTab('discover'); setActiveRoomId(null); }} />
-          <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'doubts'} icon={<HelpCircle size={18} />} label="Live Doubt Rooms" onClick={() => { setActiveTab('doubts'); setActiveRoomId(null); }} />
-          <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'sessions'} icon={<Calendar size={18} />} label="My 1:1 Study Classes" onClick={() => { setActiveTab('sessions'); setActiveRoomId(null); }} />
-
-          {/* SECTION 2: STUDENT EARNINGS & COMMUNITY */}
-          {!isSidebarCollapsed && (
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              fontSize: '0.6875rem', 
-              fontWeight: 800, 
-              letterSpacing: '0.08em', 
-              color: 'var(--accent-primary)', 
-              marginTop: '1.25rem', 
-              marginBottom: '0.5rem',
-              textTransform: 'uppercase'
-            }}>
-              EARNINGS & NETWORK
-              <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border-color)', marginLeft: '0.5rem' }}></div>
-            </div>
-          )}
-          <SidebarLink 
-            isCollapsed={isSidebarCollapsed} 
-            active={activeTab === 'wallet'} 
-            icon={<Wallet size={18} style={{ color: 'var(--success-color)' }} />} 
-            label={`Earnings Wallet (₹${profile?.walletBalance !== undefined ? profile.walletBalance : 450})`} 
-            onClick={() => { setActiveTab('wallet'); setActiveRoomId(null); }} 
-          />
-          <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'connections'} icon={<UserCheck size={18} />} label="Campus Connections" onClick={() => { setActiveTab('connections'); setActiveRoomId(null); }} />
-          <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'leaderboard'} icon={<Trophy size={18} />} label="Campus Leaderboard" onClick={() => { setActiveTab('leaderboard'); setActiveRoomId(null); }} />
-          <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'reels'} icon={<Tv2 size={18} />} label="Concept Shorts (9:16)" onClick={() => { setActiveTab('reels'); setActiveRoomId(null); }} />
-
-          {/* SECTION 3: DASHBOARD & MESSAGING */}
-          {!isSidebarCollapsed && (
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              fontSize: '0.6875rem', 
-              fontWeight: 800, 
-              letterSpacing: '0.08em', 
-              color: 'var(--accent-primary)', 
-              marginTop: '1.25rem', 
-              marginBottom: '0.5rem',
-              textTransform: 'uppercase'
-            }}>
-              MESSAGES & SUPPORT
-              <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border-color)', marginLeft: '0.5rem' }}></div>
-            </div>
-          )}
-          <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'chat'} icon={<MessageSquare size={18} />} label="Direct Messages" onClick={() => { setActiveTab('chat'); setActiveRoomId(null); }} />
-          <SidebarLink isCollapsed={isSidebarCollapsed} active={activeTab === 'contact'} icon={<LifeBuoy size={18} />} label="Help Desk" onClick={() => { setActiveTab('contact'); setActiveRoomId(null); }} />
-        </div>
-
-        {/* LOGOUT BUTTON */}
-        <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem', marginTop: 'auto' }}>
-          <button onClick={logout} className="btn btn-secondary" style={{ width: '100%', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start', border: 'none', background: 'transparent', padding: '0.5rem' }}>
-            <LogOut size={18} /> {!isSidebarCollapsed && "Logout"}
-          </button>
-        </div>
-      </nav>
-
-      {/* MAIN SCREEN DISPATCHER */}
-      <main className="main-content" style={{ padding: (activeTab === 'reels' || activeTab === 'chat') ? 0 : undefined, backgroundColor: activeTab === 'reels' ? '#09090b' : 'var(--bg-primary)' }}>
-        
-        {/* TOP FAR-RIGHT USER CORNER BAR */}
-        {activeTab !== 'reels' && activeTab !== 'chat' && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: '1.5rem',
-            paddingBottom: '1rem',
-            borderBottom: '1px solid var(--border-color)',
-            gap: '1rem',
-            flexWrap: 'wrap'
-          }}>
-            {/* Campus & Search Bar */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, maxWidth: '600px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-full)', padding: '0.375rem 0.875rem', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
-                <Building2 size={14} style={{ color: 'var(--accent-primary)' }} />
-                <span>{profile?.college || 'IIT Madras'}</span>
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-full)', padding: '0.375rem 1rem', flex: 1 }}>
-                <Search size={15} style={{ color: 'var(--text-muted)' }} />
-                <input 
-                  type="text" 
-                  placeholder="Search questions, peers, topics, code concepts..." 
-                  style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '0.8125rem', width: '100%', color: 'var(--text-primary)', fontFamily: 'inherit' }}
-                />
-              </div>
-            </div>
-
-            {/* FAR RIGHT USER DROPDOWN CHIP & THEME TOGGLE */}
-            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              
-              {/* THEME TOGGLE (LIGHT / DARK) */}
-              <button
-                onClick={() => setTheme(prev => prev === 'light' ? 'dark' : 'light')}
-                className="btn-icon"
-                style={{
-                  backgroundColor: 'var(--bg-tertiary)',
-                  width: '38px',
-                  height: '38px',
-                  borderRadius: '50%',
-                  border: '1px solid var(--border-color)'
-                }}
-                title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
-              >
-                {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
-              </button>
-
-              {/* USER PROFILE CHIP */}
-              <div style={{ position: 'relative' }}>
+            {/* User Profile Avatar Drawer */}
+            {profile && (
+              <div style={{ position: 'relative' }} ref={headerDropdownRef}>
                 <button 
                   onClick={() => setShowHeaderDropdown(prev => !prev)}
-                  className="card"
                   style={{
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.75rem',
-                    padding: '0.375rem 0.875rem',
-                    borderRadius: 'var(--radius-full)',
-                    cursor: 'pointer',
-                    backgroundColor: 'var(--bg-secondary)'
+                    gap: '4px',
+                    padding: '2px 4px',
+                    borderRadius: '999px'
                   }}
+                  title="My Profile & Settings"
                 >
-                  <img 
-                    src={getDefaultAvatarByGender(profile?.gender, profile?.avatarUrl)} 
-                    alt="Avatar" 
-                    onError={(e) => { e.target.src = getDefaultAvatarByGender(profile?.gender); }}
-                    style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid var(--accent-primary)', objectFit: 'cover' }} 
-                  />
-                  <div style={{ textAlign: 'left' }}>
-                    <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                      {profile?.fullName || 'Student Learner'}
-                    </div>
-                    <div style={{ fontSize: '0.6875rem', color: 'var(--accent-primary)', fontWeight: 600 }}>
-                      ⚡ {profile?.xp !== undefined ? profile.xp : 650} XP • Lvl {profile?.level !== undefined ? profile.level : 4}
-                    </div>
+                  <div style={{ position: 'relative', width: '32px', height: '32px' }}>
+                    <img 
+                      src={getDefaultAvatarByGender(profile?.gender, profile?.avatarUrl)} 
+                      alt="Avatar" 
+                      onError={(e) => { e.target.src = getDefaultAvatarByGender(profile?.gender); }}
+                      style={{ 
+                        width: '32px', 
+                        height: '32px', 
+                        borderRadius: '50%', 
+                        border: '1.5px solid var(--accent-primary)', 
+                        objectFit: 'cover',
+                        backgroundColor: 'var(--bg-tertiary)'
+                      }} 
+                    />
+                    <span style={{
+                      position: 'absolute',
+                      bottom: '0px',
+                      right: '0px',
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '50%',
+                      backgroundColor: '#10b981',
+                      border: '1.5px solid var(--bg-secondary)'
+                    }} />
                   </div>
-                  <ChevronDown size={14} style={{ color: 'var(--text-secondary)' }} />
+                  <ChevronDown size={13} style={{ color: 'var(--text-muted)', transform: showHeaderDropdown ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
                 </button>
 
-                {/* USER DROPDOWN MENU */}
+                {/* Profile Drawer */}
                 {showHeaderDropdown && (
-                  <div className="card dropdown-animate" style={{
-                    position: 'absolute',
-                    top: 'calc(100% + 0.5rem)',
-                    right: 0,
-                    width: '260px',
-                    borderRadius: 'var(--radius-md)',
-                    padding: '0.875rem',
-                    boxShadow: 'var(--shadow-lg)',
-                    zIndex: 2000,
-                    backgroundColor: 'var(--bg-elevated)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '0.375rem'
-                  }}>
-                    <div style={{ padding: '0.25rem 0.5rem 0.625rem 0.5rem', borderBottom: '1px solid var(--border-color)', marginBottom: '0.25rem' }}>
-                      <div style={{ fontWeight: 800, fontSize: '0.9375rem', color: 'var(--text-primary)' }}>{profile?.fullName}</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.125rem' }}>{profile?.college}</div>
+                  <div className="header-profile-dropdown" style={{ top: '48px', right: 0 }}>
+                    {/* ── Profile Header Card ── */}
+                    <div
+                      style={{
+                        padding: '14px 14px 12px 14px',
+                        background: 'linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%)',
+                        borderBottom: '1px solid var(--border-color)',
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => { setShowHeaderDropdown(false); setActiveTab('profile'); }}
+                      title="Click to open your Full Student Profile"
+                    >
+                      {/* Avatar row */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        {/* Avatar with square-rounded squircle styling & online dot */}
+                        <div style={{ position: 'relative', width: '50px', height: '50px', flexShrink: 0 }}>
+                          <img
+                            src={getDefaultAvatarByGender(profile?.gender, profile?.avatarUrl)}
+                            alt="Avatar"
+                            style={{
+                              display: 'block',
+                              width: '50px',
+                              height: '50px',
+                              borderRadius: '14px',
+                              border: '2px solid var(--accent-primary)',
+                              objectFit: 'cover'
+                            }}
+                          />
+                          <span style={{
+                            position: 'absolute',
+                            bottom: '-2px',
+                            right: '-2px',
+                            width: '12px',
+                            height: '12px',
+                            borderRadius: '50%',
+                            backgroundColor: '#10b981',
+                            border: '2px solid var(--bg-secondary)',
+                            display: 'block',
+                            boxShadow: '0 0 4px rgba(16, 185, 129, 0.6)'
+                          }} />
+                        </div>
+
+                        {/* Name + college + connections */}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontWeight: 800, fontSize: '0.9375rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {profile?.fullName || 'Student Learner'}
+                          </div>
+                          <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {profile?.college || 'IIT Madras'}
+                          </div>
+                          {/* Connections chip on the square photo profile */}
+                          <div style={{ marginTop: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              fontSize: '0.68rem',
+                              fontWeight: 800,
+                              color: 'var(--accent-primary)',
+                              backgroundColor: 'var(--accent-light)',
+                              padding: '2px 8px',
+                              borderRadius: '999px',
+                              border: '1px solid rgba(0,102,255,0.18)'
+                            }}>
+                              <Users size={10} /> {profile?.connections || profile?.followersCount || 148} Connections
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Streak + XP row */}
+                      <div style={{ marginTop: '10px', display: 'flex', gap: '8px' }}>
+                        <div style={{ flex: 1, padding: '6px 8px', borderRadius: '10px', backgroundColor: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                          <span style={{ fontSize: '0.95rem' }}>🔥</span>
+                          <div>
+                            <div style={{ fontSize: '0.74rem', fontWeight: 800, color: '#f59e0b', lineHeight: 1 }}>{profile?.streak || 7} Day</div>
+                            <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)', fontWeight: 600, marginTop: '2px' }}>Streak</div>
+                          </div>
+                        </div>
+                        <div style={{ flex: 2, padding: '6px 10px', borderRadius: '10px', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.62rem', fontWeight: 700, marginBottom: '4px' }}>
+                            <span style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                              <Zap size={10} style={{ color: 'var(--accent-primary)' }} /> Lvl {profile?.level || 4}
+                            </span>
+                            <span style={{ color: 'var(--accent-primary)' }}>{profile?.xp || 662} XP</span>
+                          </div>
+                          <div style={{ width: '100%', height: '4px', backgroundColor: 'var(--bg-tertiary)', borderRadius: '999px', overflow: 'hidden' }}>
+                            <div style={{ width: `${Math.min(100, ((profile?.xp || 662) % 1000) / 10)}%`, height: '100%', background: 'var(--accent-gradient)', borderRadius: '999px' }} />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* View Full Profile button */}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setShowHeaderDropdown(false); setActiveTab('profile'); }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          width: '100%',
+                          marginTop: '10px',
+                          padding: '9px',
+                          borderRadius: '12px',
+                          border: 'none',
+                          background: 'var(--accent-gradient)',
+                          color: '#ffffff',
+                          fontWeight: 800,
+                          fontSize: '0.82rem',
+                          cursor: 'pointer',
+                          boxShadow: '0 2px 10px rgba(0,102,255,0.3)',
+                          transition: 'opacity 0.15s ease'
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.opacity = '0.92'}
+                        onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+                      >
+                        View Full Profile <ChevronRight size={14} />
+                      </button>
                     </div>
 
-                    <button 
-                      onClick={() => { setShowHeaderDropdown(false); setActiveTab('dashboard'); }} 
-                      className="dropdown-item"
-                    >
-                      <Award size={16} style={{ color: 'var(--accent-primary)' }} /> Student Profile
-                    </button>
-
-                    <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '0.5rem', marginTop: '0.25rem' }}>
+                    {/* Dedicated Navigation: Only Profile, Classes History & Settings (Unrelated Wallet/Leaderboard removed) */}
+                    <div style={{ padding: '0.5rem' }}>
                       <button 
-                        onClick={() => { logout(); setShowHeaderDropdown(false); }} 
-                        className="dropdown-item-logout"
+                        onClick={() => { setShowHeaderDropdown(false); setActiveTab('profile'); }} 
+                        className="dropdown-nav-item"
                       >
-                        <LogOut size={16} /> Logout
+                        <User size={16} style={{ color: 'var(--accent-primary)' }} /> 
+                        <span>Profile & Portfolio</span>
+                        <span style={{ marginLeft: 'auto', fontSize: '0.68rem', fontWeight: 700, color: '#10b981', backgroundColor: 'rgba(16,185,129,0.12)', padding: '1px 6px', borderRadius: '4px' }}>
+                          Verified
+                        </span>
+                      </button>
+
+                      <button 
+                        onClick={() => { setShowHeaderDropdown(false); setActiveTab('classes_history'); }} 
+                        className="dropdown-nav-item"
+                      >
+                        <Calendar size={16} style={{ color: '#10b981' }} /> 
+                        <span>1:1 Classes & Teaching History</span>
+                      </button>
+
+                      <button 
+                        onClick={() => { setShowHeaderDropdown(false); setActiveTab('privacy_settings'); }} 
+                        className="dropdown-nav-item"
+                      >
+                        <Shield size={16} style={{ color: 'var(--accent-primary)' }} /> 
+                        <span>Campus Privacy & Security</span>
+                      </button>
+
+                      <div style={{ height: '1px', backgroundColor: 'var(--border-color)', margin: '0.35rem 0.5rem' }} />
+
+                      <button 
+                        onClick={() => { setShowHeaderDropdown(false); setShowLogoutConfirm(true); }} 
+                        className="dropdown-nav-item logout"
+                      >
+                        <LogOut size={16} /> Sign Out of Campus
                       </button>
                     </div>
                   </div>
                 )}
               </div>
-            </div>
+            )}
           </div>
-        )}
+        </header>
+
+        {/* ── 3. SCROLLABLE CONTENT BODY (Spacious Canvas) ── */}
+        <main className="studyloop-content-body">
 
         {/* Dynamic call UI overlay */}
         {webrtcCall && (
@@ -643,7 +1052,7 @@ export function MainLayout() {
               setBookedSessions(prev => [newS, ...prev]);
               setBookingModalTutor(null);
               setActiveTab('sessions');
-              alert(`🎉 1:1 Session Booked on ${newS.topic}! Payment of ₹${newS.fee} is safely held in Escrow.`);
+              toast.success(`🎉 1:1 Session Booked on ${newS.topic}! Payment of ₹${newS.fee} is safely held in Escrow.`);
             }} 
           />
         )}
@@ -665,28 +1074,113 @@ export function MainLayout() {
                 });
               }
               setReviewModalSession(null);
-              alert(`🌟 Review submitted! Concept clarity rated ${revData.clarityRating}/5 ⭐ and +₹45 Escrow funds released to tutor's wallet!`);
+              toast.success(`🌟 Review submitted! Concept clarity rated ${revData.clarityRating}/5 ⭐ and +₹45 Escrow funds released to tutor's wallet!`);
             }} 
           />
         )}
 
+        {/* LOGOUT CONFIRMATION MODAL */}
+        {showLogoutConfirm && (
+          <div className="modal-confirm-overlay" onClick={() => setShowLogoutConfirm(false)}>
+            <div className="modal-confirm-card" onClick={e => e.stopPropagation()}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', marginBottom: '1rem' }}>
+                <div style={{
+                  width: '44px',
+                  height: '44px',
+                  borderRadius: '50%',
+                  backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                  color: '#ef4444',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}>
+                  <LogOut size={22} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                    Confirm Sign Out?
+                  </h3>
+                  <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                    Are you sure you want to sign out of StudyLoop?
+                  </p>
+                </div>
+              </div>
+
+              <div style={{
+                backgroundColor: 'var(--bg-tertiary)',
+                borderRadius: '10px',
+                padding: '0.75rem 1rem',
+                fontSize: '0.75rem',
+                color: 'var(--text-secondary)',
+                marginBottom: '1.25rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                border: '1px solid var(--border-color)'
+              }}>
+                <Shield size={16} style={{ color: 'var(--success-color)', flexShrink: 0 }} />
+                <span>Your active sessions, earned balance, and doubt history remain safely saved.</span>
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                <button 
+                  onClick={() => setShowLogoutConfirm(false)}
+                  className="btn btn-secondary"
+                  style={{ padding: '0.5rem 1.25rem', fontSize: '0.8125rem', fontWeight: 600 }}
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={() => {
+                    setShowLogoutConfirm(false);
+                    logout();
+                  }}
+                  style={{
+                    backgroundColor: '#ef4444',
+                    color: '#ffffff',
+                    border: 'none',
+                    padding: '0.5rem 1.25rem',
+                    fontSize: '0.8125rem',
+                    fontWeight: 700,
+                    borderRadius: 'var(--radius-sm)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.4rem'
+                  }}
+                >
+                  <LogOut size={14} /> Log Out
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* TAB ROUTING */}
         <Suspense fallback={<LoadingFallback />}>
-          {activeTab === 'landing' && (
-            <LandingScreen 
-              setActiveTab={setActiveTab} 
-              loginSimulated={loginSimulated} 
-              loginAdmin={loginAdmin}
-              testAccounts={testAccounts} 
-              theme={theme} 
-              setTheme={setTheme} 
-              postLoginRedirectTab={postLoginRedirectTab}
-              setPostLoginRedirectTab={setPostLoginRedirectTab}
+          {(activeTab === 'landing' || activeTab === 'home') && (
+            <HomeHubScreen 
+              setActiveTab={setActiveTab}
+              setActiveRoomId={setActiveRoomId}
+              openPublicProfile={openPublicProfile}
+              onOpenPublicProfile={openPublicProfile}
+              startWebRtcCall={startWebRtcCall}
+              onOpenBookingModal={(tutor) => setBookingModalTutor(tutor)}
+              bookedSessions={bookedSessions}
+              onLaunchClassroom={(s) => {
+                setActiveClassroomSession(s);
+                setActiveTab('classroom');
+              }}
+              theme={theme}
+              setTheme={setTheme}
             />
           )}
           {activeTab === 'feed' && <FeedScreen setActiveTab={setActiveTab} setActiveRoomId={setActiveRoomId} token={token} />}
-          {(activeTab === 'dashboard' || activeTab === 'settings' || activeTab === 'profile') && <SettingsScreen token={token} setActiveTab={setActiveTab} theme={theme} setTheme={setTheme} />}
           {activeTab === 'leaderboard' && <LeaderboardScreen token={token} onOpenPublicProfile={openPublicProfile} />}
+          {(activeTab === 'dashboard' || activeTab === 'profile') && <SettingsScreen token={token} setActiveTab={setActiveTab} theme={theme} setTheme={setTheme} />}
+          {activeTab === 'classes_history' && <ClassHistoryScreen setActiveTab={setActiveTab} />}
+          {(activeTab === 'privacy_settings' || activeTab === 'settings') && <CampusPrivacySettingsScreen setActiveTab={setActiveTab} />}
           {activeTab === 'discover' && (
             <DiscoverScreen 
               token={token} 
@@ -736,28 +1230,20 @@ export function MainLayout() {
             />
           )}
           {activeTab === 'chat' && (
-            <ChatScreen 
-              token={token} 
-              activeChatId={activeChatId} 
-              setActiveChatId={setActiveChatId} 
-              chatPeer={chatPeer} 
-              setChatPeer={setChatPeer}
-              socket={socket}
-              wsMessages={wsMessages}
-              setWsMessages={setWsMessages}
-              setActiveTab={setActiveTab}
-              startWebRtcCall={startWebRtcCall}
-            />
-          )}
-          {activeTab === 'reels' && (
-            <ReelsScreen 
-              token={token} 
-              setActiveTab={setActiveTab}
-              setActiveChatId={setActiveChatId}
-              setChatPeer={setChatPeer}
-              socket={socket}
-              setWsMessages={setWsMessages}
-            />
+            <div key="chat-screen" className="screen-slide-in" style={{ display: 'contents' }}>
+              <ChatScreen 
+                token={token} 
+                activeChatId={activeChatId} 
+                setActiveChatId={setActiveChatId} 
+                chatPeer={chatPeer} 
+                setChatPeer={setChatPeer}
+                socket={socket}
+                wsMessages={wsMessages}
+                setWsMessages={setWsMessages}
+                setActiveTab={setActiveTab}
+                startWebRtcCall={startWebRtcCall}
+              />
+            </div>
           )}
           {activeTab === 'contact' && (
             <ContactSupportScreen 
@@ -770,6 +1256,7 @@ export function MainLayout() {
           )}
         </Suspense>
       </main>
+      </div>
 
       {/* MOBILE BOTTOM NAVIGATION BAR */}
       {profile && (
@@ -809,11 +1296,11 @@ export function MainLayout() {
             <span style={{ fontSize: '0.625rem', fontWeight: 600 }}>Chats</span>
           </button>
           <button 
-            onClick={() => setActiveTab('reels')} 
-            style={{ border: 'none', background: 'transparent', color: activeTab === 'reels' ? 'var(--accent-primary)' : 'var(--text-secondary)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', cursor: 'pointer' }}
+            onClick={() => setActiveTab('connections')} 
+            style={{ border: 'none', background: 'transparent', color: activeTab === 'connections' ? 'var(--primary-color)' : 'var(--text-secondary)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', cursor: 'pointer' }}
           >
-            <Tv2 size={20} />
-            <span style={{ fontSize: '0.625rem', fontWeight: 600 }}>Reels</span>
+            <Users size={20} />
+            <span style={{ fontSize: '0.625rem', fontWeight: 600 }}>Network</span>
           </button>
           <button 
             onClick={() => setActiveTab('dashboard')} 

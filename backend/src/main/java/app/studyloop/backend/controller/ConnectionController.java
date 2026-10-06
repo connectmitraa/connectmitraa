@@ -29,7 +29,8 @@ public class ConnectionController {
     @PostMapping("/request")
     public ResponseEntity<?> sendConnectionRequest(
             @AuthenticationPrincipal UserPrincipal principal,
-            @RequestParam UUID receiverId) {
+            @RequestParam UUID receiverId,
+            @RequestParam(required = false) String note) {
         
         UUID senderId = principal.getId();
         if (senderId.equals(receiverId)) {
@@ -49,6 +50,9 @@ public class ConnectionController {
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
                 .build();
+        if (note != null && !note.trim().isEmpty()) {
+            newConnection.setNote(note.trim());
+        }
 
         connectionRepository.save(newConnection);
         return ResponseEntity.ok(Map.of("message", "Connection request sent successfully"));
@@ -132,6 +136,7 @@ public class ConnectionController {
                             .connectionId(c.getId())
                             .profile(sender)
                             .status(c.getStatus())
+                            .note(c.getNote())
                             .createdAt(c.getCreatedAt())
                             .build();
                 })

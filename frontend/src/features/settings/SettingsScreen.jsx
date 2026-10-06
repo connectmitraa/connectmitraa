@@ -1,14 +1,20 @@
 import { useAuth } from '../../context/AuthContext';
 import React, { useState, useEffect, useRef } from 'react';
-import { AlertCircle, ArrowLeft, Award, BarChart3, Bell, BookOpen, Briefcase, Building2, Camera, Check, CheckCircle, CheckCircle2, Clock, Code, Coins, Compass, Download, ExternalLink, Eye, EyeOff, FileText, Flame, Github, Globe, GraduationCap, Key, Lock, Mail, MapPin, Moon, Phone, Play, Plus, RefreshCw, Save, School, Search, Shield, Sun, Trash2, Trophy, Tv2, Upload, UploadCloud, User, X } from 'lucide-react';
+import { ProfileAPI } from '../../lib/api';
+import { useToast } from '../../context/ToastContext';
+import { AlertCircle, ArrowLeft, Award, BarChart3, Bell, BookOpen, Briefcase, Building2, Calendar, Camera, Check, CheckCircle, CheckCircle2, Clock, Code, Coins, Compass, Download, ExternalLink, Eye, EyeOff, FileText, Flame, FolderOpen, Github, Globe, GraduationCap, Key, Lock, Mail, MapPin, Moon, Phone, Play, Plus, RefreshCw, Save, School, Search, Shield, Sun, Trash2, Trophy, Tv2, Upload, UploadCloud, User, X } from 'lucide-react';
 import { getDefaultAvatarByGender, MALE_AVATAR_SVG, FEMALE_AVATAR_SVG, NEUTRAL_AVATAR_SVG } from '../../constants/avatars';
 import { AvatarChangeModal } from '../../components/modals/AvatarChangeModal';
 import { PhotoPreviewModal } from '../../components/modals/PhotoPreviewModal';
+import { StudentVerificationSection } from './StudentVerificationSection';
+import { MentoringPayoutSection } from './MentoringPayoutSection';
 
 export function SettingsScreen({ token, setActiveTab, theme, setTheme }) {
   const { user, profile: authProfile, updateProfileState, testAccounts } = useAuth();
+  const toast = useToast();
   const fileInputRef = useRef(null);
   const coverInputRef = useRef(null);
+  const resumeInputRef = useRef(null);
   const [customUrlInput, setCustomUrlInput] = useState('');
 
   // CLEAN VECTOR PRESETS ONLY (NO STRANGER PHOTOS)
@@ -21,8 +27,8 @@ export function SettingsScreen({ token, setActiveTab, theme, setTheme }) {
   const handlePhotoUpload = (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        alert("Image must be smaller than 5MB");
+      if (file.size > 8 * 1024 * 1024) {
+        toast.error("Image must be smaller than 8MB");
         return;
       }
       const reader = new FileReader();
@@ -32,6 +38,7 @@ export function SettingsScreen({ token, setActiveTab, theme, setTheme }) {
           const updated = { ...formData, avatarUrl: dataUrl };
           setFormData(updated);
           handleSaveAll(updated);
+          toast.success("Profile photo updated successfully!");
         }
       };
       reader.readAsDataURL(file);
@@ -42,7 +49,7 @@ export function SettingsScreen({ token, setActiveTab, theme, setTheme }) {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 8 * 1024 * 1024) {
-        alert("Cover image must be smaller than 8MB");
+        toast.error("Cover image must be smaller than 8MB");
         return;
       }
       const reader = new FileReader();
@@ -52,13 +59,32 @@ export function SettingsScreen({ token, setActiveTab, theme, setTheme }) {
           const updated = { ...formData, coverUrl: dataUrl };
           setFormData(updated);
           handleSaveAll(updated);
+          toast.success("Cover banner updated successfully!");
         }
       };
       reader.readAsDataURL(file);
     }
   };
+
+  const handleResumeUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error("Resume file must be smaller than 10MB");
+        return;
+      }
+      const updated = {
+        ...formData,
+        resumeFileName: file.name,
+        resumeUploadDate: 'Just now'
+      };
+      setFormData(updated);
+      handleSaveAll(updated);
+      toast.success(`Resume "${file.name}" uploaded successfully!`);
+    }
+  };
   
-  // Categorized navigation (Naukri & Professional Platform style with Persistence)
+  // Categorized navigation with persistence
   const [activeCategory, setActiveCategory] = useState(() => {
     return localStorage.getItem('studyloop_settings_category') || 'basic';
   });
@@ -80,7 +106,7 @@ export function SettingsScreen({ token, setActiveTab, theme, setTheme }) {
   const [formData, setFormData] = useState({
     fullName: currentProfile.fullName || 'Aarav Sharma',
     headline: currentProfile.headline || 'B.Tech CS @ IIT Madras • Java & DSA Peer Mentor • SIH Finalist',
-    bio: currentProfile.bio || '🎓 CS Major @ IIT Madras | 💻 Full-Stack & Java Mentor | 🚀 24 1:1 Classes Taught',
+    bio: currentProfile.bio || '🎓 CS Major @ IIT Madras | 💻 Full-Stack & Java Mentor • Peer Learning & Research',
     college: currentProfile.college || 'IIT Madras',
     department: currentProfile.department || 'Computer Science',
     year: currentProfile.year || 2,
@@ -90,7 +116,13 @@ export function SettingsScreen({ token, setActiveTab, theme, setTheme }) {
     avatarUrl: currentProfile.avatarUrl || '',
     bannerTheme: currentProfile.bannerTheme || 'royal-blue',
     walletBalance: currentProfile.walletBalance !== undefined ? currentProfile.walletBalance : 450,
-    hourlyRate: currentProfile.hourlyRate || 450,
+    hourlyRate: currentProfile.hourlyRate || 50,
+    upiId: currentProfile.upiId || 'aarav@oksbi',
+    freeDemoAvailable: currentProfile.freeDemoAvailable !== undefined ? currentProfile.freeDemoAvailable : true,
+    collegeEmail: currentProfile.collegeEmail || 'cs23b015@iitm.ac.in',
+    collegeIdCard: currentProfile.collegeIdCard || 'IITM-2023-CS-042',
+    verificationStatus: currentProfile.verificationStatus || 'VERIFIED',
+    targetGoal: currentProfile.targetGoal || '🚀 Placements & Referrals',
     coinRate: currentProfile.coinRate || 45,
     isAvailableForMentoring: currentProfile.isAvailableForMentoring !== undefined ? currentProfile.isAvailableForMentoring : true,
     teachingSkills: currentProfile.teachingSkills || ['Java', 'Algorithms', 'Data Structures', 'React', 'Spring Boot'],
@@ -349,7 +381,7 @@ export function SettingsScreen({ token, setActiveTab, theme, setTheme }) {
     handleSaveAll(nextForm);
   };
 
-  // Calculate LinkedIn / Naukri Profile Completeness in Percentage
+  // Calculate StudyLoop Profile Completeness in Percentage
   const calculateProfileStrength = () => {
     let score = 0;
     const items = [];
@@ -403,140 +435,50 @@ export function SettingsScreen({ token, setActiveTab, theme, setTheme }) {
 
   const profileStrength = calculateProfileStrength();
 
-  // Categories definition (Naukri style)
-  const categories = [
-    { id: 'basic', label: 'Personal & Identity', icon: <User size={16} />, badge: 'Core' },
-    { id: 'education', label: 'Education & Academics', icon: <GraduationCap size={16} />, count: (formData.educations || []).length },
-    { id: 'certifications', label: 'Certificates & Licenses', icon: <Award size={16} />, count: (formData.certifications || []).length, highlight: true },
-    { id: 'achievements', label: 'Honors & Hackathons', icon: <Trophy size={16} />, count: (formData.achievements || []).length },
-    { id: 'projects', label: 'Projects & Code Repos', icon: <Code size={16} />, count: (formData.projects || []).length },
-    { id: 'social', label: 'Social & Coding Links', icon: <Globe size={16} /> },
-    { id: 'resume', label: 'Resume & ATS Parser', icon: <FileText size={16} />, badge: '94% Match' },
-    { id: 'reach', label: 'Shorts Studio & Insights', icon: <BarChart3 size={16} />, badge: '14.8k Reach', isInsta: true },
-    { id: 'tutoring', label: '1:1 Mentoring & Rates', icon: <Coins size={16} /> },
-    { id: 'notifications', label: 'Alerts & Reminders', icon: <Bell size={16} /> },
-    { id: 'security', label: 'Privacy & Security', icon: <Shield size={16} /> },
+  // Structured Settings Categories with Logical Grouping
+  const categoryGroups = [
+    {
+      group: 'PROFILE & ACADEMICS',
+      icon: '👤',
+      items: [
+        { id: 'basic', label: 'Personal Portfolio & Bio', icon: <User size={16} />, badge: 'Core' },
+        { id: 'education', label: 'Education & Degrees', icon: <GraduationCap size={16} />, count: (formData.educations || []).length },
+        { id: 'projects', label: 'Projects & Code Repos', icon: <Code size={16} />, count: (formData.projects || []).length },
+        { id: 'social', label: 'Social & Coding Links', icon: <Globe size={16} /> },
+      ]
+    },
+    {
+      group: 'DOCUMENTS & VERIFICATION',
+      icon: '🛡️',
+      items: [
+        { id: 'verification', label: 'Student ID & Green Tick', icon: <CheckCircle2 size={16} />, badge: 'Verified 🎓', highlight: true },
+        { id: 'certifications', label: 'Verified Certifications', icon: <Award size={16} />, count: (formData.certifications || []).length, highlight: true },
+        { id: 'resume', label: 'Resume & ATS Parser', icon: <FileText size={16} />, badge: '94% Match' },
+      ]
+    },
+    {
+      group: '1:1 LIVE CLASSES & HISTORY',
+      icon: '🧑‍🏫',
+      items: [
+        { id: 'peer_classes', label: '1:1 Live Classes & History', icon: <Calendar size={16} />, badge: '24 Taught', highlight: true },
+        { id: 'tutoring', label: 'Mentoring Rates & Payouts', icon: <Coins size={16} /> },
+        { id: 'achievements', label: 'Honors & Hackathons', icon: <Trophy size={16} />, count: (formData.achievements || []).length },
+      ]
+    },
+    {
+      group: 'ACCOUNT & SECURITY',
+      icon: '🔒',
+      items: [
+        { id: 'security', label: 'Privacy & Security Controls', icon: <Shield size={16} />, badge: 'Zero-Leak' },
+        { id: 'notifications', label: 'Alerts & Reminders', icon: <Bell size={16} /> },
+      ]
+    }
   ];
 
-  // Instagram-style Creator & Reels Reach Analytics Data with Privacy Controls
-  const [reelAnalyticsData, setReelAnalyticsData] = useState([
-    {
-      id: 'reel-1',
-      title: '3 Tricks to solve Recursion fast ⚡ #Java #Algorithms',
-      views: 12450,
-      reachMembers: 8420,
-      watchTimeHours: 105.4,
-      avgWatchPct: 88.5,
-      likes: 654,
-      comments: 89,
-      saves: 210,
-      shares: 142,
-      nonFollowerReachPct: 68,
-      postedDate: 'Aug 24, 2026',
-      visibility: 'public',
-      allowComments: true,
-      allowTips: true,
-      thumbnail: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=600&auto=format&fit=crop&q=80'
-    },
-    {
-      id: 'reel-2',
-      title: 'Spring Boot @Transactional vs Manual Rollback in 60s 🚀 #SpringBoot',
-      views: 5820,
-      reachMembers: 4190,
-      watchTimeHours: 58.2,
-      avgWatchPct: 82.0,
-      likes: 342,
-      comments: 45,
-      saves: 130,
-      shares: 68,
-      nonFollowerReachPct: 54,
-      postedDate: 'Aug 20, 2026',
-      visibility: 'campus',
-      allowComments: true,
-      allowTips: true,
-      thumbnail: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=600&auto=format&fit=crop&q=80'
-    },
-    {
-      id: 'reel-3',
-      title: 'Dynamic Programming: 0/1 Knapsack Memory Trick 💡 #DSA',
-      views: 3410,
-      reachMembers: 2210,
-      watchTimeHours: 31.0,
-      avgWatchPct: 79.4,
-      likes: 184,
-      comments: 28,
-      saves: 94,
-      shares: 41,
-      nonFollowerReachPct: 45,
-      postedDate: 'Aug 14, 2026',
-      visibility: 'public',
-      allowComments: true,
-      allowTips: true,
-      thumbnail: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=600&auto=format&fit=crop&q=80'
-    }
-  ]);
-
-  const [showUploadShortModal, setShowUploadShortModal] = useState(false);
-  const [newShortForm, setNewShortForm] = useState({
-    title: '',
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-software-developer-working-on-code-42867-large.mp4',
-    visibility: 'public',
-    category: 'Algorithms',
-    allowComments: true,
-    allowTips: true,
-    thumbnail: 'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?w=600&auto=format&fit=crop&q=80'
-  });
-
-  const handleCreateShort = (e) => {
-    e.preventDefault();
-    if (!newShortForm.title.trim()) return;
-    const newEntry = {
-      id: `reel-${Date.now()}`,
-      title: newShortForm.title.trim(),
-      views: 1,
-      reachMembers: 1,
-      watchTimeHours: 0.1,
-      avgWatchPct: 100,
-      likes: 0,
-      comments: 0,
-      saves: 0,
-      shares: 0,
-      nonFollowerReachPct: 0,
-      postedDate: 'Just now',
-      visibility: newShortForm.visibility,
-      allowComments: newShortForm.allowComments,
-      allowTips: newShortForm.allowTips,
-      thumbnail: newShortForm.thumbnail
-    };
-    setReelAnalyticsData(prev => [newEntry, ...prev]);
-    setShowUploadShortModal(false);
-    setNewShortForm({
-      title: '',
-      videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-software-developer-working-on-code-42867-large.mp4',
-      visibility: 'public',
-      category: 'Algorithms',
-      allowComments: true,
-      allowTips: true,
-      thumbnail: 'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?w=600&auto=format&fit=crop&q=80'
-    });
-    setSaveToast("🎬 Concept Short published successfully with your custom privacy settings!");
-    setTimeout(() => setSaveToast(null), 3500);
-  };
-
-  const handleUpdateReelVisibility = (reelId, nextVis) => {
-    setReelAnalyticsData(prev => prev.map(r => r.id === reelId ? { ...r, visibility: nextVis } : r));
-    setSaveToast(`🔒 Visibility updated to "${nextVis.toUpperCase()}"!`);
-    setTimeout(() => setSaveToast(null), 3000);
-  };
-
-  const handleDeleteReel = (reelId) => {
-    setReelAnalyticsData(prev => prev.filter(r => r.id !== reelId));
-    setSaveToast("🗑️ Concept Short deleted from creator studio.");
-    setTimeout(() => setSaveToast(null), 3000);
-  };
+  const categories = categoryGroups.flatMap(g => g.items);
 
   return (
-    <div style={{ minHeight: '100vh', width: '100%', backgroundColor: 'var(--bg-primary)', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ width: '100%', backgroundColor: 'var(--bg-primary)', display: 'flex', flexDirection: 'column' }}>
       
       {/* TOAST FEEDBACK NOTIFICATION */}
       {saveToast && (
@@ -562,179 +504,209 @@ export function SettingsScreen({ token, setActiveTab, theme, setTheme }) {
         </div>
       )}
 
-      {/* 1. DEDICATED SEPARATE PAGE TOP NAVIGATION HEADER */}
+      {/* ── TOP NAV (slim 52px) ──────────────────────────────────────────────── */}
       <header style={{
-        position: 'sticky',
-        top: 0,
-        zIndex: 100,
+        position: 'sticky', top: 0, zIndex: 100,
         backgroundColor: 'var(--bg-secondary)',
         borderBottom: '1px solid var(--border-color)',
-        padding: '0.75rem 2.5rem',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        boxShadow: 'var(--shadow-sm)',
-        backdropFilter: 'blur(10px)'
+        padding: '0 20px',
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        height: '52px', backdropFilter: 'blur(12px)'
       }}>
-        {/* BRAND LOGO + DEDICATED STUDENT PROFILE BADGE */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-          <div 
-            onClick={() => setActiveTab('landing')} 
-            style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', cursor: 'pointer' }}
-            title="Return to Home Hub"
-          >
-            <div style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '10px',
-              background: 'var(--accent-gradient)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: 'var(--shadow-sm)'
-            }}>
-              <span className="font-serif" style={{ color: '#ffffff', fontWeight: 800, fontSize: '1.1rem' }}>SL</span>
-            </div>
-            <div>
-              <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
-                StudyLoop
-              </div>
-              <div style={{ fontSize: '0.5625rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.14em', textTransform: 'uppercase' }}>
-                STUDENT PROFILE
-              </div>
-            </div>
+        {/* Logo */}
+        <div
+          onClick={() => { if (setActiveTab) setActiveTab('landing'); }}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '8px',
+            cursor: 'pointer'
+          }}
+          title="← Return to Campus Home"
+        >
+          <div style={{
+            width: '32px', height: '32px', borderRadius: '9px',
+            background: 'var(--accent-gradient)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 2px 8px rgba(0,102,255,0.25)', flexShrink: 0
+          }}>
+            <span style={{ color: '#fff', fontWeight: 900, fontSize: '0.9rem' }}>SL</span>
           </div>
-
-          <div style={{ width: '1px', height: '24px', backgroundColor: 'var(--border-color)' }}></div>
-
-          <button 
-            onClick={() => setActiveTab('landing')} 
-            className="btn btn-secondary"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              fontWeight: 700,
-              fontSize: '0.8125rem',
-              padding: '0.45rem 1rem',
-              backgroundColor: 'var(--bg-tertiary)',
-              border: '1px solid var(--border-color)',
-              borderRadius: 'var(--radius-sm)'
-            }}
-          >
-            <ArrowLeft size={15} /> Back to Home Hub
-          </button>
+          <div style={{ textAlign: 'left' }}>
+            <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em', lineHeight: 1.1 }}>StudyLoop</div>
+            <div style={{ fontSize: '0.5rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Scholar Profile</div>
+          </div>
         </div>
 
-        {/* RIGHT: CAMPUS BADGE + THEME TOGGLE + USER CHIP + PRIMARY SAVE BUTTON */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
-          <span className="tag tag-accent" style={{ fontSize: '0.75rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
-            <GraduationCap size={13} /> {formData.college || 'IIT Madras'}
+        {/* Center: Profile Strength */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '5px 12px', borderRadius: '999px', backgroundColor: 'var(--bg-tertiary)', border: '1px solid var(--border-color)' }}>
+          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Profile</span>
+          <div style={{ width: '60px', height: '5px', backgroundColor: 'var(--border-color)', borderRadius: '999px', overflow: 'hidden' }}>
+            <div style={{ width: `${profileStrength.score}%`, height: '100%', backgroundColor: profileStrength.score === 100 ? '#10b981' : 'var(--accent-primary)', borderRadius: '999px', transition: 'width 0.6s ease' }} />
+          </div>
+          <span style={{ fontWeight: 900, fontSize: '0.78rem', color: profileStrength.score === 100 ? '#10b981' : 'var(--accent-primary)' }}>{profileStrength.score}%</span>
+          <span style={{ fontSize: '0.625rem', fontWeight: 800, padding: '2px 7px', borderRadius: '999px', backgroundColor: profileStrength.score === 100 ? 'rgba(16,185,129,0.12)' : 'var(--accent-light)', color: profileStrength.score === 100 ? '#059669' : 'var(--accent-primary)' }}>
+            {profileStrength.levelLabel.split(' ')[0]}
           </span>
+        </div>
 
+        {/* Right: Theme + Discard Changes + Save All Changes */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px', marginRight: '4px' }}>
+            <GraduationCap size={12} style={{ color: 'var(--accent-primary)' }} />
+            {formData.college || 'IIT Madras'}
+          </span>
           {setTheme && (
             <button
               onClick={() => setTheme(prev => prev === 'light' ? 'dark' : 'light')}
-              className="btn-icon"
-              style={{
-                backgroundColor: 'var(--bg-tertiary)',
-                width: '36px',
-                height: '36px',
-                borderRadius: '50%',
-                border: '1px solid var(--border-color)'
-              }}
-              title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+              style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', borderRadius: '50%', width: '32px', height: '32px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}
+              title="Toggle Theme"
             >
-              {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+              {theme === 'light' ? <Moon size={14} /> : <Sun size={14} />}
             </button>
           )}
-
-          <div 
+          {saveToast && (
+            <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+              ✓ Saved
+            </span>
+          )}
+          <button
+            onClick={() => handleSaveAll()}
+            disabled={isSaving}
             style={{
+              padding: '6px 16px',
+              borderRadius: '8px',
+              border: 'none',
+              background: 'var(--accent-gradient)',
+              color: '#ffffff',
+              fontSize: '0.78rem',
+              fontWeight: 800,
+              cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.625rem',
-              padding: '0.3rem 0.75rem',
-              borderRadius: 'var(--radius-full)',
-              backgroundColor: 'var(--bg-tertiary)',
-              border: '1px solid var(--border-color)'
+              gap: '6px',
+              boxShadow: '0 2px 8px rgba(0,102,255,0.3)',
+              transition: 'all 0.15s ease'
             }}
           >
-            <img 
-              src={getDefaultAvatarByGender(formData.gender, formData.avatarUrl)} 
-              alt="Avatar" 
-              style={{ width: '28px', height: '28px', borderRadius: '50%', border: '2px solid #10b981', objectFit: 'cover' }} 
-            />
-            <div style={{ textAlign: 'left' }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                {formData.fullName || 'Aarav Sharma'}
-              </div>
-              <div style={{ fontSize: '0.625rem', color: '#10b981', fontWeight: 700 }}>
-                {profileStrength.score === 100 ? '✓ 100% Completed' : `${profileStrength.score}% Completed`}
-              </div>
-            </div>
-          </div>
-
-          <button 
-            onClick={() => handleSaveAll()} 
-            disabled={isSaving}
-            className="btn btn-accent"
-            style={{
-              fontWeight: 800,
-              fontSize: '0.8125rem',
-              padding: '0.5rem 1.25rem',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.5rem'
-            }}
-          >
-            {isSaving ? <RefreshCw size={14} className="spin" /> : <Check size={15} />}
-            {isSaving ? 'Saving...' : 'Save All Changes'}
+            {isSaving ? <RefreshCw size={13} className="spin" /> : <Save size={13} />}
+            <span>{isSaving ? 'Saving...' : 'Save All Changes'}</span>
           </button>
         </div>
       </header>
 
-      {/* 2. SUBHEADER: STREAMLINED PROFILE STRENGTH PROGRESS BAR */}
-      <div style={{
-        backgroundColor: 'var(--bg-secondary)',
-        borderBottom: '1px solid var(--border-color)',
-        padding: '0.625rem 2.5rem',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        flexWrap: 'wrap',
-        gap: '1rem'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-            🎯 Profile Strength: <strong style={{ color: profileStrength.score === 100 ? '#10b981' : 'var(--accent-primary)' }}>{profileStrength.score}%</strong>
-          </span>
-          <span className={`tag ${profileStrength.levelBadge}`} style={{ fontSize: '0.6875rem', fontWeight: 800 }}>
-            {profileStrength.levelLabel}
-          </span>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem', flex: 1, maxWidth: '420px' }}>
-          <div style={{ flex: 1, height: '8px', backgroundColor: 'var(--bg-tertiary)', borderRadius: 'var(--radius-full)', overflow: 'hidden' }}>
-            <div style={{ 
-              width: `${profileStrength.score}%`, 
-              height: '100%', 
-              backgroundColor: profileStrength.score === 100 ? '#10b981' : 'var(--accent-primary)',
-              borderRadius: 'var(--radius-full)',
-              transition: 'width 0.3s ease' 
-            }}></div>
-          </div>
-          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: profileStrength.score === 100 ? '#10b981' : 'var(--accent-primary)' }}>
-            {profileStrength.score}%
-          </span>
-        </div>
-      </div>
-
       {/* 3. MAIN 2-COLUMN CATEGORIZED LAYOUT (FULL-WIDTH SCROLLABLE STANDALONE PAGE) */}
-      <main style={{ flex: 1, padding: '2rem 2.5rem 4rem 2.5rem', width: '100%', maxWidth: '1440px', margin: '0 auto' }}>
+      <main style={{ flex: 1, padding: '1.25rem 0 4rem 0', width: '100%', maxWidth: '1200px', margin: '0 auto' }}>
         
-        {/* 1. MASTER STUDENT PROFILE HERO CARD */}
-        <div className="card-premium" style={{ marginBottom: '2rem', overflow: 'hidden', padding: 0, border: '1px solid var(--border-color)' }}>
+        {/* TOP NAVIGATION & MODE SWITCHER */}
+        <div style={{ marginBottom: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+          <button
+            onClick={() => setActiveTab('landing')}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '9px 18px',
+              borderRadius: '12px',
+              border: '1.5px solid var(--border-color)',
+              backgroundColor: 'var(--bg-card)',
+              color: 'var(--text-primary)',
+              fontSize: '0.875rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              boxShadow: '0 4px 14px rgba(0,0,0,0.06)',
+              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)';
+              e.currentTarget.style.transform = 'translateX(-3px)';
+              e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,102,255,0.18)';
+              e.currentTarget.style.borderColor = 'var(--accent-primary)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.backgroundColor = 'var(--bg-card)';
+              e.currentTarget.style.transform = 'translateX(0)';
+              e.currentTarget.style.boxShadow = '0 4px 14px rgba(0,0,0,0.06)';
+              e.currentTarget.style.borderColor = 'var(--border-color)';
+            }}
+            title="← Return to Campus Home"
+          >
+            <ArrowLeft size={18} style={{ color: 'var(--accent-primary)', strokeWidth: 2.5 }} />
+            <span>Back to Home</span>
+          </button>
+
+          {/* DEDICATED SECTIONS QUICK SWITCHER */}
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <button
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '7px 14px',
+                borderRadius: '10px',
+                border: '1.5px solid var(--accent-primary)',
+                backgroundColor: 'var(--accent-light)',
+                color: 'var(--accent-primary)',
+                fontSize: '0.8125rem',
+                fontWeight: 800,
+                cursor: 'default'
+              }}
+            >
+              <span>👤 Profile & Credentials</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('classes_history')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '7px 14px',
+                borderRadius: '10px',
+                border: '1px solid var(--border-color)',
+                backgroundColor: 'var(--bg-card)',
+                color: 'var(--text-primary)',
+                fontSize: '0.8125rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#10b981'; e.currentTarget.style.color = '#10b981'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border-color)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+              title="Open dedicated 1:1 Live Classes & Teaching History page"
+            >
+              <span>🧑‍🏫 1:1 Classes History</span>
+              <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.12)', padding: '1px 6px', borderRadius: '4px' }}>
+                24 Taught
+              </span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('privacy_settings')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '7px 14px',
+                borderRadius: '10px',
+                border: '1px solid var(--border-color)',
+                backgroundColor: 'var(--bg-card)',
+                color: 'var(--text-primary)',
+                fontSize: '0.8125rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent-primary)'; e.currentTarget.style.color = 'var(--accent-primary)'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border-color)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+              title="Open dedicated Campus Privacy & Security Settings center"
+            >
+              <Shield size={14} style={{ color: 'var(--accent-primary)' }} />
+              <span>Campus Privacy & Security</span>
+            </button>
+          </div>
+        </div>
+
+        {/* 1. MASTER STUDENT PROFILE GRAND HERO CARD */}
+        <div className="card-premium" style={{ marginBottom: '1.75rem', overflow: 'hidden', padding: 0, border: '1px solid var(--border-color)', borderRadius: '20px' }}>
           {/* COVER BANNER */}
           <div style={{
             height: '180px',
@@ -809,7 +781,7 @@ export function SettingsScreen({ token, setActiveTab, theme, setTheme }) {
                     }} 
                   />
 
-                  {/* TOP-RIGHT BADGE: 100% TICK MARK OR PERCENTAGE */}
+                  {/* TOP-RIGHT BADGE: 100% TICK MARK */}
                   <div
                     title={profileStrength.score === 100 ? "100% Profile Completed" : `${profileStrength.score}% Profile Completed`}
                     style={{
@@ -864,16 +836,51 @@ export function SettingsScreen({ token, setActiveTab, theme, setTheme }) {
                 </button>
               </div>
 
-              {/* QUICK ACTION BUTTONS */}
-              <div style={{ display: 'flex', gap: '0.625rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                <button 
-                  onClick={() => handleSaveAll()} 
-                  disabled={isSaving}
-                  className="btn btn-accent"
-                  style={{ fontSize: '0.8125rem', padding: '0.5rem 1.25rem', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+              {/* HERO QUICK ACTIONS: SAVE ALL CHANGES & GREEN TICK */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px', flexWrap: 'wrap' }}>
+                <button
+                  onClick={() => setActiveCategory('verification')}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: '12px',
+                    border: '1px solid var(--border-color)',
+                    backgroundColor: 'var(--bg-tertiary)',
+                    color: 'var(--text-primary)',
+                    fontWeight: 700,
+                    fontSize: '0.8125rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    transition: 'all 0.2s ease'
+                  }}
+                  title="Complete verification steps for Green Tick"
                 >
-                  {isSaving ? <RefreshCw size={14} className="spin" /> : <Check size={15} />}
-                  {isSaving ? 'Saving...' : 'Save All Changes'}
+                  <Shield size={15} style={{ color: '#10b981' }} />
+                  <span>Get Green Tick</span>
+                </button>
+
+                <button
+                  onClick={() => handleSaveAll()}
+                  disabled={isSaving}
+                  style={{
+                    padding: '8px 22px',
+                    borderRadius: '12px',
+                    border: 'none',
+                    background: 'var(--accent-gradient)',
+                    color: '#ffffff',
+                    fontWeight: 800,
+                    fontSize: '0.875rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    boxShadow: '0 4px 16px rgba(0, 102, 255, 0.35)',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  {isSaving ? <RefreshCw size={15} className="spin" /> : <Save size={15} />}
+                  <span>{isSaving ? 'Saving...' : 'Save All Changes'}</span>
                 </button>
               </div>
 
@@ -907,7 +914,7 @@ export function SettingsScreen({ token, setActiveTab, theme, setTheme }) {
                   {formData.location || 'Chennai, Tamil Nadu, India'}
                 </span>
                 <span style={{ color: 'var(--warning-color)', fontWeight: 700 }}>
-                  ⭐ 4.9 Tutor Rating (24 Classes Taught)
+                  ⭐ 4.9 Scholar Trust Rating • Verified Campus Scholar
                 </span>
               </div>
 
@@ -936,20 +943,31 @@ export function SettingsScreen({ token, setActiveTab, theme, setTheme }) {
               </div>
 
               {/* COUNTERS STRIP */}
-              <div style={{ display: 'flex', gap: '2rem', fontSize: '0.9375rem', color: 'var(--text-primary)', marginTop: '0.75rem', borderTop: '1px solid var(--border-color)', paddingTop: '0.875rem', flexWrap: 'wrap' }}>
-                <div><strong>3</strong> <span style={{ color: 'var(--text-secondary)' }}>posts</span></div>
-                <div><strong>2</strong> <span style={{ color: 'var(--text-secondary)' }}>shorts</span></div>
-                <div><strong>148</strong> <span style={{ color: 'var(--text-secondary)' }}>followers</span></div>
-                <div><strong>92</strong> <span style={{ color: 'var(--text-secondary)' }}>following</span></div>
-                <div style={{ color: 'var(--accent-primary)', fontWeight: 700 }}>
-                  ⚡ 680 XP • Lvl 4
-                </div>
+              <div style={{ display: 'flex', gap: '0', fontSize: '0.875rem', color: 'var(--text-primary)', marginTop: '0.75rem', borderTop: '1px solid var(--border-color)', paddingTop: '0.875rem', flexWrap: 'wrap' }}>
+                {[
+                  { label: 'Posts', value: 3 },
+                  { label: 'Shorts', value: 2 },
+                  { label: 'Followers', value: 148 },
+                  { label: 'Following', value: 92 },
+                  { label: 'Connections', value: authProfile?.connections || 148, accent: true },
+                  { label: 'XP · Lvl 4', value: formData.xp || 680, accent: true },
+                ].map((stat, i) => (
+                  <div key={i} style={{
+                    paddingRight: '1.5rem', marginRight: '1.5rem',
+                    borderRight: i < 5 ? '1px solid var(--border-color)' : 'none',
+                    paddingTop: '0.25rem', paddingBottom: '0.25rem',
+                    color: stat.accent ? 'var(--accent-primary)' : 'inherit'
+                  }}>
+                    <strong style={{ fontSize: '0.9375rem' }}>{stat.value}</strong>{' '}
+                    <span style={{ color: stat.accent ? 'var(--accent-primary)' : 'var(--text-secondary)' }}>{stat.label}</span>
+                  </div>
+                ))}
               </div>
 
               {/* ABOUT / BIO */}
               <div style={{ marginTop: '0.5rem' }}>
                 <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
-                  {formData.bio || '🎓 CS Major @ IIT Madras | 💻 Full-Stack & Java Mentor | 🚀 24 1:1 Classes Taught'}
+                  {formData.bio || '🎓 CS Major @ IIT Madras | 💻 Full-Stack & Java Mentor • Peer Learning & Research'}
                 </p>
               </div>
 
@@ -970,17 +988,199 @@ export function SettingsScreen({ token, setActiveTab, theme, setTheme }) {
           </div>
         </div>
 
-        {/* 2. MAIN 2-COLUMN CATEGORIZED LAYOUT (NAUKRI & ENTERPRISE PORTAL STYLE) */}
+        {/* ═══════════════════════════════════════════════════════════════
+          GAMING QUEST FLOWCHART ROADMAP — Green Tick & Scholar Journey
+        ═══════════════════════════════════════════════════════════════ */}
+        <div className="card-premium" style={{
+          marginBottom: '1.5rem',
+          padding: '1.15rem 1.5rem',
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border-color)',
+          borderRadius: '16px',
+          boxShadow: 'var(--shadow-sm)',
+          position: 'relative',
+          overflow: 'hidden'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+              <span style={{ fontSize: '1.25rem' }}>🎮</span>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <h2 className="font-serif" style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+                    Scholar Quest & Green Tick Pathway
+                  </h2>
+                  <span style={{
+                    fontSize: '0.6875rem',
+                    fontWeight: 800,
+                    padding: '2px 8px',
+                    borderRadius: '999px',
+                    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                    color: '#10b981',
+                    border: '1px solid rgba(16, 185, 129, 0.3)'
+                  }}>
+                    🛡️ Green Tick Ready
+                  </span>
+                </div>
+                <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: '0.15rem 0 0 0' }}>
+                  Complete all milestone quests to unlock Verified Scholar Green Tick & 1:1 Peer Mentoring.
+                </p>
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent-primary)', background: 'var(--bg-tertiary)', padding: '0.35rem 0.85rem', borderRadius: '999px' }}>
+              <span>🏆 Total Rewards:</span>
+              <span style={{ color: '#10b981' }}>+750 XP</span>
+              <span>•</span>
+              <span style={{ color: '#f59e0b' }}>🪙 45 Coins</span>
+            </div>
+          </div>
+
+          {/* FLOWCHART INTERACTIVE STEPPER */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
+            gap: '0.875rem',
+            position: 'relative'
+          }}>
+            {[
+              {
+                step: '1',
+                icon: '📸',
+                title: 'Photo & Intro',
+                desc: 'Avatar & bio set',
+                xp: '+50 XP',
+                status: 'done',
+                cat: 'basic'
+              },
+              {
+                step: '2',
+                icon: '💼',
+                title: 'Projects & Work',
+                desc: 'WebRTC & Code Repos',
+                xp: '+100 XP',
+                status: 'done',
+                cat: 'projects'
+              },
+              {
+                step: '3',
+                icon: '🎓',
+                title: 'College Verified',
+                desc: 'IIT Madras CS Dept',
+                xp: '+150 XP',
+                status: 'done',
+                cat: 'education'
+              },
+              {
+                step: '4',
+                icon: '🛡️',
+                title: 'Student ID Card',
+                desc: 'Green Tick Ready',
+                xp: '+200 XP',
+                status: 'active',
+                cat: 'verification'
+              },
+              {
+                step: '5',
+                icon: '🧑‍🏫',
+                title: '1:1 Peer Mentor',
+                desc: 'Earn ₹3,600+ / mo',
+                xp: '+250 XP',
+                status: 'unlocked',
+                cat: 'peer_classes'
+              }
+            ].map((q, idx) => {
+              const isDone = q.status === 'done';
+              const isActive = q.status === 'active';
+              return (
+                <div
+                  key={idx}
+                  onClick={() => setActiveCategory(q.cat)}
+                  style={{
+                    padding: '0.875rem 0.75rem',
+                    borderRadius: '14px',
+                    background: isDone 
+                      ? 'rgba(16, 185, 129, 0.06)' 
+                      : (isActive ? 'rgba(0, 102, 255, 0.08)' : 'var(--bg-tertiary)'),
+                    border: isDone 
+                      ? '1.5px solid rgba(16, 185, 129, 0.35)' 
+                      : (isActive ? '2px solid var(--accent-primary)' : '1px solid var(--border-color)'),
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    position: 'relative',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.25rem'
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                  title={`Click to open ${q.title} settings`}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{
+                      width: '28px',
+                      height: '28px',
+                      borderRadius: '8px',
+                      backgroundColor: isDone ? '#10b981' : (isActive ? 'var(--accent-primary)' : 'var(--border-color)'),
+                      color: '#ffffff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '0.875rem',
+                      fontWeight: 800
+                    }}>
+                      {isDone ? '✓' : q.icon}
+                    </div>
+                    <span style={{
+                      fontSize: '0.6875rem',
+                      fontWeight: 800,
+                      padding: '1px 6px',
+                      borderRadius: '6px',
+                      backgroundColor: isDone ? 'rgba(16, 185, 129, 0.15)' : 'rgba(0, 102, 255, 0.12)',
+                      color: isDone ? '#10b981' : 'var(--accent-primary)'
+                    }}>
+                      {q.xp}
+                    </span>
+                  </div>
+
+                  <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '0.2rem' }}>
+                    {q.title}
+                  </div>
+                  <div style={{ fontSize: '0.6875rem', color: 'var(--text-secondary)' }}>
+                    {q.desc}
+                  </div>
+
+                  <div style={{ marginTop: '0.25rem', paddingTop: '0.25rem', borderTop: '1px dashed var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{
+                      fontSize: '0.625rem',
+                      fontWeight: 700,
+                      color: isDone ? '#10b981' : (isActive ? 'var(--accent-primary)' : 'var(--text-muted)')
+                    }}>
+                      {isDone ? '✅ Claimed' : (isActive ? '⚡ In Progress' : '🔓 Unlocked')}
+                    </span>
+                    <span style={{ fontSize: '0.625rem', color: 'var(--text-muted)' }}>Edit →</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 2. MAIN 2-COLUMN CATEGORIZED SETTINGS LAYOUT */}
         <div className="settings-responsive-layout">
         
         {/* LEFT COLUMN: CATEGORIES SIDEBAR */}
-        <div className="card-premium" style={{ padding: '1rem', position: 'sticky', top: '1.5rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', position: 'sticky', top: '4.5rem' }}>
           
-          <div style={{ padding: '0.5rem 0.75rem 0.75rem 0.75rem', borderBottom: '1px solid var(--border-color)', marginBottom: '0.75rem' }}>
-            <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>
-              SETTINGS CATEGORIES
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--bg-tertiary)', padding: '0.4rem 0.75rem', borderRadius: 'var(--radius-sm)' }}>
+          {/* CATEGORIES SIDEBAR WITH LOGICAL GROUPS */}
+          <div className="card-premium" style={{ padding: '0.875rem' }}>
+          
+          <div style={{ padding: '0.35rem 0.5rem 0.65rem 0.5rem', borderBottom: '1px solid var(--border-color)', marginBottom: '0.65rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--bg-tertiary)', padding: '0.45rem 0.75rem', borderRadius: 'var(--radius-sm)' }}>
               <Search size={14} style={{ color: 'var(--text-muted)' }} />
               <input 
                 type="text" 
@@ -992,69 +1192,73 @@ export function SettingsScreen({ token, setActiveTab, theme, setTheme }) {
             </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
             {categories
               .filter(cat => cat.label.toLowerCase().includes(searchFilter.toLowerCase()))
+              .filter(cat => cat.id !== 'peer_classes') // peer_classes is a dedicated separate page
               .map(cat => {
-                const isActive = activeCategory === cat.id;
-                return (
-                  <button
-                    key={cat.id}
-                    onClick={() => setActiveCategory(cat.id)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      width: '100%',
-                      padding: '0.65rem 0.875rem',
-                      borderRadius: 'var(--radius-sm)',
-                      border: 'none',
-                      backgroundColor: isActive ? 'var(--accent-primary)' : 'transparent',
-                      color: isActive ? '#ffffff' : 'var(--text-primary)',
-                      fontWeight: isActive ? 700 : 600,
-                      fontSize: '0.8125rem',
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                      transition: 'all 0.15s ease'
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
-                      <span style={{ color: isActive ? '#ffffff' : 'var(--accent-primary)' }}>{cat.icon}</span>
-                      <span>{cat.label}</span>
-                    </div>
+              const isActive = activeCategory === cat.id;
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => setActiveCategory(cat.id)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    width: '100%',
+                    padding: '0.6rem 0.75rem',
+                    borderRadius: '10px',
+                    border: 'none',
+                    backgroundColor: isActive ? 'var(--accent-primary)' : 'transparent',
+                    color: isActive ? '#ffffff' : 'var(--text-primary)',
+                    fontWeight: isActive ? 700 : 600,
+                    fontSize: '0.8125rem',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    transition: 'all 0.15s ease'
+                  }}
+                  onMouseEnter={e => { if (!isActive) e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'; }}
+                  onMouseLeave={e => { if (!isActive) e.currentTarget.style.backgroundColor = 'transparent'; }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <span style={{ color: isActive ? '#ffffff' : 'var(--accent-primary)', flexShrink: 0 }}>{cat.icon}</span>
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cat.label}</span>
+                  </div>
 
-                    {cat.badge && (
-                      <span style={{
-                        fontSize: '0.6875rem',
-                        fontWeight: 700,
-                        padding: '0.15rem 0.5rem',
-                        borderRadius: 'var(--radius-full)',
-                        backgroundColor: isActive ? 'rgba(255,255,255,0.25)' : (cat.isInsta ? 'rgba(236, 72, 153, 0.15)' : 'var(--bg-tertiary)'),
-                        color: isActive ? '#ffffff' : (cat.isInsta ? '#ec4899' : 'var(--accent-primary)')
-                      }}>
-                        {cat.badge}
-                      </span>
-                    )}
+                  {cat.badge && (
+                    <span style={{
+                      fontSize: '0.65rem',
+                      fontWeight: 700,
+                      padding: '0.12rem 0.45rem',
+                      borderRadius: 'var(--radius-full)',
+                      backgroundColor: isActive ? 'rgba(255,255,255,0.25)' : 'var(--bg-tertiary)',
+                      color: isActive ? '#ffffff' : '#10b981',
+                      flexShrink: 0
+                    }}>
+                      {cat.badge}
+                    </span>
+                  )}
 
-                    {cat.count !== undefined && (
-                      <span style={{
-                        fontSize: '0.6875rem',
-                        fontWeight: 700,
-                        padding: '0.15rem 0.45rem',
-                        borderRadius: 'var(--radius-full)',
-                        backgroundColor: isActive ? 'rgba(255,255,255,0.25)' : 'var(--bg-tertiary)',
-                        color: isActive ? '#ffffff' : 'var(--text-secondary)'
-                      }}>
-                        {cat.count}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
+                  {cat.count !== undefined && (
+                    <span style={{
+                      fontSize: '0.65rem',
+                      fontWeight: 700,
+                      padding: '0.12rem 0.4rem',
+                      borderRadius: 'var(--radius-full)',
+                      backgroundColor: isActive ? 'rgba(255,255,255,0.25)' : 'var(--bg-tertiary)',
+                      color: isActive ? '#ffffff' : 'var(--text-secondary)',
+                      flexShrink: 0
+                    }}>
+                      {cat.count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
 
-
-
+        </div>
         </div>
 
         {/* RIGHT COLUMN: ACTIVE CATEGORY CONTENT PANEL */}
@@ -1258,106 +1462,150 @@ export function SettingsScreen({ token, setActiveTab, theme, setTheme }) {
                 </div>
               </div>
 
-              {/* FORM FIELDS */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
-                <div>
-                  <label className="label">Full Legal / Display Name *</label>
-                  <input 
-                    type="text" 
-                    className="input" 
-                    value={formData.fullName} 
-                    onChange={e => setFormData({ ...formData, fullName: e.target.value })} 
-                    placeholder="e.g. Aarav Sharma" 
-                    required 
-                  />
-                </div>
+              {/* STRUCTURED FORM SECTIONS */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginTop: '1.5rem' }}>
+                
+                {/* 1. BASIC IDENTITY */}
+                <div style={{ padding: '1.25rem', borderRadius: '14px', background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                    <div style={{ fontWeight: 800, fontSize: '0.9375rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>👤</span> Basic Student Information
+                    </div>
+                    <span style={{ fontSize: '0.6875rem', fontWeight: 800, padding: '2px 7px', borderRadius: '6px', background: 'rgba(16,185,129,0.15)', color: '#10b981' }}>
+                      +25 XP
+                    </span>
+                  </div>
 
-                <div>
-                  <label className="label">Pronouns</label>
-                  <input 
-                    type="text" 
-                    className="input" 
-                    value={formData.pronouns} 
-                    onChange={e => setFormData({ ...formData, pronouns: e.target.value })} 
-                    placeholder="e.g. He/Him, She/Her, They/Them" 
-                  />
-                </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+                    <div>
+                      <label className="label">Full Legal / Display Name *</label>
+                      <input 
+                        type="text" 
+                        className="input" 
+                        value={formData.fullName} 
+                        onChange={e => setFormData({ ...formData, fullName: e.target.value })} 
+                        placeholder="e.g. Aarav Sharma" 
+                        required 
+                      />
+                    </div>
 
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <label className="label">Professional Student Headline *</label>
-                  <input 
-                    type="text" 
-                    className="input" 
-                    value={formData.headline} 
-                    onChange={e => setFormData({ ...formData, headline: e.target.value })} 
-                    placeholder="e.g. B.Tech CS @ IIT Madras • Java & DSA Peer Mentor • SIH Finalist" 
-                    required 
-                  />
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                    Tip: Mention your major, university, and core strengths like peer mentoring or hackathon awards.
+                    <div>
+                      <label className="label">Pronouns</label>
+                      <input 
+                        type="text" 
+                        className="input" 
+                        value={formData.pronouns} 
+                        onChange={e => setFormData({ ...formData, pronouns: e.target.value })} 
+                        placeholder="e.g. He/Him, She/Her, They/Them" 
+                      />
+                    </div>
+
+                    <div>
+                      <label className="label">City & Country</label>
+                      <input 
+                        type="text" 
+                        className="input" 
+                        value={formData.location} 
+                        onChange={e => setFormData({ ...formData, location: e.target.value })} 
+                        placeholder="e.g. Chennai, Tamil Nadu, India" 
+                      />
+                    </div>
                   </div>
                 </div>
 
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <label className="label">About / Student Bio</label>
-                  <textarea 
-                    className="input" 
-                    style={{ minHeight: '90px' }} 
-                    value={formData.bio} 
-                    onChange={e => setFormData({ ...formData, bio: e.target.value })} 
-                    placeholder="Brief description about your studies, passions, and mentoring background..." 
-                  />
+                {/* 2. CAMPUS & ACADEMICS */}
+                <div style={{ padding: '1.25rem', borderRadius: '14px', background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                    <div style={{ fontWeight: 800, fontSize: '0.9375rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>🎓</span> College & Degree Details
+                    </div>
+                    <span style={{ fontSize: '0.6875rem', fontWeight: 800, padding: '2px 7px', borderRadius: '6px', background: 'rgba(0,102,255,0.12)', color: 'var(--accent-primary)' }}>
+                      +50 XP
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+                    <div>
+                      <label className="label">College / Institute *</label>
+                      <input 
+                        type="text" 
+                        className="input" 
+                        value={formData.college} 
+                        onChange={e => setFormData({ ...formData, college: e.target.value })} 
+                        placeholder="e.g. IIT Madras, BITS Pilani" 
+                        required 
+                      />
+                    </div>
+
+                    <div>
+                      <label className="label">Department / Branch *</label>
+                      <input 
+                        type="text" 
+                        className="input" 
+                        value={formData.department} 
+                        onChange={e => setFormData({ ...formData, department: e.target.value })} 
+                        placeholder="e.g. Computer Science & Engineering" 
+                        required 
+                      />
+                    </div>
+
+                    <div>
+                      <label className="label">Academic Year</label>
+                      <select 
+                        className="input" 
+                        value={formData.year} 
+                        onChange={e => setFormData({ ...formData, year: parseInt(e.target.value) || 1 })}
+                      >
+                        <option value={1}>1st Year (Freshman)</option>
+                        <option value={2}>2nd Year (Sophomore)</option>
+                        <option value={3}>3rd Year (Junior)</option>
+                        <option value={4}>4th Year (Senior / Finalist)</option>
+                        <option value={5}>Postgraduate / Master's / PhD</option>
+                      </select>
+                    </div>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="label">College / Institute *</label>
-                  <input 
-                    type="text" 
-                    className="input" 
-                    value={formData.college} 
-                    onChange={e => setFormData({ ...formData, college: e.target.value })} 
-                    placeholder="e.g. IIT Madras, BITS Pilani" 
-                    required 
-                  />
+                {/* 3. HEADLINE & BIO */}
+                <div style={{ padding: '1.25rem', borderRadius: '14px', background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                    <div style={{ fontWeight: 800, fontSize: '0.9375rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>✍️</span> Student Headline & Bio
+                    </div>
+                    <span style={{ fontSize: '0.6875rem', fontWeight: 800, padding: '2px 7px', borderRadius: '6px', background: 'rgba(245,158,11,0.15)', color: '#f59e0b' }}>
+                      +50 XP
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <div>
+                      <label className="label">Professional Student Headline *</label>
+                      <input 
+                        type="text" 
+                        className="input" 
+                        value={formData.headline} 
+                        onChange={e => setFormData({ ...formData, headline: e.target.value })} 
+                        placeholder="e.g. B.Tech CS @ IIT Madras • Java & DSA Peer Mentor • SIH Finalist" 
+                        required 
+                      />
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                        Tip: Mention your university, key tech stack (Java/React/AI), and strengths.
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="label">About / Student Bio</label>
+                      <textarea 
+                        className="input" 
+                        style={{ minHeight: '80px' }} 
+                        value={formData.bio} 
+                        onChange={e => setFormData({ ...formData, bio: e.target.value })} 
+                        placeholder="Brief description about your studies, passions, and peer mentoring background..." 
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="label">Department / Branch *</label>
-                  <input 
-                    type="text" 
-                    className="input" 
-                    value={formData.department} 
-                    onChange={e => setFormData({ ...formData, department: e.target.value })} 
-                    placeholder="e.g. Computer Science & Engineering" 
-                    required 
-                  />
-                </div>
-
-                <div>
-                  <label className="label">Academic Year</label>
-                  <select 
-                    className="input" 
-                    value={formData.year} 
-                    onChange={e => setFormData({ ...formData, year: parseInt(e.target.value) || 1 })}
-                  >
-                    <option value={1}>1st Year (Freshman)</option>
-                    <option value={2}>2nd Year (Sophomore)</option>
-                    <option value={3}>3rd Year (Junior)</option>
-                    <option value={4}>4th Year (Senior / Finalist)</option>
-                    <option value={5}>Postgraduate / Master's / PhD</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="label">City & Country</label>
-                  <input 
-                    type="text" 
-                    className="input" 
-                    value={formData.location} 
-                    onChange={e => setFormData({ ...formData, location: e.target.value })} 
-                    placeholder="e.g. Chennai, Tamil Nadu, India" 
-                  />
-                </div>
               </div>
 
               <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end' }}>
@@ -1374,6 +1622,155 @@ export function SettingsScreen({ token, setActiveTab, theme, setTheme }) {
 
           {/* ========================================================================= */}
           {/* CATEGORY 2: EDUCATION & ACADEMICS */}
+          {/* ========================================================================= */}
+          {/* ========================================================================= */}
+          {/* CATEGORY 2: PEER-TO-PEER LIVE CLASSES & MENTORSHIP */}
+          {/* ========================================================================= */}
+          {activeCategory === 'peer_classes' && (
+            <div className="card-premium">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+                <div>
+                  <h2 className="font-serif" style={{ fontSize: '1.35rem', fontWeight: 800, margin: 0 }}>
+                    🧑‍🏫 Peer-to-Peer Live Classes & Mentorship Studio
+                  </h2>
+                  <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', margin: '0.25rem 0 0 0' }}>
+                    Your live 1:1 teaching history, student reviews, rate controls, and upcoming scheduled sessions.
+                  </p>
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button 
+                    type="button"
+                    onClick={() => setActiveTab('sessions')}
+                    className="btn btn-accent"
+                    style={{ fontSize: '0.8125rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}
+                  >
+                    <Calendar size={15} /> Open Classes Schedule
+                  </button>
+                </div>
+              </div>
+
+              {/* METRIC HIGHLIGHTS */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.75rem' }}>
+                <div style={{ padding: '1.25rem', borderRadius: 'var(--radius-md)', background: 'linear-gradient(135deg, rgba(0, 102, 255, 0.08) 0%, rgba(0, 198, 255, 0.08) 100%)', border: '1px solid rgba(0, 102, 255, 0.2)' }}>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--accent-primary)', textTransform: 'uppercase' }}>Classes Conducted</div>
+                  <div style={{ fontSize: '1.85rem', fontWeight: 900, color: 'var(--text-primary)', marginTop: '0.25rem' }}>
+                    {formData.classesTaught || 24}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>100% On-time completion</div>
+                </div>
+
+                <div style={{ padding: '1.25rem', borderRadius: 'var(--radius-md)', background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(5, 150, 105, 0.08) 100%)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--success-color)', textTransform: 'uppercase' }}>Peer Tutoring Earnings</div>
+                  <div style={{ fontSize: '1.85rem', fontWeight: 900, color: 'var(--text-primary)', marginTop: '0.25rem' }}>
+                    ₹{((formData.totalEarned || 3600)).toLocaleString('en-IN')}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>Released via UPI Escrow</div>
+                </div>
+
+                <div style={{ padding: '1.25rem', borderRadius: 'var(--radius-md)', background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(217, 119, 6, 0.08) 100%)', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--warning-color)', textTransform: 'uppercase' }}>Mentor Rating</div>
+                  <div style={{ fontSize: '1.85rem', fontWeight: 900, color: 'var(--text-primary)', marginTop: '0.25rem' }}>
+                    4.92 / 5.0 ⭐
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>From 38 student reviews</div>
+                </div>
+              </div>
+
+              {/* RATE PREFERENCES & AVAILABILITY TOGGLE */}
+              <div style={{ padding: '1.25rem', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', marginBottom: '1.75rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: '0.9375rem', color: 'var(--text-primary)' }}>Live Class Hourly Rates</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Students book 45-60 min 1:1 sessions based on your hourly pricing.</div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: formData.isAvailableForMentoring ? 'var(--success-color)' : 'var(--text-muted)' }}>
+                      {formData.isAvailableForMentoring ? '🟢 Available for Bookings' : '⚪ Unavailable'}
+                    </span>
+                    <input 
+                      type="checkbox" 
+                      checked={formData.isAvailableForMentoring} 
+                      onChange={e => {
+                        const next = { ...formData, isAvailableForMentoring: e.target.checked };
+                        setFormData(next);
+                        handleSaveAll(next);
+                      }}
+                      style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+                  <div>
+                    <label className="label">Hourly Rate (₹ INR)</label>
+                    <input 
+                      type="number" 
+                      className="input" 
+                      value={formData.hourlyRate || 450} 
+                      onChange={e => setFormData({ ...formData, hourlyRate: parseInt(e.target.value) || 0 })} 
+                    />
+                  </div>
+                  <div>
+                    <label className="label">Rate in StudyLoop Coins (🪙)</label>
+                    <input 
+                      type="number" 
+                      className="input" 
+                      value={formData.coinRate || 45} 
+                      onChange={e => setFormData({ ...formData, coinRate: parseInt(e.target.value) || 0 })} 
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* RECENT CONDUCTED CLASSES & STUDENT REVIEWS */}
+              <div>
+                <h3 className="font-serif" style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '0.85rem' }}>
+                  Recent 1:1 Live Classes Taught
+                </h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  {[
+                    { topic: 'Dynamic Programming: 0/1 Knapsack & Memoization', student: 'Bhavna Patel', college: 'IIT Madras', duration: '45 mins', fee: '₹150', rating: 5.0, date: 'Yesterday', review: 'Aarav is the best DSA mentor on campus! Clear diagrams and whiteboard explanations.' },
+                    { topic: 'Spring Boot Microservices & JPA Cascading', student: 'Chaitanya Reddy', college: 'BITS Pilani', duration: '60 mins', fee: '₹200', rating: 4.9, date: '3 days ago', review: 'Saved me hours of debugging before my semester submission deadline.' },
+                    { topic: 'React Custom Hooks & Memory Leaks in useEffect', student: 'Kavya Subramanian', college: 'IIT Delhi', duration: '45 mins', fee: '₹150', rating: 5.0, date: '1 week ago', review: 'Super clear practical examples. Highly recommended!' },
+                    { topic: 'Binary Trees & Level Order Traversal in Java', student: 'Rohan Deshmukh', college: 'IIT Bombay', duration: '60 mins', fee: '₹200', rating: 4.8, date: '2 weeks ago', review: 'Great pacing and guided practice problems.' }
+                  ].map((cls, idx) => (
+                    <div key={idx} style={{
+                      padding: '1rem 1.25rem',
+                      borderRadius: 'var(--radius-sm)',
+                      border: '1px solid var(--border-color)',
+                      backgroundColor: 'var(--bg-tertiary)',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'flex-start',
+                      flexWrap: 'wrap',
+                      gap: '0.75rem'
+                    }}>
+                      <div style={{ flex: 1, minWidth: '240px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                          <span style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{cls.topic}</span>
+                          <span className="tag tag-success" style={{ fontSize: '0.65rem' }}>Completed</span>
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                          Student: <strong>{cls.student}</strong> ({cls.college}) • {cls.duration} • {cls.date}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic', marginTop: '0.35rem' }}>
+                          "{cls.review}"
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem' }}>
+                        <span style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--success-color)' }}>+{cls.fee}</span>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#f59e0b' }}>⭐ {cls.rating} / 5.0</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* CATEGORY 3: EDUCATION & ACADEMICS */}
           {/* ========================================================================= */}
           {activeCategory === 'education' && (
             <div className="card-premium">
@@ -2017,24 +2414,31 @@ export function SettingsScreen({ token, setActiveTab, theme, setTheme }) {
               </p>
 
               {/* CURRENT RESUME BANNER */}
+              <input 
+                type="file" 
+                ref={resumeInputRef} 
+                accept=".pdf,.doc,.docx" 
+                onChange={handleResumeUpload} 
+                style={{ display: 'none' }} 
+              />
               <div style={{ padding: '1.25rem', backgroundColor: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                   <div style={{ width: '48px', height: '48px', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <FileText size={26} />
                   </div>
                   <div>
-                    <h4 style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 800, color: 'var(--text-primary)' }}>{formData.resumeFileName}</h4>
+                    <h4 style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 800, color: 'var(--text-primary)' }}>{formData.resumeFileName || 'Aarav_Sharma_Resume.pdf'}</h4>
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>
-                      Uploaded: {formData.resumeUploadDate} • 2.4 MB PDF Document
+                      Uploaded: {formData.resumeUploadDate || 'Aug 2026'} • 2.4 MB PDF Document
                     </div>
                   </div>
                 </div>
 
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button onClick={() => alert("📥 Downloading verified resume PDF...")} className="btn btn-secondary" style={{ fontSize: '0.75rem', fontWeight: 700 }}>
+                  <button onClick={() => toast.info(`📥 Downloading ${formData.resumeFileName || 'resume.pdf'}...`)} className="btn btn-secondary" style={{ fontSize: '0.75rem', fontWeight: 700 }}>
                     <Download size={14} /> Download
                   </button>
-                  <button onClick={() => alert("📤 Resume file upload: Select new PDF file from device")} className="btn btn-accent" style={{ fontSize: '0.75rem', fontWeight: 700 }}>
+                  <button onClick={() => resumeInputRef.current?.click()} className="btn btn-accent" style={{ fontSize: '0.75rem', fontWeight: 700 }}>
                     <UploadCloud size={14} /> Upload New PDF
                   </button>
                 </div>
@@ -2071,446 +2475,31 @@ export function SettingsScreen({ token, setActiveTab, theme, setTheme }) {
           )}
 
           {/* ========================================================================= */}
-          {/* CATEGORY 8: CREATOR & REELS REACH ANALYTICS (INSTAGRAM & YOUTUBE SHORTS STUDIO) */}
+          {/* CATEGORY 8: CREATOR & REELS REACH ANALYTICS — StudyLoop Shorts Studio */}
           {/* ========================================================================= */}
-          {activeCategory === 'reach' && (
-            <div className="card-premium">
-              
-              {/* INSTAGRAM CREATOR STUDIO STYLE HEADER */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                    <h2 className="font-serif" style={{ fontSize: '1.4rem', fontWeight: 800, margin: 0 }}>
-                      📊 Creator & Concept Shorts Studio
-                    </h2>
-                    <span className="tag tag-accent" style={{ background: 'linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%)', color: '#ffffff', fontWeight: 800, fontSize: '0.75rem' }}>
-                      ⚡ Studio & Privacy Mode
-                    </span>
-                  </div>
-                  <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', margin: '0.3rem 0 0 0' }}>
-                    Publish educational shorts, configure Public / Campus / Private visibility, and inspect live reach analytics.
-                  </p>
-                </div>
-
-                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                  {/* UPLOAD NEW SHORT ACTION */}
-                  <button 
-                    onClick={() => setShowUploadShortModal(true)} 
-                    className="btn btn-accent"
-                    style={{ fontSize: '0.8125rem', fontWeight: 800, padding: '0.5rem 1.25rem', display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}
-                  >
-                    <Plus size={15} /> Publish Concept Short (9:16)
-                  </button>
-
-                  {/* TIMEFRAME SWITCHER */}
-                  <div style={{ display: 'flex', gap: '0.35rem', background: 'var(--bg-tertiary)', padding: '0.25rem', borderRadius: 'var(--radius-sm)' }}>
-                    {[
-                      { id: '7d', label: 'Last 7 Days' },
-                      { id: '30d', label: 'Last 30 Days' },
-                      { id: 'all', label: 'All Time' }
-                    ].map(t => (
-                      <button
-                        key={t.id}
-                        onClick={() => setReachTimeframe(t.id)}
-                        style={{
-                          padding: '0.35rem 0.75rem',
-                          borderRadius: 'var(--radius-xs)',
-                          border: 'none',
-                          fontSize: '0.75rem',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          background: reachTimeframe === t.id ? 'var(--bg-card)' : 'transparent',
-                          color: reachTimeframe === t.id ? 'var(--accent-primary)' : 'var(--text-secondary)',
-                          boxShadow: reachTimeframe === t.id ? 'var(--shadow-sm)' : 'none'
-                        }}
-                      >
-                        {t.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* UPLOAD SHORT MODAL DRAWER */}
-              {showUploadShortModal && (
-                <form onSubmit={handleCreateShort} style={{ backgroundColor: 'var(--bg-tertiary)', padding: '1.5rem', borderRadius: 'var(--radius-md)', marginBottom: '1.75rem', border: '1px solid var(--border-color)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      🎬 Publish New Concept Short (9:16 Format)
-                    </h4>
-                    <button type="button" onClick={() => setShowUploadShortModal(false)} className="btn-icon"><X size={16} /></button>
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
-                    <div style={{ gridColumn: '1 / -1' }}>
-                      <label className="label">Short Video Title & Tags *</label>
-                      <input 
-                        type="text" 
-                        className="input" 
-                        placeholder="e.g. 3 Tricks to solve Recursion Tree problems fast in Java ⚡ #Algorithms #Java"
-                        value={newShortForm.title} 
-                        onChange={e => setNewShortForm({ ...newShortForm, title: e.target.value })} 
-                        required 
-                      />
-                    </div>
-
-                    <div>
-                      <label className="label">Academic Subject / Domain</label>
-                      <select 
-                        className="input"
-                        value={newShortForm.category}
-                        onChange={e => setNewShortForm({ ...newShortForm, category: e.target.value })}
-                      >
-                        <option value="Algorithms">Algorithms & Data Structures</option>
-                        <option value="Java">Java & Object Oriented</option>
-                        <option value="React">React & Frontend Architecture</option>
-                        <option value="System Design">System Design & Backend</option>
-                        <option value="AI / ML">AI / Machine Learning</option>
-                        <option value="Gate Exam">GATE Exam Tricks</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="label">🔒 Audience & Privacy Level</label>
-                      <select 
-                        className="input"
-                        value={newShortForm.visibility}
-                        onChange={e => setNewShortForm({ ...newShortForm, visibility: e.target.value })}
-                      >
-                        <option value="public">🌐 Public (All Campus Students & Network)</option>
-                        <option value="campus">🏫 Campus Only (Verified IIT Madras peers)</option>
-                        <option value="private">🔒 Private / Unlisted Draft</option>
-                      </select>
-                    </div>
-
-                    <div style={{ gridColumn: '1 / -1' }}>
-                      <label className="label">Video Source URL (MP4 / WebM / CDN)</label>
-                      <input 
-                        type="url" 
-                        className="input" 
-                        placeholder="https://assets.mixkit.co/videos/... or media link"
-                        value={newShortForm.videoUrl} 
-                        onChange={e => setNewShortForm({ ...newShortForm, videoUrl: e.target.value })} 
-                        required 
-                      />
-                    </div>
-
-                    <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '1.5rem', flexWrap: 'wrap', paddingTop: '0.25rem' }}>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-primary)', cursor: 'pointer' }}>
-                        <input 
-                          type="checkbox" 
-                          checked={newShortForm.allowComments} 
-                          onChange={e => setNewShortForm({ ...newShortForm, allowComments: e.target.checked })} 
-                        />
-                        💬 Allow Peer Comments & Discussion
-                      </label>
-
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-primary)', cursor: 'pointer' }}>
-                        <input 
-                          type="checkbox" 
-                          checked={newShortForm.allowTips} 
-                          onChange={e => setNewShortForm({ ...newShortForm, allowTips: e.target.checked })} 
-                        />
-                        🪙 Allow Peer Coin Tips (1 to 50 Coins)
-                      </label>
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.25rem' }}>
-                    <button type="button" onClick={() => setShowUploadShortModal(false)} className="btn btn-secondary" style={{ fontSize: '0.75rem' }}>Cancel</button>
-                    <button type="submit" className="btn btn-accent" style={{ fontSize: '0.75rem', fontWeight: 800 }}>Publish Short 🚀</button>
-                  </div>
-                </form>
-              )}
-
-              {/* TOP KPI CARDS STRIP */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.75rem' }}>
-                <div style={{ padding: '1.25rem', borderRadius: 'var(--radius-md)', background: 'linear-gradient(135deg, rgba(0, 102, 255, 0.08) 0%, rgba(0, 198, 255, 0.08) 100%)', border: '1px solid rgba(0, 102, 255, 0.2)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>TOTAL ACCOUNTS REACHED</span>
-                    <Eye size={16} style={{ color: 'var(--accent-primary)' }} />
-                  </div>
-                  <div style={{ fontSize: '1.75rem', fontWeight: 900, color: 'var(--text-primary)', marginTop: '0.35rem' }}>
-                    14,820
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--success-color)', fontWeight: 700, marginTop: '0.2rem' }}>
-                    ↑ +34.2% vs previous period
-                  </div>
-                </div>
-
-                <div style={{ padding: '1.25rem', borderRadius: 'var(--radius-md)', background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%)', border: '1px solid rgba(236, 72, 153, 0.2)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>TOTAL REEL PLAYS & VIEWS</span>
-                    <Play size={16} style={{ color: '#ec4899' }} />
-                  </div>
-                  <div style={{ fontSize: '1.75rem', fontWeight: 900, color: 'var(--text-primary)', marginTop: '0.35rem' }}>
-                    38,450
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--success-color)', fontWeight: 700, marginTop: '0.2rem' }}>
-                    ↑ +28.6% engagement
-                  </div>
-                </div>
-
-                <div style={{ padding: '1.25rem', borderRadius: 'var(--radius-md)', background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(5, 150, 105, 0.08) 100%)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>TOTAL WATCH TIME</span>
-                    <Clock size={16} style={{ color: 'var(--success-color)' }} />
-                  </div>
-                  <div style={{ fontSize: '1.75rem', fontWeight: 900, color: 'var(--text-primary)', marginTop: '0.35rem' }}>
-                    194.6 Hrs
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
-                    Avg 83.3% completion rate
-                  </div>
-                </div>
-
-                <div style={{ padding: '1.25rem', borderRadius: 'var(--radius-md)', background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(217, 119, 6, 0.08) 100%)', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>CREATOR ENGAGEMENT</span>
-                    <Flame size={16} style={{ color: 'var(--warning-color)' }} />
-                  </div>
-                  <div style={{ fontSize: '1.75rem', fontWeight: 900, color: 'var(--text-primary)', marginTop: '0.35rem' }}>
-                    12.8%
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--accent-primary)', fontWeight: 700, marginTop: '0.2rem' }}>
-                    ⭐ Top 5% Peer Creator
-                  </div>
-                </div>
-              </div>
-
-              {/* INDIVIDUAL REEL REACH PERFORMANCE (DETAILED BREAKDOWN WITH VISIBILITY TOGGLES) */}
-              <div style={{ marginBottom: '2rem' }}>
-                <h3 className="font-serif" style={{ fontSize: '1.15rem', fontWeight: 800, margin: '0 0 1rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Tv2 size={18} style={{ color: 'var(--accent-primary)' }} />
-                  Your Published Concept Shorts & Privacy Controls
-                </h3>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  {reelAnalyticsData.map((reel) => (
-                    <div key={reel.id} style={{ padding: '1.25rem', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', background: 'var(--bg-card)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.25rem' }}>
-                      
-                      <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', minWidth: '280px', flex: 1 }}>
-                        <img 
-                          src={reel.thumbnail} 
-                          alt="Thumbnail" 
-                          style={{ width: '60px', height: '90px', borderRadius: 'var(--radius-sm)', objectFit: 'cover', border: '1px solid var(--border-color)' }} 
-                        />
-                        <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                            <h4 style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 800, color: 'var(--text-primary)' }}>{reel.title}</h4>
-                          </div>
-                          
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
-                            Published {reel.postedDate} • Educational Concept Short (9:16)
-                          </div>
-
-                          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)', flexWrap: 'wrap' }}>
-                            <span>❤️ {reel.likes} Likes</span>
-                            <span>💬 {reel.comments} Comments</span>
-                            <span>🔖 {reel.saves} Saves</span>
-                            <span>↗️ {reel.shares} Shares</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* STATS MATRIX FOR REEL */}
-                      <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                        <div style={{ textAlign: 'center' }}>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>MEMBERS SEEN</div>
-                          <div style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--accent-primary)', marginTop: '0.15rem' }}>
-                            {reel.reachMembers.toLocaleString()}
-                          </div>
-                          <div style={{ fontSize: '0.6875rem', color: 'var(--success-color)', fontWeight: 700 }}>
-                            {reel.nonFollowerReachPct}% Non-Followers
-                          </div>
-                        </div>
-
-                        <div style={{ textAlign: 'center' }}>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>TOTAL PLAYS</div>
-                          <div style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--text-primary)', marginTop: '0.15rem' }}>
-                            {reel.views.toLocaleString()}
-                          </div>
-                          <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
-                            {reel.watchTimeHours} Hours Total
-                          </div>
-                        </div>
-
-                        {/* PRIVACY CONTROLS DROPDOWN & DELETE */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', minWidth: '150px' }}>
-                          <label style={{ fontSize: '0.6875rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Audience Visibility</label>
-                          <select 
-                            value={reel.visibility || 'public'} 
-                            onChange={e => handleUpdateReelVisibility(reel.id, e.target.value)}
-                            className="input"
-                            style={{ fontSize: '0.75rem', padding: '0.35rem 0.6rem' }}
-                          >
-                            <option value="public">🌐 Public (All)</option>
-                            <option value="campus">🏫 Campus Only</option>
-                            <option value="private">🔒 Private Draft</option>
-                          </select>
-
-                          <button 
-                            onClick={() => handleDeleteReel(reel.id)} 
-                            className="btn btn-secondary" 
-                            style={{ fontSize: '0.6875rem', padding: '0.25rem 0.5rem', color: 'var(--danger-color)', border: '1px solid var(--border-color)' }}
-                          >
-                            <Trash2 size={12} /> Delete Short
-                          </button>
-                        </div>
-                      </div>
-
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* AUDIENCE DEMOGRAPHICS & REACH DISTRIBUTION */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
-                
-                <div style={{ padding: '1.25rem', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', background: 'var(--bg-card)' }}>
-                  <h4 style={{ margin: '0 0 1rem 0', fontSize: '0.9375rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Building2 size={16} style={{ color: 'var(--accent-primary)' }} />
-                    Top Reached Campuses
-                  </h4>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                    {[
-                      { college: 'IIT Madras', pct: 42, count: '6,224 students' },
-                      { college: 'IIT Bombay', pct: 24, count: '3,556 students' },
-                      { college: 'BITS Pilani', pct: 18, count: '2,667 students' },
-                      { college: 'NIT Trichy', pct: 10, count: '1,482 students' },
-                      { college: 'Other Universities', pct: 6, count: '891 students' }
-                    ].map((c, i) => (
-                      <div key={i}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
-                          <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{c.college}</span>
-                          <span style={{ color: 'var(--text-secondary)' }}>{c.count} ({c.pct}%)</span>
-                        </div>
-                        <div style={{ width: '100%', height: '6px', backgroundColor: 'var(--bg-tertiary)', borderRadius: 'var(--radius-full)', overflow: 'hidden' }}>
-                          <div style={{ width: `${c.pct}%`, height: '100%', backgroundColor: 'var(--accent-primary)' }}></div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div style={{ padding: '1.25rem', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', background: 'var(--bg-card)' }}>
-                  <h4 style={{ margin: '0 0 1rem 0', fontSize: '0.9375rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Compass size={16} style={{ color: '#ec4899' }} />
-                    Discovery & Traffic Sources
-                  </h4>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                    {[
-                      { source: 'Campus Concept Shorts Feed', pct: 62, icon: '📱' },
-                      { source: 'Topic & Doubt Room Searches', pct: 23, icon: '🔍' },
-                      { source: 'Direct Chat & Peer Shares', pct: 15, icon: '💬' }
-                    ].map((s, i) => (
-                      <div key={i}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
-                          <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{s.icon} {s.source}</span>
-                          <span style={{ color: 'var(--text-secondary)' }}>{s.pct}%</span>
-                        </div>
-                        <div style={{ width: '100%', height: '6px', backgroundColor: 'var(--bg-tertiary)', borderRadius: 'var(--radius-full)', overflow: 'hidden' }}>
-                          <div style={{ width: `${s.pct}%`, height: '100%', backgroundColor: '#ec4899' }}></div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-              </div>
-
-            </div>
+          {activeCategory === 'verification' && (
+            <StudentVerificationSection 
+              formData={formData} 
+              setFormData={setFormData} 
+              handleSaveAll={handleSaveAll} 
+              toast={toast} 
+            />
           )}
 
           {/* ========================================================================= */}
           {/* CATEGORY 9: PEER TUTORING & PRICING */}
           {/* ========================================================================= */}
           {activeCategory === 'tutoring' && (
-            <div className="card-premium">
-              <h2 className="font-serif" style={{ fontSize: '1.35rem', fontWeight: 800, margin: '0 0 0.5rem 0' }}>
-                🧑‍🏫 1:1 Peer Mentoring & Pricing Preferences
-              </h2>
-              <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
-                Set your availability for live 1:1 video classes, hourly rate, and subjects you teach.
-              </p>
-
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 1.25rem', backgroundColor: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', marginBottom: '1.5rem' }}>
-                <div>
-                  <div style={{ fontWeight: 800, fontSize: '0.9375rem', color: 'var(--text-primary)' }}>Open to 1:1 Peer Mentoring</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Allow fellow campus students to book 1:1 study sessions with you</div>
-                </div>
-                <input 
-                  type="checkbox" 
-                  checked={formData.isAvailableForMentoring} 
-                  onChange={e => {
-                    const next = { ...formData, isAvailableForMentoring: e.target.checked };
-                    setFormData(next);
-                    handleSaveAll(next);
-                  }}
-                  style={{ width: '22px', height: '22px', cursor: 'pointer' }}
-                />
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.25rem', marginBottom: '1.5rem' }}>
-                <div>
-                  <label className="label">Hourly Rate in Rupee (₹)</label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ fontSize: '1.125rem', fontWeight: 700 }}>₹</span>
-                    <input 
-                      type="number" 
-                      className="input" 
-                      value={formData.hourlyRate} 
-                      onChange={e => setFormData({ ...formData, hourlyRate: parseInt(e.target.value) || 0 })} 
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="label">Rate in Peer Coins (🪙)</label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ fontSize: '1.125rem', fontWeight: 700 }}>🪙</span>
-                    <input 
-                      type="number" 
-                      className="input" 
-                      value={formData.coinRate} 
-                      onChange={e => setFormData({ ...formData, coinRate: parseInt(e.target.value) || 0 })} 
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* TEACHING SKILLS TAGS */}
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label className="label">Subjects & Skills You Teach</label>
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
-                  {(formData.teachingSkills || []).map((skill, sIdx) => (
-                    <span key={sIdx} className="tag tag-accent" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.8125rem', padding: '0.35rem 0.75rem' }}>
-                      {skill}
-                      <button onClick={() => handleRemoveSkill(skill)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'inherit', padding: 0 }}>
-                        <X size={13} />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-
-                <form onSubmit={handleAddSkill} style={{ display: 'flex', gap: '0.5rem', maxWidth: '400px' }}>
-                  <input 
-                    type="text" 
-                    className="input" 
-                    placeholder="Add subject (e.g. Dynamic Programming, Java, Calculus)" 
-                    value={newSkillTag} 
-                    onChange={e => setNewSkillTag(e.target.value)} 
-                  />
-                  <button type="submit" className="btn btn-secondary" style={{ flexShrink: 0 }}>Add Tag</button>
-                </form>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <button onClick={() => handleSaveAll()} className="btn btn-primary" style={{ fontWeight: 700, padding: '0.6rem 1.5rem' }}>
-                  Save Mentoring Preferences
-                </button>
-              </div>
-            </div>
+            <MentoringPayoutSection
+              formData={formData}
+              setFormData={setFormData}
+              handleSaveAll={handleSaveAll}
+              toast={toast}
+              newSkillTag={newSkillTag}
+              setNewSkillTag={setNewSkillTag}
+              handleAddSkill={handleAddSkill}
+              handleRemoveSkill={handleRemoveSkill}
+            />
           )}
 
           {/* ========================================================================= */}
