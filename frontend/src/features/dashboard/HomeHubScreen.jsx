@@ -1,47 +1,63 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
+  ArrowRight,
   ArrowUpRight,
+  Award,
+  Bell,
+  Bookmark,
   BookOpen,
+  Briefcase,
   Calendar,
+  Check,
+  CheckCircle,
   CheckCircle2,
+  ChevronDown,
+  Clock,
   Code,
   Code2,
   Copy,
-  Check,
+  ExternalLink,
+  Eye,
+  FileText,
+  Film,
+  Filter,
+  Flame,
+  Globe,
+  GraduationCap,
+  Heart,
   HelpCircle,
   Image,
+  Lock,
+  MapPin,
+  MessageCircle,
   MessageSquare,
+  MoreHorizontal,
+  Paperclip,
+  Pin,
+  Play,
   Plus,
+  PlusCircle,
+  Radio,
+  Repeat2,
+  RotateCw,
   Search,
   Send,
   Share2,
   Shield,
+  Sparkles,
+  Star,
+  Sun,
   ThumbsUp,
+  TrendingUp,
   Trophy,
+  User,
+  UserCheck,
+  UserPlus,
   Users,
   Video,
+  Wallet,
   X,
-  Zap,
-  Flame,
-  Globe,
-  MapPin,
-  ChevronDown,
-  Lock,
-  Briefcase,
-  Bell,
-  Sun,
-  Moon,
-  Bookmark,
-  Play,
-  Film,
-  Filter,
-  Heart,
-  GraduationCap,
-  ArrowRight,
-  Clock,
-  Star,
-  Award,
-  PlusCircle
+  Zap
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -56,7 +72,7 @@ function ActivityHeatmap() {
       <div style={{ fontSize: '0.625rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>35-Day Study Log</div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '3px' }}>
         {cells.map((v, i) => (
-          <div key={i} title={`${v} sessions`} style={{ height: '9px', borderRadius: '2px', backgroundColor: colors[v], transition: 'transform 0.1s' }}
+          <div key={i} title={`${v} study sessions`} style={{ height: '9px', width: '9px', borderRadius: '2px', backgroundColor: colors[v], transition: 'transform 0.1s' }}
             onMouseEnter={e => e.currentTarget.style.transform='scale(1.4)'}
             onMouseLeave={e => e.currentTarget.style.transform='scale(1)'}
           />
@@ -67,12 +83,12 @@ function ActivityHeatmap() {
 }
 
 // ─── Trust Score Ring ─────────────────────────────────────────────────────────
-function TrustRing({ score = 72 }) {
+function TrustRing({ score = 82 }) {
   const r = 26, c = 2 * Math.PI * r;
   const offset = c - (score / 100) * c;
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-      <svg width="62" height="62" viewBox="0 0 62 62">
+      <svg width="60" height="60" viewBox="0 0 62 62">
         <circle cx="31" cy="31" r={r} fill="none" stroke="var(--bg-tertiary)" strokeWidth="5" />
         <circle cx="31" cy="31" r={r} fill="none" stroke="var(--accent-primary)" strokeWidth="5"
           strokeLinecap="round" strokeDasharray={c} strokeDashoffset={offset}
@@ -81,186 +97,289 @@ function TrustRing({ score = 72 }) {
         <text x="31" y="36" textAnchor="middle" fontSize="13" fontWeight="800" fill="var(--text-primary)">{score}</text>
       </svg>
       <div>
-        <div style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-primary)' }}>Scholar Trust</div>
-        <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-          {score >= 90 ? '✅ Scholar Verified' : score >= 70 ? '🔵 Campus Verified' : '⚪ Building...'}
+        <div style={{ fontSize: '0.74rem', fontWeight: 800, color: 'var(--text-primary)' }}>Scholar Trust</div>
+        <div style={{ fontSize: '0.62rem', color: 'var(--text-muted)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#10b981', display: 'inline-block' }} />
+          {score >= 90 ? 'Scholar Verified' : score >= 70 ? 'Campus Verified' : 'Building...'}
         </div>
       </div>
     </div>
   );
 }
 
-// ─── LinkedIn-style Post Composer Modal ────────────────────────────────────────
-function PostModal({ profile, onClose, onPost, initialCategory = 'doubt', initialCodeMode = false }) {
+// ─── LinkedIn / X Style Post Composer Modal ──────────────────────────────────
+function PostComposerModal({ profile, onClose, onPost, initialCategory = 'doubt', initialCodeMode = false }) {
   const [text, setText] = useState('');
   const [category, setCategory] = useState(initialCategory);
   const [codeMode, setCodeMode] = useState(initialCodeMode);
   const [codeText, setCodeText] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
+  const [showImageInput, setShowImageInput] = useState(false);
+  const [pollMode, setPollMode] = useState(false);
+  const [pollOptions, setPollOptions] = useState(['', '']);
   const [audience, setAudience] = useState('campus');
 
   const categories = [
-    { id: 'doubt', label: '❓ Code Doubt', color: '#7C3AED' },
-    { id: 'exam', label: '📚 Exam Notes', color: '#D97706' },
-    { id: 'placement', label: '💼 Placement OA', color: '#059669' },
-    { id: 'project', label: '🚀 Project Share', color: '#0066FF' }
+    { id: 'doubt', label: '❓ Code Doubt', color: '#ef4444' },
+    { id: 'placement', label: '💼 Placement & OA', color: '#8b5cf6' },
+    { id: 'exam', label: '📚 Exam Notes', color: '#0066FF' },
+    { id: 'project', label: '🚀 Project Collab', color: '#10b981' },
+    { id: 'general', label: '📢 Campus Life', color: '#f59e0b' }
   ];
 
-  const audiences = [
-    { id: 'campus', label: '🏛️ My Campus', icon: <MapPin size={12} /> },
-    { id: 'all', label: '🌐 All Students', icon: <Globe size={12} /> },
-    { id: 'mentors', label: '🎓 Mentors Only', icon: <Lock size={12} /> }
-  ];
+  const handleAddPollOption = () => {
+    if (pollOptions.length < 4) {
+      setPollOptions([...pollOptions, '']);
+    }
+  };
 
-  const handlePost = () => {
+  const handlePollChange = (idx, val) => {
+    const next = [...pollOptions];
+    next[idx] = val;
+    setPollOptions(next);
+  };
+
+  const handleSubmit = (e) => {
+    e?.preventDefault();
     if (!text.trim()) return;
-    onPost({ text, category, codeText: codeMode ? codeText : null, audience });
+
+    let pollData = null;
+    if (pollMode && pollOptions.filter(o => o.trim()).length >= 2) {
+      pollData = {
+        question: text,
+        options: pollOptions.filter(o => o.trim()).map(opt => ({ text: opt, votes: 0 })),
+        totalVotes: 0,
+        userVoted: null
+      };
+    }
+
+    onPost({
+      text,
+      category,
+      codeText: codeMode ? codeText : null,
+      imageUrl: showImageInput && imageUrl.trim() ? imageUrl.trim() : null,
+      poll: pollData,
+      audience
+    });
     onClose();
   };
 
   return (
     <div style={{
-      position: 'fixed', inset: 0, zIndex: 1000,
-      backgroundColor: 'rgba(0,0,0,0.55)',
-      backdropFilter: 'blur(4px)',
+      position: 'fixed', inset: 0, zIndex: 3000,
+      backgroundColor: 'rgba(15, 23, 42, 0.75)',
+      backdropFilter: 'blur(6px)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: '20px'
+      padding: '16px'
     }} onClick={onClose}>
       <div
         style={{
           backgroundColor: 'var(--bg-secondary)',
           borderRadius: '16px',
-          width: '100%', maxWidth: '580px',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+          width: '100%', maxWidth: '600px',
+          boxShadow: '0 25px 60px -15px rgba(0,0,0,0.4)',
+          border: '1px solid var(--border-color)',
           overflow: 'hidden',
-          animation: 'fadeIn 0.2s ease'
+          display: 'flex', flexDirection: 'column'
         }}
         onClick={e => e.stopPropagation()}
       >
         {/* Modal Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid var(--border-color)' }}>
-          <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-            Post to Campus Network
-          </h3>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-            onMouseEnter={e => e.currentTarget.style.backgroundColor='var(--bg-tertiary)'}
-            onMouseLeave={e => e.currentTarget.style.backgroundColor='transparent'}
-          >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '1.2rem' }}>✨</span>
+            <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+              Create Post for Campus Feed
+            </h3>
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <X size={18} />
           </button>
         </div>
 
-        <div style={{ padding: '16px 20px' }}>
-          {/* Author row */}
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '14px' }}>
+        {/* Modal Body */}
+        <div style={{ padding: '18px 20px', maxHeight: '70vh', overflowY: 'auto' }}>
+          {/* Author info */}
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '14px' }}>
             <img
               src={getDefaultAvatarByGender(profile?.gender, profile?.avatarUrl)}
               alt=""
-              style={{ width: '44px', height: '44px', borderRadius: '50%', border: '2px solid var(--accent-primary)', objectFit: 'cover', flexShrink: 0 }}
+              style={{ width: '44px', height: '44px', borderRadius: '50%', border: '2px solid var(--accent-primary)', objectFit: 'cover' }}
             />
             <div>
-              <div style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
-                {profile?.fullName || 'Student'}
+              <div style={{ fontWeight: 800, fontSize: '0.92rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                {profile?.fullName || 'Aarav Sharma'}
+                <span style={{ fontSize: '0.68rem', backgroundColor: 'var(--accent-light)', color: 'var(--accent-primary)', padding: '2px 8px', borderRadius: '999px', fontWeight: 700 }}>
+                  {profile?.college || 'IIT Madras'}
+                </span>
               </div>
-              {/* Audience dropdown */}
-              <div style={{ display: 'flex', gap: '5px', marginTop: '4px' }}>
-                {audiences.map(a => (
-                  <button
-                    key={a.id}
-                    onClick={() => setAudience(a.id)}
-                    style={{
-                      padding: '2px 8px', borderRadius: '4px',
-                      border: audience === a.id ? '1.5px solid var(--accent-primary)' : '1px solid var(--border-color)',
-                      backgroundColor: audience === a.id ? 'var(--accent-light)' : 'var(--bg-tertiary)',
-                      color: audience === a.id ? 'var(--accent-primary)' : 'var(--text-muted)',
-                      fontSize: '0.65rem', fontWeight: 700, cursor: 'pointer',
-                      display: 'inline-flex', alignItems: 'center', gap: '3px'
-                    }}
-                  >
-                    {a.icon} {a.label}
-                  </button>
-                ))}
+              <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
+                <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                  <Globe size={11} /> Visible to Campus & Network
+                </span>
               </div>
             </div>
           </div>
 
-          {/* Main text area */}
+          {/* Text input */}
           <textarea
             autoFocus
-            rows={5}
+            rows={4}
             value={text}
             onChange={e => setText(e.target.value)}
-            placeholder="Share a technical doubt, post exam notes, or describe a placement experience that could help your campus peers..."
+            placeholder="What's happening? Share a coding doubt, placement experience, formula notes, or campus announcement..."
             style={{
               width: '100%', border: 'none', outline: 'none',
               background: 'transparent',
-              color: 'var(--text-primary)', fontSize: '0.925rem',
+              color: 'var(--text-primary)', fontSize: '0.95rem',
               lineHeight: 1.6, resize: 'none',
-              fontFamily: 'inherit'
+              fontFamily: 'inherit', boxSizing: 'border-box'
             }}
           />
+
+          {/* Image Input Bar */}
+          {showImageInput && (
+            <div style={{ marginTop: '10px', padding: '10px', backgroundColor: 'var(--bg-tertiary)', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                <span>🖼️ Image / Screenshot URL</span>
+                <button onClick={() => setShowImageInput(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.7rem' }}>Remove ×</button>
+              </div>
+              <input
+                type="text"
+                value={imageUrl}
+                onChange={e => setImageUrl(e.target.value)}
+                placeholder="https://images.unsplash.com/... or image link"
+                style={{
+                  width: '100%', padding: '8px 10px', borderRadius: '6px',
+                  border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)',
+                  color: 'var(--text-primary)', fontSize: '0.8rem', boxSizing: 'border-box'
+                }}
+              />
+            </div>
+          )}
 
           {/* Code snippet toggle */}
           {codeMode && (
             <div style={{ marginTop: '10px', borderRadius: '10px', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
               <div style={{ padding: '6px 12px', backgroundColor: 'var(--bg-tertiary)', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', fontFamily: 'monospace' }}>// Code Snippet</span>
+                <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--accent-primary)', fontFamily: 'monospace' }}>// Code Snippet (Java / C++ / Python / JS)</span>
                 <button onClick={() => setCodeMode(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.7rem' }}>Remove ×</button>
               </div>
               <textarea
                 rows={4}
                 value={codeText}
                 onChange={e => setCodeText(e.target.value)}
-                placeholder="// paste your code here..."
+                placeholder="// paste code or bug stack trace here..."
                 style={{
                   width: '100%', border: 'none', outline: 'none', padding: '10px 12px',
-                  backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-primary)',
-                  fontFamily: "'Fira Code', monospace", fontSize: '0.8rem', resize: 'none'
+                  backgroundColor: '#0f172a', color: '#f8fafc',
+                  fontFamily: "'Fira Code', monospace", fontSize: '0.82rem', resize: 'none',
+                  boxSizing: 'border-box'
                 }}
               />
             </div>
           )}
 
-          {/* Category chips */}
-          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '14px' }}>
-            {categories.map(cat => (
-              <button
-                key={cat.id}
-                onClick={() => setCategory(cat.id)}
-                style={{
-                  padding: '4px 11px', borderRadius: '999px',
-                  border: category === cat.id ? `1.5px solid ${cat.color}` : '1px solid var(--border-color)',
-                  backgroundColor: category === cat.id ? `${cat.color}14` : 'var(--bg-tertiary)',
-                  color: category === cat.id ? cat.color : 'var(--text-muted)',
-                  fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.12s'
-                }}
-              >
-                {cat.label}
-              </button>
-            ))}
+          {/* Poll mode */}
+          {pollMode && (
+            <div style={{ marginTop: '10px', padding: '12px', backgroundColor: 'var(--bg-tertiary)', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.76rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                <span>📊 Campus Poll Options</span>
+                <button onClick={() => setPollMode(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.7rem' }}>Remove ×</button>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {pollOptions.map((opt, i) => (
+                  <input
+                    key={i}
+                    type="text"
+                    value={opt}
+                    onChange={e => handlePollChange(i, e.target.value)}
+                    placeholder={`Option ${i + 1} (e.g. ${i === 0 ? 'Dynamic Programming' : i === 1 ? 'Graph Theory' : 'System Design'})`}
+                    style={{
+                      width: '100%', padding: '8px 10px', borderRadius: '6px',
+                      border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)',
+                      color: 'var(--text-primary)', fontSize: '0.8rem', boxSizing: 'border-box'
+                    }}
+                  />
+                ))}
+                {pollOptions.length < 4 && (
+                  <button
+                    onClick={handleAddPollOption}
+                    style={{ alignSelf: 'flex-start', background: 'none', border: 'none', color: 'var(--accent-primary)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                  >
+                    <Plus size={13} /> Add Option
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Category Selector Chips */}
+          <div style={{ marginTop: '14px' }}>
+            <div style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '6px' }}>
+              SELECT TOPIC TAG
+            </div>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              {categories.map(cat => (
+                <button
+                  key={cat.id}
+                  onClick={() => setCategory(cat.id)}
+                  style={{
+                    padding: '4px 12px', borderRadius: '999px',
+                    border: category === cat.id ? `1.5px solid ${cat.color}` : '1px solid var(--border-color)',
+                    backgroundColor: category === cat.id ? `${cat.color}18` : 'var(--bg-tertiary)',
+                    color: category === cat.id ? cat.color : 'var(--text-secondary)',
+                    fontSize: '0.74rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.12s'
+                  }}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
         {/* Modal Footer */}
-        <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg-secondary)' }}>
           <div style={{ display: 'flex', gap: '6px' }}>
             <button
+              onClick={() => setShowImageInput(!showImageInput)}
+              title="Add Image / Screenshot"
+              style={{
+                width: '36px', height: '36px', borderRadius: '8px',
+                border: showImageInput ? '1.5px solid var(--accent-primary)' : '1px solid var(--border-color)',
+                backgroundColor: showImageInput ? 'var(--accent-light)' : 'transparent',
+                color: showImageInput ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}
+            >
+              <Image size={17} />
+            </button>
+            <button
               onClick={() => setCodeMode(!codeMode)}
-              title="Add code snippet"
+              title="Add Code Snippet"
               style={{
                 width: '36px', height: '36px', borderRadius: '8px',
                 border: codeMode ? '1.5px solid var(--accent-primary)' : '1px solid var(--border-color)',
                 backgroundColor: codeMode ? 'var(--accent-light)' : 'transparent',
-                color: codeMode ? 'var(--accent-primary)' : 'var(--text-muted)',
+                color: codeMode ? 'var(--accent-primary)' : 'var(--text-secondary)',
                 cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
               }}
             >
-              <Code2 size={16} />
+              <Code2 size={17} />
             </button>
             <button
-              title="Add image (coming soon)"
-              style={{ width: '36px', height: '36px', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'transparent', color: 'var(--text-muted)', cursor: 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.5 }}
+              onClick={() => setPollMode(!pollMode)}
+              title="Add Campus Poll"
+              style={{
+                width: '36px', height: '36px', borderRadius: '8px',
+                border: pollMode ? '1.5px solid var(--accent-primary)' : '1px solid var(--border-color)',
+                backgroundColor: pollMode ? 'var(--accent-light)' : 'transparent',
+                color: pollMode ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}
             >
-              <Image size={16} />
+              <Radio size={17} />
             </button>
           </div>
 
@@ -269,17 +388,15 @@ function PostModal({ profile, onClose, onPost, initialCategory = 'doubt', initia
               {text.length}/1000
             </span>
             <button
-              onClick={handlePost}
+              onClick={handleSubmit}
               disabled={!text.trim()}
               style={{
                 padding: '8px 20px', borderRadius: '8px', border: 'none',
                 background: text.trim() ? 'var(--accent-primary)' : 'var(--bg-tertiary)',
                 color: text.trim() ? '#fff' : 'var(--text-muted)',
-                fontSize: '0.845rem', fontWeight: 800, cursor: text.trim() ? 'pointer' : 'not-allowed',
+                fontSize: '0.84rem', fontWeight: 800, cursor: text.trim() ? 'pointer' : 'not-allowed',
                 display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.15s'
               }}
-              onMouseEnter={e => { if (text.trim()) e.currentTarget.style.background = 'var(--accent-dark)'; }}
-              onMouseLeave={e => { if (text.trim()) e.currentTarget.style.background = 'var(--accent-primary)'; }}
             >
               <Send size={14} /> Post
             </button>
@@ -290,210 +407,731 @@ function PostModal({ profile, onClose, onPost, initialCategory = 'doubt', initia
   );
 }
 
-// ─── Main HomeHubScreen ───────────────────────────────────────────────────────
-export function HomeHubScreen({ 
-  setActiveTab, 
-  setActiveRoomId, 
-  onOpenBookingModal, 
+// ─── LinkedIn / X Style Feed Card Component ──────────────────────────────────
+function SocialFeedCard({
+  post,
+  onLike,
+  onBookmark,
+  onVotePoll,
+  onComment,
+  onOpenProfile,
+  onJoinRoom,
+  toast
+}) {
+  const [showComments, setShowComments] = useState(false);
+  const [commentText, setCommentText] = useState('');
+  const [copiedCode, setCopiedCode] = useState(false);
+  const [showOptions, setShowOptions] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+
+  const categoryColors = {
+    doubt: { color: '#ef4444', bg: 'rgba(239,68,68,0.1)', label: '❓ Code Doubt' },
+    placement: { color: '#8b5cf6', bg: 'rgba(139,92,246,0.1)', label: '💼 Placements & OA' },
+    exam: { color: '#0066FF', bg: 'rgba(0,102,255,0.1)', label: '📚 Exam Notes' },
+    project: { color: '#10b981', bg: 'rgba(16,185,129,0.1)', label: '🚀 Project & Collab' },
+    reels: { color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', label: '🎬 Concept Short' },
+    general: { color: '#64748b', bg: 'rgba(100,116,139,0.1)', label: '📢 Campus Life' }
+  };
+
+  const cat = categoryColors[post.category] || categoryColors.general;
+
+  const handleCopyCode = () => {
+    if (!post.codeSnippet) return;
+    navigator.clipboard.writeText(post.codeSnippet);
+    setCopiedCode(true);
+    toast?.success('📋 Code snippet copied to clipboard!');
+    setTimeout(() => setCopiedCode(false), 2000);
+  };
+
+  const handleAddComment = (e) => {
+    e.preventDefault();
+    if (!commentText.trim()) return;
+    onComment(post.id, commentText.trim());
+    setCommentText('');
+    toast?.success('💬 Comment posted to thread!');
+  };
+
+  const isLongText = post.content && post.content.length > 280;
+  const displayText = isLongText && !expanded ? post.content.slice(0, 280) + '...' : post.content;
+
+  return (
+    <div
+      style={{
+        backgroundColor: 'var(--bg-secondary)',
+        border: '1px solid var(--border-color)',
+        borderRadius: '16px',
+        padding: '20px',
+        boxShadow: 'var(--shadow-sm)',
+        transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '14px',
+        position: 'relative'
+      }}
+      className="social-feed-card interactive-hover"
+    >
+      {/* 1. Header: Author info & 3-dot menu */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div
+          style={{ display: 'flex', gap: '12px', alignItems: 'center', cursor: 'pointer' }}
+          onClick={() => onOpenProfile?.(post)}
+        >
+          <div style={{ position: 'relative' }}>
+            <img
+              src={post.avatar || MALE_AVATAR_SVG}
+              alt={post.author}
+              style={{ width: '46px', height: '46px', borderRadius: '50%', objectFit: 'cover', border: '1.5px solid var(--border-color)' }}
+            />
+            {post.verified && (
+              <span
+                title="Verified Student"
+                style={{
+                  position: 'absolute', bottom: -2, right: -2,
+                  width: '16px', height: '16px', borderRadius: '50%',
+                  backgroundColor: '#0066FF', color: '#fff',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  border: '2px solid var(--bg-secondary)'
+                }}
+              >
+                <Check size={9} strokeWidth={4} />
+              </span>
+            )}
+          </div>
+
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+              <span style={{ fontWeight: 800, fontSize: '0.94rem', color: 'var(--text-primary)' }}>
+                {post.author}
+              </span>
+              <span style={{
+                fontSize: '0.68rem',
+                fontWeight: 700,
+                padding: '2px 7px',
+                borderRadius: '6px',
+                backgroundColor: 'var(--bg-tertiary)',
+                color: 'var(--text-secondary)',
+                border: '1px solid var(--border-color)'
+              }}>
+                🏛️ {post.college}
+              </span>
+            </div>
+
+            <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span>{post.department || 'Computer Science'}</span>
+              <span>•</span>
+              <span>{post.timeAgo || '10m ago'}</span>
+              <span>•</span>
+              <Globe size={11} />
+            </div>
+          </div>
+        </div>
+
+        {/* Category Pill & 3-Dot Dropdown */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', position: 'relative' }}>
+          <span style={{
+            fontSize: '0.7rem',
+            fontWeight: 800,
+            padding: '3px 10px',
+            borderRadius: '999px',
+            backgroundColor: cat.bg,
+            color: cat.color
+          }}>
+            {cat.label}
+          </span>
+
+          <button
+            onClick={() => setShowOptions(!showOptions)}
+            style={{
+              background: 'none', border: 'none',
+              color: 'var(--text-muted)', cursor: 'pointer',
+              padding: '6px', borderRadius: '50%',
+              display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}
+            onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
+            onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+          >
+            <MoreHorizontal size={18} />
+          </button>
+
+          {showOptions && (
+            <div
+              style={{
+                position: 'absolute', right: 0, top: '34px',
+                backgroundColor: 'var(--bg-elevated)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '10px',
+                boxShadow: 'var(--shadow-lg)',
+                padding: '6px',
+                zIndex: 20,
+                width: '170px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '2px'
+              }}
+            >
+              <button
+                onClick={() => {
+                  onBookmark?.(post.id);
+                  setShowOptions(false);
+                  toast?.success(post.isBookmarked ? 'Removed from saved' : 'Post saved to your profile! 🔖');
+                }}
+                style={{
+                  padding: '8px 10px', borderRadius: '6px', border: 'none',
+                  background: 'none', color: 'var(--text-primary)',
+                  fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: '8px', textAlign: 'left'
+                }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
+                <Bookmark size={14} /> {post.isBookmarked ? 'Saved Post' : 'Save Post'}
+              </button>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(window.location.href);
+                  setShowOptions(false);
+                  toast?.success('🔗 Post link copied to clipboard!');
+                }}
+                style={{
+                  padding: '8px 10px', borderRadius: '6px', border: 'none',
+                  background: 'none', color: 'var(--text-primary)',
+                  fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: '8px', textAlign: 'left'
+                }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
+                <Share2 size={14} /> Copy Link
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* 2. Post Title (if doubt or article) */}
+      {post.title && (
+        <h4 style={{ margin: 0, fontSize: '1.02rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.35 }}>
+          {post.title}
+        </h4>
+      )}
+
+      {/* 3. Post Content (Text with #hashtags) */}
+      <div style={{ fontSize: '0.88rem', color: 'var(--text-primary)', lineHeight: 1.6, whiteSpace: 'pre-line' }}>
+        {displayText}
+        {isLongText && (
+          <button
+            onClick={() => setExpanded(!expanded)}
+            style={{ background: 'none', border: 'none', color: 'var(--accent-primary)', fontWeight: 700, cursor: 'pointer', padding: '0 0 0 4px', fontSize: '0.84rem' }}
+          >
+            {expanded ? 'Show less' : '...see more'}
+          </button>
+        )}
+      </div>
+
+      {/* 4. Code Snippet Block (High-Contrast with Copy button) */}
+      {post.codeSnippet && (
+        <div style={{
+          backgroundColor: '#090d16',
+          borderRadius: '10px',
+          border: '1px solid #1e293b',
+          overflow: 'hidden'
+        }}>
+          <div style={{
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            padding: '8px 14px', backgroundColor: '#111827',
+            borderBottom: '1px solid #1e293b'
+          }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', fontFamily: 'monospace' }}>
+              ⌨️ Code Snippet
+            </span>
+            <button
+              onClick={handleCopyCode}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '4px',
+                padding: '4px 8px', borderRadius: '6px', border: '1px solid #334155',
+                backgroundColor: 'transparent', color: copiedCode ? '#10b981' : '#cbd5e1',
+                fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s'
+              }}
+            >
+              {copiedCode ? <Check size={12} /> : <Copy size={12} />}
+              {copiedCode ? 'Copied!' : 'Copy'}
+            </button>
+          </div>
+          <pre style={{
+            margin: 0, padding: '14px',
+            color: '#38bdf8', fontFamily: "'Fira Code', monospace",
+            fontSize: '0.82rem', lineHeight: 1.5, overflowX: 'auto'
+          }}>
+            <code>{post.codeSnippet}</code>
+          </pre>
+        </div>
+      )}
+
+      {/* 5. Image Attachment (if any) */}
+      {post.imageUrl && (
+        <div style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border-color)', maxHeight: '380px' }}>
+          <img
+            src={post.imageUrl}
+            alt="Post media"
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          />
+        </div>
+      )}
+
+      {/* 6. Interactive Poll (if any) */}
+      {post.poll && (
+        <div style={{
+          backgroundColor: 'var(--bg-tertiary)',
+          borderRadius: '12px',
+          padding: '14px',
+          border: '1px solid var(--border-color)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px'
+        }}>
+          <div style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px' }}>
+            📊 Campus Poll · {post.poll.totalVotes || 0} votes
+          </div>
+          {post.poll.options.map((option, idx) => {
+            const hasVoted = post.poll.userVoted !== null;
+            const percentage = post.poll.totalVotes > 0
+              ? Math.round((option.votes / post.poll.totalVotes) * 100)
+              : 0;
+            const isUserPick = post.poll.userVoted === idx;
+
+            return (
+              <button
+                key={idx}
+                onClick={() => onVotePoll?.(post.id, idx)}
+                style={{
+                  position: 'relative',
+                  width: '100%',
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  border: isUserPick ? '1.5px solid var(--accent-primary)' : '1px solid var(--border-color)',
+                  backgroundColor: 'var(--bg-secondary)',
+                  cursor: hasVoted ? 'default' : 'pointer',
+                  overflow: 'hidden',
+                  textAlign: 'left',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}
+              >
+                {/* Percentage progress bar fill */}
+                {hasVoted && (
+                  <div
+                    style={{
+                      position: 'absolute', left: 0, top: 0, bottom: 0,
+                      width: `${percentage}%`,
+                      backgroundColor: isUserPick ? 'rgba(0, 102, 255, 0.18)' : 'rgba(148, 163, 184, 0.15)',
+                      transition: 'width 0.5s ease',
+                      zIndex: 1
+                    }}
+                  />
+                )}
+                <span style={{ position: 'relative', zIndex: 2, fontSize: '0.82rem', fontWeight: isUserPick ? 800 : 600, color: 'var(--text-primary)' }}>
+                  {isUserPick && '✓ '} {option.text}
+                </span>
+                {hasVoted && (
+                  <span style={{ position: 'relative', zIndex: 2, fontSize: '0.8rem', fontWeight: 800, color: isUserPick ? 'var(--accent-primary)' : 'var(--text-muted)' }}>
+                    {percentage}%
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* 7. Live Room Callout (if active) */}
+      {post.hasLiveRoom && (
+        <div style={{
+          backgroundColor: 'rgba(239, 68, 68, 0.08)',
+          border: '1px solid rgba(239, 68, 68, 0.25)',
+          borderRadius: '10px',
+          padding: '10px 14px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '8px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#ef4444', display: 'inline-block', animation: 'pulse 1.5s infinite' }} />
+            <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#ef4444' }}>
+              Active Doubt Room is Live Now!
+            </span>
+          </div>
+          <button
+            onClick={() => onJoinRoom?.(post)}
+            style={{
+              padding: '6px 14px', borderRadius: '6px', border: 'none',
+              background: '#ef4444', color: '#fff', fontSize: '0.74rem',
+              fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px'
+            }}
+          >
+            <Video size={13} /> Join Live Room 🚀
+          </button>
+        </div>
+      )}
+
+      {/* 8. Hashtags & Tags */}
+      {post.tags && post.tags.length > 0 && (
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+          {post.tags.map((tag, idx) => (
+            <span
+              key={idx}
+              style={{
+                fontSize: '0.72rem',
+                fontWeight: 700,
+                color: 'var(--accent-primary)',
+                backgroundColor: 'var(--accent-light)',
+                padding: '2px 8px',
+                borderRadius: '6px',
+                cursor: 'pointer'
+              }}
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* 9. Reaction Stats Bar (Likes, Comments count) */}
+      <div style={{
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        paddingTop: '8px', borderTop: '1px solid var(--border-color)',
+        fontSize: '0.74rem', color: 'var(--text-muted)'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '3px', color: '#ef4444', fontWeight: 700 }}>
+            <Heart size={13} fill="#ef4444" /> {post.likes || 0}
+          </span>
+          <span>•</span>
+          <span>{post.comments?.length || post.answers || 0} comments</span>
+        </div>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <span>{post.shares || 4} reposts</span>
+          <span>•</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+            <Eye size={12} /> {post.views || '1.2k'} views
+          </span>
+        </div>
+      </div>
+
+      {/* 10. Social Action Bar (Like, Comment, Repost, Save, Share) */}
+      <div style={{
+        display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
+        gap: '4px', paddingTop: '4px'
+      }}>
+        <button
+          onClick={() => onLike?.(post.id)}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+            padding: '8px 6px', borderRadius: '8px', border: 'none',
+            background: 'none', color: post.isLiked ? '#ef4444' : 'var(--text-secondary)',
+            fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer',
+            transition: 'background 0.15s, color 0.15s'
+          }}
+          onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
+          onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+        >
+          <Heart size={16} fill={post.isLiked ? '#ef4444' : 'none'} />
+          {post.isLiked ? 'Liked' : 'Like'}
+        </button>
+
+        <button
+          onClick={() => setShowComments(!showComments)}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+            padding: '8px 6px', borderRadius: '8px', border: 'none',
+            background: 'none', color: showComments ? 'var(--accent-primary)' : 'var(--text-secondary)',
+            fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer',
+            transition: 'background 0.15s'
+          }}
+          onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
+          onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+        >
+          <MessageCircle size={16} />
+          Comment
+        </button>
+
+        <button
+          onClick={() => {
+            toast?.success('🔁 Reposted to your campus peers!');
+          }}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+            padding: '8px 6px', borderRadius: '8px', border: 'none',
+            background: 'none', color: 'var(--text-secondary)',
+            fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer',
+            transition: 'background 0.15s'
+          }}
+          onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
+          onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+        >
+          <Repeat2 size={16} />
+          Repost
+        </button>
+
+        <button
+          onClick={() => {
+            onBookmark?.(post.id);
+            toast?.success(post.isBookmarked ? 'Bookmark removed' : 'Saved to Bookmarks 🔖');
+          }}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+            padding: '8px 6px', borderRadius: '8px', border: 'none',
+            background: 'none', color: post.isBookmarked ? 'var(--accent-primary)' : 'var(--text-secondary)',
+            fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer',
+            transition: 'background 0.15s'
+          }}
+          onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
+          onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+        >
+          <Bookmark size={16} fill={post.isBookmarked ? 'var(--accent-primary)' : 'none'} />
+          Save
+        </button>
+      </div>
+
+      {/* 11. Comments Thread & Input Drawer */}
+      {showComments && (
+        <div style={{
+          marginTop: '4px',
+          paddingTop: '12px',
+          borderTop: '1px solid var(--border-color)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px',
+          animation: 'fadeIn 0.2s ease'
+        }}>
+          {/* Add comment input */}
+          <form onSubmit={handleAddComment} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <input
+              type="text"
+              value={commentText}
+              onChange={e => setCommentText(e.target.value)}
+              placeholder="Add your peer explanation or answer..."
+              style={{
+                flex: 1, padding: '8px 12px', borderRadius: '999px',
+                border: '1px solid var(--border-color)',
+                backgroundColor: 'var(--bg-tertiary)',
+                color: 'var(--text-primary)',
+                fontSize: '0.8rem', outline: 'none'
+              }}
+            />
+            <button
+              type="submit"
+              disabled={!commentText.trim()}
+              style={{
+                padding: '8px 14px', borderRadius: '999px', border: 'none',
+                backgroundColor: commentText.trim() ? 'var(--accent-primary)' : 'var(--bg-tertiary)',
+                color: commentText.trim() ? '#fff' : 'var(--text-muted)',
+                fontSize: '0.78rem', fontWeight: 800, cursor: commentText.trim() ? 'pointer' : 'default',
+                display: 'flex', alignItems: 'center', gap: '4px'
+              }}
+            >
+              <Send size={12} /> Send
+            </button>
+          </form>
+
+          {/* Existing comments */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '200px', overflowY: 'auto' }}>
+            {(post.commentsList || [
+              { author: 'Chaitanya Reddy', text: 'Great explanation! This helped me understand the edge cases.', time: '12m ago', avatar: MALE_AVATAR_SVG },
+              { author: 'Bhavna Patel', text: 'You can also optimize space by keeping only 2 rows in DP array.', time: '5m ago', avatar: FEMALE_AVATAR_SVG }
+            ]).map((c, i) => (
+              <div key={i} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', backgroundColor: 'var(--bg-tertiary)', padding: '8px 12px', borderRadius: '10px' }}>
+                <img src={c.avatar || MALE_AVATAR_SVG} alt="" style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontWeight: 800, fontSize: '0.78rem', color: 'var(--text-primary)' }}>{c.author}</span>
+                    <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>{c.time}</span>
+                  </div>
+                  <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', marginTop: '2px' }}>{c.text}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Main HomeHubScreen with LinkedIn / X Feed ─────────────────────────────────
+export function HomeHubScreen({
+  setActiveTab,
+  setActiveRoomId,
+  onOpenBookingModal,
   openPublicProfile,
   onOpenPublicProfile,
   startWebRtcCall,
   bookedSessions,
   onLaunchClassroom,
-  theme, 
-  setTheme 
+  theme,
+  setTheme
 }) {
   const { profile } = useAuth();
   const toast = useToast();
 
-  const rightSidebarRef = useRef(null);
-  const feedColumnRef = useRef(null);
-
-  useEffect(() => {
-    if (rightSidebarRef.current) {
-      rightSidebarRef.current.scrollTop = 0;
-    }
-    if (feedColumnRef.current) {
-      feedColumnRef.current.scrollTop = 0;
-    }
-
-    const handleOpenModal = () => setShowPostModal(true);
-    window.addEventListener('studyloop-open-post-modal', handleOpenModal);
-    return () => window.removeEventListener('studyloop-open-post-modal', handleOpenModal);
-  }, []);
-
-  const [activeFeedFilter, setActiveFeedFilter] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilter, setActiveFilter] = useState('for_you'); // 'for_you', 'campus', 'following', 'doubt', 'placement', 'exam', 'project'
   const [showPostModal, setShowPostModal] = useState(false);
   const [composerCategory, setComposerCategory] = useState('doubt');
   const [composerCodeMode, setComposerCodeMode] = useState(false);
 
-  // Filters & Sorting state
-  const [campusFilter, setCampusFilter] = useState('all');
-  const [branchFilter, setBranchFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('recent'); // 'recent', 'upvotes', 'answers'
-  const [showSortDropdown, setShowSortDropdown] = useState(false);
-
-  const [academicPosts, setAcademicPosts] = useState([
-    {
-      id: 'reel-1',
-      author: 'Ananya Guha',
-      college: 'BITS Pilani',
-      department: 'Cloud & Systems',
-      avatar: FEMALE_AVATAR_SVG,
-      verified: true,
-      category: 'reels',
-      title: '🎬 60-Sec Concept Short: Kubernetes Pod Lifecycle & Eviction Explained',
-      content: 'Quick 60-second animated concept short on Kubernetes Pod Scheduling, Resource limits vs requests, and node pressure eviction. Watch full concept explanation below! 👇',
-      videoUrl: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=700&auto=format&fit=crop&q=80',
-      isReel: true,
-      reelDuration: '0:58',
-      codeSnippet: 'kubectl describe pod <pod-name> | grep -E "State|Node"',
-      tags: ['#ConceptShorts', '#Kubernetes', '#DevOps60s'],
-      upvotes: 142, isUpvoted: true, answers: 28, timeAgo: '22m', hasLiveRoom: false
-    },
-    {
-      id: 'reel-2',
-      author: 'Vikram Joshi',
-      college: 'IIT Madras',
-      department: 'Computer Science',
-      avatar: MALE_AVATAR_SVG,
-      verified: true,
-      category: 'reels',
-      title: '🎬 45-Sec Short: Dijkstra vs Bellman-Ford in 45 Seconds',
-      content: 'Why Dijkstra fails with negative weight cycles and why Bellman-Ford relaxes edges V-1 times. Visual animated walkthrough in 45s.',
-      videoUrl: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=700&auto=format&fit=crop&q=80',
-      isReel: true,
-      reelDuration: '0:45',
-      codeSnippet: null,
-      tags: ['#AlgorithmsShort', '#GraphTheory', '#Placements'],
-      upvotes: 98, isUpvoted: false, answers: 14, timeAgo: '1h', hasLiveRoom: true
-    },
-    {
-      id: 'p1',
-      author: 'Rohan Deshmukh',
-      college: 'IIT Bombay',
-      department: 'Computer Science',
-      avatar: MALE_AVATAR_SVG,
-      verified: true,
-      category: 'doubt',
-      title: '0/1 Knapsack 2D DP Memoization — State Transition Bug',
-      content: 'Getting an out-of-bounds error on recursive top-down memoization when capacity W exceeds array limits. Has anyone refactored this to a 1D space-optimized table?',
-      codeSnippet: 'dp[i][w] = Math.max(dp[i-1][w], val[i-1] + dp[i-1][w - wt[i-1]]);',
-      tags: ['#DynamicProgramming', '#DSA', '#LeetCodeMedium'],
-      upvotes: 34, isUpvoted: false, answers: 8, timeAgo: '15m', hasLiveRoom: true
-    },
-    {
-      id: 'p2',
-      author: 'Bhavna Patel',
-      college: 'IIT Madras',
-      department: 'Data Science & AI',
-      avatar: FEMALE_AVATAR_SVG,
-      verified: true,
-      category: 'placement',
-      title: 'Google & Microsoft SDE-1 OA Graph Traversal Cheatsheet',
-      content: "Compiled top 15 Graph BFS/DFS patterns from recent campus placement rounds. Includes cycle detection in directed graphs and Kahn's algorithm for topological sort.",
-      codeSnippet: null,
-      tags: ['#Placements', '#GraphAlgorithms', '#InterviewOA'],
-      upvotes: 89, isUpvoted: true, answers: 24, timeAgo: '1h', hasLiveRoom: false
-    },
-    {
-      id: 'p3',
-      author: 'Chaitanya Reddy',
-      college: 'BITS Pilani',
-      department: 'Electrical & CS',
-      avatar: MALE_AVATAR_SVG,
-      verified: true,
-      category: 'exam',
-      title: 'K-Map Prime Implicants — 4-variable Grouping Mid-sem Prep',
-      content: "Stuck on 4-variable K-Map with essential prime implicants and don't-care conditions. Looking for a 10-minute peer walkthrough before tomorrow's exam.",
-      codeSnippet: null,
-      tags: ['#DigitalLogic', '#SemesterExam', '#Hardware'],
-      upvotes: 19, isUpvoted: false, answers: 5, timeAgo: '3h', hasLiveRoom: true
-    }
-  ]);
-
-  const topMentors = [
-    { id: 'm1', fullName: 'Bhavna Patel', college: 'IIT Madras', subject: 'DSA & Algorithms', specialty: 'DP, Graphs', rating: 4.98, sessions: 42, avatar: FEMALE_AVATAR_SVG, available: true },
-    { id: 'm2', fullName: 'Rohan Deshmukh', college: 'IIT Bombay', subject: 'Competitive Prog.', specialty: 'Segment Trees, CP', rating: 4.92, sessions: 38, avatar: MALE_AVATAR_SVG, available: false },
-    { id: 'm3', fullName: 'Divya Nambiar', college: 'NIT Trichy', subject: 'DBMS & OS', specialty: 'Indexing, Scheduling', rating: 4.95, sessions: 29, avatar: FEMALE_AVATAR_SVG, available: true }
-  ];
-
-  const handleUpvote = (id) => {
-    setAcademicPosts(p => p.map(post => post.id === id
-      ? { ...post, isUpvoted: !post.isUpvoted, upvotes: post.isUpvoted ? post.upvotes - 1 : post.upvotes + 1 }
-      : post
-    ));
-  };
-
-  const handlePost = ({ text, category, codeText }) => {
-    const np = {
-      id: `p-${Date.now()}`,
-      author: profile?.fullName || 'You',
-      college: profile?.college || 'IIT Madras',
-      department: profile?.department || 'Computer Science',
-      avatar: getDefaultAvatarByGender(profile?.gender, profile?.avatarUrl),
-      verified: true,
-      category,
-      title: text.slice(0, 65) + (text.length > 65 ? '...' : ''),
-      content: text,
-      codeSnippet: codeText || null,
-      tags: ['#CampusPost'],
-      upvotes: 1, isUpvoted: true, answers: 0,
-      timeAgo: 'Just now', hasLiveRoom: true
-    };
-    setAcademicPosts(prev => [np, ...prev]);
-    toast.success('Posted to campus network! 🎉');
-  };
-
-  const filteredPosts = academicPosts.filter(p => {
-    const matchCategory = activeFeedFilter === 'all' || p.category === activeFeedFilter;
-    const q = searchQuery.toLowerCase();
-    const matchSearch = !q || 
-      p.title.toLowerCase().includes(q) || 
-      p.content.toLowerCase().includes(q) ||
-      (p.tags && p.tags.some(t => t.toLowerCase().includes(q))) ||
-      p.author.toLowerCase().includes(q);
-    const matchCampus = campusFilter === 'all' || (p.college && p.college.toLowerCase().includes(campusFilter.toLowerCase()));
-    const matchBranch = branchFilter === 'all' || (p.department && p.department.toLowerCase().includes('computer'));
-    return matchCategory && matchSearch && matchCampus && matchBranch;
-  }).sort((a, b) => {
-    if (sortBy === 'upvotes') return b.upvotes - a.upvotes;
-    if (sortBy === 'answers') return b.answers - a.answers;
-    return 0; // default order in array is recent
-  });
-
-  // Quick Doubt Modal State
+  // Quick doubt / skill swap modal states
   const [showQuickDoubtModal, setShowQuickDoubtModal] = useState(false);
   const [quickDoubtQuestion, setQuickDoubtQuestion] = useState('');
   const [quickDoubtSubject, setQuickDoubtSubject] = useState('Java');
-  const [quickDoubtLanguage, setQuickDoubtLanguage] = useState('Telugu');
+  const [quickDoubtLanguage, setQuickDoubtLanguage] = useState('Telugu / English');
 
-  // Quick Skill Swap Modal State
   const [showSkillSwapModal, setShowSkillSwapModal] = useState(false);
-  const [swapLearn, setSwapLearn] = useState('Java & Spring Boot');
-  const [swapTeach, setSwapTeach] = useState('React & Frontend');
+  const [swapLearn, setSwapLearn] = useState('');
+  const [swapTeach, setSwapTeach] = useState('');
 
-  const handleCreateQuickDoubt = (e) => {
-    e.preventDefault();
-    if (!quickDoubtQuestion.trim()) return;
-    const roomId = `doubt-${quickDoubtSubject.toLowerCase()}-${Date.now().toString().slice(-4)}`;
-    setShowQuickDoubtModal(false);
-    toast.success(`🚀 Live Doubt Room "${quickDoubtQuestion.slice(0, 30)}..." launched!`);
-    setActiveRoomId?.(roomId);
-    setActiveTab('doubts');
-    if (startWebRtcCall) {
-      startWebRtcCall(null, roomId, quickDoubtQuestion, quickDoubtSubject);
+  // Feed Posts List
+  const [posts, setPosts] = useState([
+    {
+      id: 'p-1',
+      author: 'Bhavna Patel',
+      college: 'IIT Madras',
+      department: 'CS 4th Year • Java & ML Mentor',
+      avatar: FEMALE_AVATAR_SVG,
+      verified: true,
+      category: 'placement',
+      title: '🚀 Top 15 Graph BFS/DFS Patterns from Google & Microsoft SDE OA Rounds',
+      content: 'Just finished documenting the most frequent Graph problems asked in this semester\'s campus placement coding assessments.\n\nKey takeaways:\n1. Cycle detection in Directed Graph (Kahn\'s algorithm vs 3-color DFS)\n2. Shortest path in unweighted DAG (0-1 BFS with Deque)\n3. Disjoint Set Union (DSU) with Path Compression & Rank\n\nFull cheat sheet attached below for campus juniors! Drop your questions in comments.',
+      codeSnippet: `// 0-1 BFS for Shortest Path with 0/1 weights
+Deque<Integer> dq = new ArrayDeque<>();
+dq.addFirst(startNode);
+dist[startNode] = 0;
+while(!dq.isEmpty()) {
+    int u = dq.pollFirst();
+    for (Edge e : adj.get(u)) {
+        if (dist[u] + e.weight < dist[e.v]) {
+            dist[e.v] = dist[u] + e.weight;
+            if (e.weight == 0) dq.addFirst(e.v);
+            else dq.addLast(e.v);
+        }
     }
-  };
+}`,
+      imageUrl: null,
+      tags: ['#JavaDSA', '#Placements2026', '#GraphTheory', '#IITMadras'],
+      likes: 184,
+      isLiked: false,
+      answers: 28,
+      shares: 19,
+      views: '2.4k',
+      timeAgo: '12m ago',
+      isBookmarked: false,
+      hasLiveRoom: false
+    },
+    {
+      id: 'p-2',
+      author: 'Rohan Deshmukh',
+      college: 'IIT Bombay',
+      department: 'Competitive Programming Lead',
+      avatar: MALE_AVATAR_SVG,
+      verified: true,
+      category: 'doubt',
+      title: '❓ 0/1 Knapsack 2D DP Memoization — ArrayIndexOutOfBounds on state table',
+      content: 'Getting an index out of bounds error during recursive top-down memoization when capacity W exceeds the pre-allocated array bounds. Can someone jump into the Live Room and explain 1D space optimization in Telugu / English?',
+      codeSnippet: `int solve(int i, int w, int[] val, int[] wt, int[][] dp) {
+    if (i == 0 || w == 0) return 0;
+    if (dp[i][w] != -1) return dp[i][w];
+    if (wt[i-1] <= w) {
+        return dp[i][w] = Math.max(val[i-1] + solve(i-1, w-wt[i-1], val, wt, dp), solve(i-1, w, val, wt, dp));
+    }
+    return dp[i][w] = solve(i-1, w, val, wt, dp);
+}`,
+      imageUrl: null,
+      tags: ['#DynamicProgramming', '#DSA', '#CodeBug'],
+      likes: 56,
+      isLiked: true,
+      answers: 12,
+      shares: 6,
+      views: '1.1k',
+      timeAgo: '28m ago',
+      isBookmarked: true,
+      hasLiveRoom: true
+    },
+    {
+      id: 'p-3',
+      author: 'Chaitanya Reddy',
+      college: 'BITS Pilani',
+      department: 'EEE & Algorithms Tutor',
+      avatar: MALE_AVATAR_SVG,
+      verified: true,
+      category: 'general',
+      title: '📊 Campus Poll: Which Semester 4 Subject is Most Challenging?',
+      content: 'Hey everyone! Setting up peer study groups for the upcoming mid-semester exams. Which domain do you think requires the most peer doubt-solving sessions this month?',
+      poll: {
+        question: 'Which subject requires the most doubt sessions?',
+        options: [
+          { text: 'Dynamic Programming & Graphs (DSA)', votes: 142 },
+          { text: 'Operating Systems (Paging & Locks)', votes: 98 },
+          { text: 'Database Management Systems (SQL & ACID)', votes: 45 },
+          { text: 'Computer Networks (TCP/IP & Sockets)', votes: 61 }
+        ],
+        totalVotes: 346,
+        userVoted: null
+      },
+      tags: ['#CampusPoll', '#ExamPrep', '#StudyGroups'],
+      likes: 92,
+      isLiked: false,
+      answers: 34,
+      shares: 14,
+      views: '1.8k',
+      timeAgo: '1h ago',
+      isBookmarked: false,
+      hasLiveRoom: false
+    },
+    {
+      id: 'p-4',
+      author: 'Kavya Subramanian',
+      college: 'IIT Delhi',
+      department: 'React & WebRTC Senior Mentor',
+      avatar: FEMALE_AVATAR_SVG,
+      verified: true,
+      category: 'exam',
+      title: '📚 React useEffect Cleanup & WebRTC ICE Candidate Memory Leak Prevention',
+      content: 'Here is a quick concept sheet explaining why cleaning up EventListeners and RTCPeerConnection instances in useEffect prevents infinite re-render loops and zombie sockets!\n\nKey Rule:\nAlways return a teardown callback in useEffect when creating peer connections.',
+      imageUrl: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=700&auto=format&fit=crop&q=80',
+      tags: ['#React', '#WebRTC', '#JavaScript', '#Frontend'],
+      likes: 210,
+      isLiked: false,
+      answers: 41,
+      shares: 32,
+      views: '3.1k',
+      timeAgo: '2h ago',
+      isBookmarked: true,
+      hasLiveRoom: false
+    },
+    {
+      id: 'p-5',
+      author: 'Divya Nambiar',
+      college: 'NIT Trichy',
+      department: 'Data Science & SQL Expert',
+      avatar: FEMALE_AVATAR_SVG,
+      verified: true,
+      category: 'project',
+      title: '🚀 Looking for 2 React/Spring Boot developers for SIH Smart Campus Project',
+      content: 'We are building an AI-powered Campus Mentoring & Question Paper archive for SIH 2026. Tech stack: React + Spring Boot + PostgreSQL. If you want to collaborate and earn project badges, comment below or send a connection request!',
+      tags: ['#SIH2026', '#OpenSource', '#Hackathon', '#SpringBoot'],
+      likes: 124,
+      isLiked: false,
+      answers: 19,
+      shares: 11,
+      views: '1.5k',
+      timeAgo: '3h ago',
+      isBookmarked: false,
+      hasLiveRoom: false
+    }
+  ]);
 
-  const handleProposeSkillSwap = (e) => {
-    e.preventDefault();
-    setShowSkillSwapModal(false);
-    toast.success(`🔄 Skill Swap proposal posted to campus: You teach ${swapTeach} ⮀ Learn ${swapLearn}!`);
-    setActiveTab('sessions');
-  };
-
+  // Live Doubt Rooms
   const liveDoubtRooms = [
     {
       id: 'room-1',
@@ -502,8 +1140,7 @@ export function HomeHubScreen({
       language: 'Telugu / English',
       creator: 'Aarav Sharma',
       college: 'IIT Madras',
-      participants: 3,
-      time: 'Live Now'
+      participants: 3
     },
     {
       id: 'room-2',
@@ -512,8 +1149,7 @@ export function HomeHubScreen({
       language: 'Telugu / English',
       creator: 'Bhavna Patel',
       college: 'IIT Madras',
-      participants: 5,
-      time: 'Live Now'
+      participants: 5
     },
     {
       id: 'room-3',
@@ -522,122 +1158,156 @@ export function HomeHubScreen({
       language: 'English / Hindi',
       creator: 'Chaitanya Reddy',
       college: 'BITS Pilani',
-      participants: 4,
-      time: 'Live Now'
+      participants: 4
     }
   ];
 
+  // Top Mentors
+  const topMentors = [
+    { id: 'm1', fullName: 'Bhavna Patel', college: 'IIT Madras', subject: 'DSA & Algorithms', specialty: 'DP, Graphs', rating: 4.98, sessions: 42, avatar: FEMALE_AVATAR_SVG, available: true, rate: '₹50/session' },
+    { id: 'm2', fullName: 'Rohan Deshmukh', college: 'IIT Bombay', subject: 'Competitive Prog.', specialty: 'Segment Trees, CP', rating: 4.92, sessions: 38, avatar: MALE_AVATAR_SVG, available: false, rate: '₹60/session' },
+    { id: 'm3', fullName: 'Divya Nambiar', college: 'NIT Trichy', subject: 'DBMS & OS', specialty: 'Indexing, Scheduling', rating: 4.95, sessions: 29, avatar: FEMALE_AVATAR_SVG, available: true, rate: '₹40/session' }
+  ];
+
+  // Trending Topics
+  const trendingTopics = [
+    { tag: '#JavaDSA', count: '1.4k posts', hot: true },
+    { tag: '#Placements2026', count: '2.8k posts', hot: true },
+    { tag: '#TeluguTutors', count: '920 posts', hot: true },
+    { tag: '#ReactHooks', count: '850 posts', hot: false },
+    { tag: '#OperatingSystems', count: '640 posts', hot: false },
+    { tag: '#SIH2026', count: '510 posts', hot: false }
+  ];
+
+  // Handlers
+  const handleLike = (id) => {
+    setPosts(prev => prev.map(p => {
+      if (p.id === id) {
+        const nextLiked = !p.isLiked;
+        return {
+          ...p,
+          isLiked: nextLiked,
+          likes: nextLiked ? p.likes + 1 : p.likes - 1
+        };
+      }
+      return p;
+    }));
+  };
+
+  const handleBookmark = (id) => {
+    setPosts(prev => prev.map(p => {
+      if (p.id === id) {
+        return { ...p, isBookmarked: !p.isBookmarked };
+      }
+      return p;
+    }));
+  };
+
+  const handleVotePoll = (postId, optionIdx) => {
+    setPosts(prev => prev.map(p => {
+      if (p.id === postId && p.poll) {
+        if (p.poll.userVoted !== null) return p; // already voted
+        const newOptions = [...p.poll.options];
+        newOptions[optionIdx].votes += 1;
+        return {
+          ...p,
+          poll: {
+            ...p.poll,
+            options: newOptions,
+            totalVotes: p.poll.totalVotes + 1,
+            userVoted: optionIdx
+          }
+        };
+      }
+      return p;
+    }));
+    toast.success('📊 Vote registered!');
+  };
+
+  const handleAddComment = (postId, commentText) => {
+    setPosts(prev => prev.map(p => {
+      if (p.id === postId) {
+        const newComment = {
+          author: profile?.fullName || 'Aarav Sharma',
+          avatar: getDefaultAvatarByGender(profile?.gender, profile?.avatarUrl),
+          text: commentText,
+          time: 'Just now'
+        };
+        const currentList = p.commentsList || [];
+        return {
+          ...p,
+          answers: (p.answers || 0) + 1,
+          commentsList: [newComment, ...currentList]
+        };
+      }
+      return p;
+    }));
+  };
+
+  const handleCreatePost = (newPostData) => {
+    const newPost = {
+      id: `p-${Date.now()}`,
+      author: profile?.fullName || 'Aarav Sharma',
+      college: profile?.college || 'IIT Madras',
+      department: profile?.department || 'Computer Science 3rd Year',
+      avatar: getDefaultAvatarByGender(profile?.gender, profile?.avatarUrl),
+      verified: true,
+      category: newPostData.category || 'general',
+      title: newPostData.text.slice(0, 60) + (newPostData.text.length > 60 ? '...' : ''),
+      content: newPostData.text,
+      codeSnippet: newPostData.codeText || null,
+      imageUrl: newPostData.imageUrl || null,
+      poll: newPostData.poll || null,
+      tags: ['#CampusPost', `#${profile?.college?.replace(/\s+/g, '') || 'IITMadras'}`],
+      likes: 1,
+      isLiked: true,
+      answers: 0,
+      shares: 0,
+      views: '1',
+      timeAgo: 'Just now',
+      isBookmarked: false,
+      hasLiveRoom: newPostData.category === 'doubt'
+    };
+    setPosts([newPost, ...posts]);
+    toast.success('🎉 Post published to Campus Feed!');
+  };
+
+  const handleCreateQuickDoubt = (e) => {
+    e.preventDefault();
+    if (!quickDoubtQuestion.trim()) return;
+    const newRoomId = `room-${Date.now()}`;
+    setShowQuickDoubtModal(false);
+    toast.success(`Launching Live Doubt Room: "${quickDoubtQuestion.slice(0, 30)}..." 🚀`);
+    setActiveRoomId?.(newRoomId);
+    setActiveTab('doubts');
+    startWebRtcCall?.(null, newRoomId, quickDoubtQuestion, quickDoubtSubject);
+  };
+
+  const handleProposeSkillSwap = (e) => {
+    e.preventDefault();
+    if (!swapLearn.trim() || !swapTeach.trim()) return;
+    setShowSkillSwapModal(false);
+    toast.success(`Skill Swap Proposal Posted! Learn: "${swapLearn}" ⮀ Teach: "${swapTeach}" 🤝`);
+  };
+
+  // Filtered feed
+  const filteredPosts = posts.filter(p => {
+    if (activeFilter === 'for_you') return true;
+    if (activeFilter === 'campus') return p.college?.toLowerCase().includes(profile?.college?.toLowerCase() || 'iit');
+    if (activeFilter === 'following') return p.verified;
+    return p.category === activeFilter;
+  });
+
   return (
-    <div className="studyloop-page-container">
+    <div className="studyloop-page-container" style={{ maxWidth: '1280px', margin: '0 auto', padding: '16px 20px' }}>
 
-      {/* ── QUICK DOUBT MODAL ── */}
-      {showQuickDoubtModal && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.8)', zIndex: 4000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', backdropFilter: 'blur(6px)' }}>
-          <div className="card-premium" style={{ width: '100%', maxWidth: '520px', padding: '2rem', borderRadius: 'var(--radius-xl)', backgroundColor: 'var(--bg-elevated)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-              <div>
-                <h3 className="font-serif" style={{ fontSize: '1.3rem', margin: 0 }}>❓ Ask Academic Doubt</h3>
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: '0.2rem 0 0 0' }}>
-                  Instantly creates a dedicated live room with audio/video, code editor & chat.
-                </p>
-              </div>
-              <button onClick={() => setShowQuickDoubtModal(false)} className="btn-icon">✕</button>
-            </div>
-            <form onSubmit={handleCreateQuickDoubt} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div>
-                <label className="label">Your Question / Concept</label>
-                <textarea 
-                  className="input" 
-                  rows={3} 
-                  placeholder="e.g. Why does my recursive DFS throw StackOverflowError on cyclic graph?" 
-                  value={quickDoubtQuestion} 
-                  onChange={e => setQuickDoubtQuestion(e.target.value)} 
-                  required 
-                />
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                <div>
-                  <label className="label">Subject Tag</label>
-                  <select className="input" value={quickDoubtSubject} onChange={e => setQuickDoubtSubject(e.target.value)}>
-                    <option value="Java">Java</option>
-                    <option value="React">React</option>
-                    <option value="Algorithms">Algorithms & DSA</option>
-                    <option value="Databases">DBMS & SQL</option>
-                    <option value="Calculus">Mathematics</option>
-                    <option value="AI / ML">Python & AI</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="label">Preferred Language</label>
-                  <select className="input" value={quickDoubtLanguage} onChange={e => setQuickDoubtLanguage(e.target.value)}>
-                    <option value="Telugu">🗣️ తెలుగు (Telugu)</option>
-                    <option value="English">🗣️ English</option>
-                    <option value="Hindi">🗣️ हिंदी (Hindi)</option>
-                  </select>
-                </div>
-              </div>
-              <button type="submit" className="btn btn-primary" style={{ padding: '0.75rem', fontWeight: 800 }}>
-                Launch Live Doubt Room 🚀
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ── QUICK SKILL SWAP MODAL ── */}
-      {showSkillSwapModal && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.8)', zIndex: 4000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', backdropFilter: 'blur(6px)' }}>
-          <div className="card-premium" style={{ width: '100%', maxWidth: '520px', padding: '2rem', borderRadius: 'var(--radius-xl)', backgroundColor: 'var(--bg-elevated)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-              <div>
-                <h3 className="font-serif" style={{ fontSize: '1.3rem', margin: 0 }}>🔄 Peer Skill Barter / Swap</h3>
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: '0.2rem 0 0 0' }}>
-                  100% Free peer knowledge exchange — zero money.
-                </p>
-              </div>
-              <button onClick={() => setShowSkillSwapModal(false)} className="btn-icon">✕</button>
-            </div>
-            <form onSubmit={handleProposeSkillSwap} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div>
-                <label className="label">1. What Subject Do You Want to Learn?</label>
-                <input 
-                  type="text" 
-                  className="input" 
-                  value={swapLearn} 
-                  onChange={e => setSwapLearn(e.target.value)} 
-                  placeholder="e.g. Java OOP, Dynamic Programming, SQL Normalization" 
-                  required 
-                />
-              </div>
-              <div>
-                <label className="label">2. What Subject Can You Teach in Exchange?</label>
-                <input 
-                  type="text" 
-                  className="input" 
-                  value={swapTeach} 
-                  onChange={e => setSwapTeach(e.target.value)} 
-                  placeholder="e.g. React & Redux, Python Fast-API, Engineering Physics" 
-                  required 
-                />
-              </div>
-              <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)', padding: '0.75rem', borderRadius: '6px', fontSize: '0.75rem', color: '#059669', lineHeight: 1.4 }}>
-                💡 <strong>Mutual Learning:</strong> Once a campus peer accepts your swap, a free 1:1 Live Classroom will be scheduled for both of you!
-              </div>
-              <button type="submit" className="btn btn-primary" style={{ padding: '0.75rem', fontWeight: 800, background: '#10b981', borderColor: '#10b981' }}>
-                Post Skill Swap Proposal 🤝
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ── 1. HERO COMMAND CENTER HEADER ── */}
+      {/* ── 1. HERO COMMAND HEADER ── */}
       <div style={{
         background: 'linear-gradient(135deg, rgba(0, 102, 255, 0.08) 0%, rgba(124, 58, 237, 0.06) 100%)',
         border: '1px solid rgba(0, 102, 255, 0.18)',
         borderRadius: '16px',
-        padding: '24px 28px',
-        marginBottom: '24px',
+        padding: '20px 24px',
+        marginBottom: '20px',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
@@ -645,776 +1315,471 @@ export function HomeHubScreen({
         gap: '16px'
       }}>
         <div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: 'var(--accent-light)', color: 'var(--accent-primary)', padding: '3px 10px', borderRadius: '999px', fontSize: '0.72rem', fontWeight: 800, marginBottom: '8px' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: 'var(--accent-light)', color: 'var(--accent-primary)', padding: '3px 10px', borderRadius: '999px', fontSize: '0.72rem', fontWeight: 800, marginBottom: '6px' }}>
             🎓 {profile?.college || 'IIT Madras'} Campus Hub
           </div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 900, color: 'var(--text-primary)', margin: '0 0 6px 0', letterSpacing: '-0.02em' }}>
-            Welcome back, {profile?.fullName?.split(' ')[0] || 'Student'}! 👋
+          <h1 style={{ fontSize: '1.6rem', fontWeight: 900, color: 'var(--text-primary)', margin: '0 0 4px 0', letterSpacing: '-0.02em' }}>
+            Welcome back, {profile?.fullName?.split(' ')[0] || 'Aarav'}! 👋
           </h1>
-          <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary)', margin: 0, maxWidth: '580px' }}>
-            Get instant academic clarity in your language. Solve doubts in dedicated live rooms, connect with verified peer mentors, or swap skills for free.
+          <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', margin: 0, maxWidth: '580px' }}>
+            Explore what's happening across campus, solve live doubts, and scroll through peer discussions.
           </p>
         </div>
 
         {/* Quick Scholar Metrics */}
-        <div style={{ display: 'flex', gap: '16px', backgroundColor: 'var(--bg-secondary)', padding: '12px 18px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+        <div style={{ display: 'flex', gap: '16px', backgroundColor: 'var(--bg-secondary)', padding: '10px 16px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
           <TrustRing score={profile?.trustScore || 82} />
           <div style={{ width: '1px', backgroundColor: 'var(--border-color)' }} />
           <ActivityHeatmap />
         </div>
       </div>
 
-      {/* ── 2. FOUR PRIMARY ACTION TILES (LinkedIn / Unstop Command Grid) ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px', marginBottom: '24px' }}>
-        
-        {/* Action 1: Ask a Doubt */}
-        <div 
+      {/* ── 2. FOUR PRIMARY ACTION TILES ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '12px', marginBottom: '22px' }}>
+        <div
           onClick={() => setShowQuickDoubtModal(true)}
           className="studyloop-card interactive-hover"
-          style={{ padding: '18px 20px', cursor: 'pointer', margin: 0, borderLeft: '4px solid #ef4444' }}
+          style={{ padding: '16px 18px', cursor: 'pointer', margin: 0, borderLeft: '4px solid #ef4444' }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-            <span style={{ width: '38px', height: '38px', borderRadius: '10px', backgroundColor: 'rgba(239, 68, 68, 0.12)', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <HelpCircle size={20} />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+            <span style={{ width: '36px', height: '36px', borderRadius: '8px', backgroundColor: 'rgba(239, 68, 68, 0.12)', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <HelpCircle size={18} />
             </span>
-            <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: '2px 7px', borderRadius: '999px' }}>Instant</span>
+            <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: '2px 6px', borderRadius: '999px' }}>Instant</span>
           </div>
-          <div style={{ fontWeight: 800, fontSize: '0.96rem', color: 'var(--text-primary)', marginBottom: '4px' }}>
-            Ask Academic Doubt
-          </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-            Open dedicated live meeting room with code editor & whiteboard.
-          </div>
+          <div style={{ fontWeight: 800, fontSize: '0.92rem', color: 'var(--text-primary)', marginBottom: '2px' }}>Ask Academic Doubt</div>
+          <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', lineHeight: 1.35 }}>Open live room with code editor & whiteboard.</div>
         </div>
 
-        {/* Action 2: Find a Mentor */}
-        <div 
+        <div
           onClick={() => setActiveTab('discover')}
           className="studyloop-card interactive-hover"
-          style={{ padding: '18px 20px', cursor: 'pointer', margin: 0, borderLeft: '4px solid #0066FF' }}
+          style={{ padding: '16px 18px', cursor: 'pointer', margin: 0, borderLeft: '4px solid #0066FF' }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-            <span style={{ width: '38px', height: '38px', borderRadius: '10px', backgroundColor: 'var(--accent-light)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Search size={20} />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+            <span style={{ width: '36px', height: '36px', borderRadius: '8px', backgroundColor: 'var(--accent-light)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Search size={18} />
             </span>
-            <span style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--accent-primary)', backgroundColor: 'var(--accent-light)', padding: '2px 7px', borderRadius: '999px' }}>Telugu & More</span>
+            <span style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--accent-primary)', backgroundColor: 'var(--accent-light)', padding: '2px 6px', borderRadius: '999px' }}>Telugu & More</span>
           </div>
-          <div style={{ fontWeight: 800, fontSize: '0.96rem', color: 'var(--text-primary)', marginBottom: '4px' }}>
-            Find Campus Mentors
-          </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-            Browse verified seniors by subject, rating, and spoken languages.
-          </div>
+          <div style={{ fontWeight: 800, fontSize: '0.92rem', color: 'var(--text-primary)', marginBottom: '2px' }}>Find Campus Mentors</div>
+          <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', lineHeight: 1.35 }}>Verified seniors by subject, rating & language.</div>
         </div>
 
-        {/* Action 3: Peer Skill Swap */}
-        <div 
+        <div
           onClick={() => setShowSkillSwapModal(true)}
           className="studyloop-card interactive-hover"
-          style={{ padding: '18px 20px', cursor: 'pointer', margin: 0, borderLeft: '4px solid #10b981' }}
+          style={{ padding: '16px 18px', cursor: 'pointer', margin: 0, borderLeft: '4px solid #10b981' }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-            <span style={{ width: '38px', height: '38px', borderRadius: '10px', backgroundColor: 'rgba(16, 185, 129, 0.12)', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Share2 size={20} />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+            <span style={{ width: '36px', height: '36px', borderRadius: '8px', backgroundColor: 'rgba(16, 185, 129, 0.12)', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Share2 size={18} />
             </span>
-            <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', padding: '2px 7px', borderRadius: '999px' }}>100% Free</span>
+            <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', padding: '2px 6px', borderRadius: '999px' }}>100% Free</span>
           </div>
-          <div style={{ fontWeight: 800, fontSize: '0.96rem', color: 'var(--text-primary)', marginBottom: '4px' }}>
-            Peer Skill Swap
-          </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-            "You teach me X, I teach you Y" — zero money barter exchange.
-          </div>
+          <div style={{ fontWeight: 800, fontSize: '0.92rem', color: 'var(--text-primary)', marginBottom: '2px' }}>Peer Skill Swap</div>
+          <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', lineHeight: 1.35 }}>"You teach me X, I teach you Y" barter.</div>
         </div>
 
-        {/* Action 4: Become a Mentor */}
-        <div 
+        <div
           onClick={() => setActiveTab('discover')}
           className="studyloop-card interactive-hover"
-          style={{ padding: '18px 20px', cursor: 'pointer', margin: 0, borderLeft: '4px solid #7C3AED' }}
+          style={{ padding: '16px 18px', cursor: 'pointer', margin: 0, borderLeft: '4px solid #7C3AED' }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-            <span style={{ width: '38px', height: '38px', borderRadius: '10px', backgroundColor: 'rgba(124, 58, 237, 0.12)', color: '#7C3AED', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Award size={20} />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+            <span style={{ width: '36px', height: '36px', borderRadius: '8px', backgroundColor: 'rgba(124, 58, 237, 0.12)', color: '#7C3AED', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Award size={18} />
             </span>
-            <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#7C3AED', backgroundColor: 'rgba(124, 58, 237, 0.1)', padding: '2px 7px', borderRadius: '999px' }}>Earn / Badges</span>
+            <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#7C3AED', backgroundColor: 'rgba(124, 58, 237, 0.1)', padding: '2px 6px', borderRadius: '999px' }}>Earn / Badges</span>
           </div>
-          <div style={{ fontWeight: 800, fontSize: '0.96rem', color: 'var(--text-primary)', marginBottom: '4px' }}>
-            Become a Mentor
-          </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-            Teach juniors, earn ₹30-₹100/session or mentor for badge honors.
-          </div>
+          <div style={{ fontWeight: 800, fontSize: '0.92rem', color: 'var(--text-primary)', marginBottom: '2px' }}>Become a Mentor</div>
+          <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', lineHeight: 1.35 }}>Teach juniors, earn ₹30-₹100 or badge honors.</div>
         </div>
-
       </div>
 
-      {/* ── 3. BALANCED 2-COLUMN GRID (Flush Top Baseline) ── */}
-      <div className="studyloop-hub-grid">
+      {/* ── 3. MAIN 2-COLUMN FEED GRID (LINKEDIN & X STYLE) ── */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 340px',
+        gap: '22px',
+        alignItems: 'start'
+      }} className="studyloop-hub-grid">
 
-        {/* ── LEFT / MAIN DASHBOARD COLUMN: ZERO DUPLICATE FEED ── */}
-        <div ref={feedColumnRef} style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
+        {/* ── LEFT COLUMN: THE LINKEDIN / X STYLE FEED STREAM ── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
-          {/* ── SECTION 1: 🔴 LIVE ACADEMIC DOUBT ROOMS (RIGHT NOW) ── */}
-          <div style={{
-            backgroundColor: 'var(--card-bg)',
-            border: '1px solid var(--border-color)',
-            borderRadius: '16px',
-            padding: '20px',
-            boxShadow: 'var(--shadow-sm)'
-          }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: '14px',
-              flexWrap: 'wrap',
-              gap: '10px'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  backgroundColor: 'rgba(239, 68, 68, 0.12)',
-                  color: '#ef4444',
-                  padding: '4px 10px',
+          {/* 1. Start a Post Box (LinkedIn Style Composer Bar) */}
+          <div
+            style={{
+              backgroundColor: 'var(--bg-secondary)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '16px',
+              padding: '16px 20px',
+              boxShadow: 'var(--shadow-sm)'
+            }}
+          >
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '12px' }}>
+              <img
+                src={getDefaultAvatarByGender(profile?.gender, profile?.avatarUrl)}
+                alt=""
+                style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', border: '1.5px solid var(--border-color)' }}
+              />
+              <button
+                onClick={() => setShowPostModal(true)}
+                style={{
+                  flex: 1,
+                  padding: '12px 18px',
                   borderRadius: '999px',
-                  fontSize: '0.78rem',
-                  fontWeight: 800
-                }}>
-                  <span style={{
-                    width: '8px',
-                    height: '8px',
-                    borderRadius: '50%',
-                    backgroundColor: '#ef4444',
-                    display: 'inline-block',
-                    animation: 'pulse 1.5s infinite'
-                  }} />
-                  LIVE NOW
-                </div>
-                <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-                  Active Doubt Rooms
-                </h3>
-                <span style={{
-                  fontSize: '0.75rem',
-                  color: 'var(--text-muted)',
-                  fontWeight: 600
-                }}>
-                  ({liveDoubtRooms.length} rooms solving right now)
-                </span>
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <button
-                  onClick={() => setShowQuickDoubtModal(true)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '6px 14px',
-                    borderRadius: '8px',
-                    border: 'none',
-                    background: 'var(--accent-primary)',
-                    color: '#ffffff',
-                    fontSize: '0.78rem',
-                    fontWeight: 800,
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease'
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.opacity = '0.9'}
-                  onMouseLeave={e => e.currentTarget.style.opacity = '1'}
-                >
-                  <PlusCircle size={14} /> Ask Doubt
-                </button>
-                <button
-                  onClick={() => setActiveTab('doubts')}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    padding: '6px 12px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border-color)',
-                    background: 'var(--bg-secondary)',
-                    color: 'var(--text-primary)',
-                    fontSize: '0.78rem',
-                    fontWeight: 700,
-                    cursor: 'pointer'
-                  }}
-                >
-                  All Rooms <ArrowRight size={13} />
-                </button>
-              </div>
+                  border: '1px solid var(--border-color)',
+                  backgroundColor: 'var(--bg-tertiary)',
+                  color: 'var(--text-secondary)',
+                  fontSize: '0.86rem',
+                  fontWeight: 600,
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  transition: 'background 0.15s, border-color 0.15s'
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.backgroundColor = 'var(--bg-secondary)';
+                  e.currentTarget.style.borderColor = 'var(--accent-primary)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)';
+                  e.currentTarget.style.borderColor = 'var(--border-color)';
+                }}
+              >
+                Start a post, ask a code doubt, share placement notes...
+              </button>
             </div>
 
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0 0 16px 0', lineHeight: 1.45 }}>
-              Dedicated spaces with voice, video, shared code runner, and Telugu/English peer explanations. Jump in to get unblocked or help a peer!
-            </p>
+            {/* Quick action buttons */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid var(--border-color)', flexWrap: 'wrap', gap: '6px' }}>
+              <button
+                onClick={() => {
+                  setComposerCategory('doubt');
+                  setComposerCodeMode(true);
+                  setShowPostModal(true);
+                }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  background: 'none', border: 'none', color: '#ef4444',
+                  fontSize: '0.78rem', fontWeight: 700, padding: '6px 10px',
+                  borderRadius: '8px', cursor: 'pointer'
+                }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.08)'}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
+                <Code2 size={16} /> Code Doubt
+              </button>
 
-            {/* Live Doubt Cards List */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <button
+                onClick={() => {
+                  setComposerCategory('placement');
+                  setShowPostModal(true);
+                }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  background: 'none', border: 'none', color: '#8b5cf6',
+                  fontSize: '0.78rem', fontWeight: 700, padding: '6px 10px',
+                  borderRadius: '8px', cursor: 'pointer'
+                }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(139, 92, 246, 0.08)'}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
+                <Briefcase size={16} /> Placement OA
+              </button>
+
+              <button
+                onClick={() => {
+                  setComposerCategory('exam');
+                  setShowPostModal(true);
+                }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  background: 'none', border: 'none', color: '#0066FF',
+                  fontSize: '0.78rem', fontWeight: 700, padding: '6px 10px',
+                  borderRadius: '8px', cursor: 'pointer'
+                }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(0, 102, 255, 0.08)'}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
+                <BookOpen size={16} /> Exam Notes
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowPostModal(true);
+                }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  background: 'none', border: 'none', color: '#10b981',
+                  fontSize: '0.78rem', fontWeight: 700, padding: '6px 10px',
+                  borderRadius: '8px', cursor: 'pointer'
+                }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.08)'}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
+                <Radio size={16} /> Campus Poll
+              </button>
+            </div>
+          </div>
+
+          {/* 2. Active Live Doubt Rooms Carousel Ribbon */}
+          <div style={{
+            backgroundColor: 'var(--bg-secondary)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '16px',
+            padding: '16px 18px',
+            boxShadow: 'var(--shadow-sm)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '5px',
+                  backgroundColor: 'rgba(239, 68, 68, 0.12)', color: '#ef4444',
+                  padding: '3px 8px', borderRadius: '999px', fontSize: '0.72rem', fontWeight: 800
+                }}>
+                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#ef4444', animation: 'pulse 1.5s infinite' }} />
+                  LIVE NOW
+                </span>
+                <span style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
+                  Active Doubt Rooms
+                </span>
+              </div>
+              <button
+                onClick={() => setActiveTab('doubts')}
+                style={{
+                  background: 'none', border: 'none', color: 'var(--accent-primary)',
+                  fontSize: '0.76rem', fontWeight: 700, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: '3px'
+                }}
+              >
+                All Rooms <ArrowRight size={13} />
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '4px' }}>
               {liveDoubtRooms.map(room => (
                 <div
                   key={room.id}
                   style={{
-                    backgroundColor: 'var(--bg-secondary)',
-                    border: '1px solid var(--border-color)',
+                    minWidth: '240px',
+                    maxWidth: '280px',
+                    backgroundColor: 'var(--bg-tertiary)',
                     borderRadius: '12px',
-                    padding: '14px 16px',
+                    padding: '12px',
+                    border: '1px solid var(--border-color)',
                     display: 'flex',
-                    alignItems: 'center',
+                    flexDirection: 'column',
                     justifyContent: 'space-between',
-                    gap: '14px',
-                    flexWrap: 'wrap',
-                    transition: 'border-color 0.2s ease, transform 0.15s ease'
-                  }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.borderColor = 'var(--accent-primary)';
-                    e.currentTarget.style.transform = 'translateY(-1px)';
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.borderColor = 'var(--border-color)';
-                    e.currentTarget.style.transform = 'none';
+                    gap: '10px',
+                    flexShrink: 0
                   }}
                 >
-                  <div style={{ flex: 1, minWidth: '260px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
-                      <span style={{
-                        padding: '2px 8px',
-                        borderRadius: '6px',
-                        backgroundColor: 'var(--accent-light)',
-                        color: 'var(--accent-primary)',
-                        fontSize: '0.72rem',
-                        fontWeight: 800
-                      }}>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                      <span style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--accent-primary)', backgroundColor: 'var(--accent-light)', padding: '2px 6px', borderRadius: '4px' }}>
                         {room.subject}
                       </span>
-                      <span style={{
-                        padding: '2px 8px',
-                        borderRadius: '6px',
-                        backgroundColor: 'rgba(16, 185, 129, 0.12)',
-                        color: '#10b981',
-                        fontSize: '0.72rem',
-                        fontWeight: 700,
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '4px'
-                      }}>
-                        🗣️ {room.language}
-                      </span>
-                      <span style={{
-                        fontSize: '0.72rem',
-                        color: 'var(--text-muted)',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '4px'
-                      }}>
-                        <Users size={12} /> {room.participants} peers in room
+                      <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+                        👥 {room.participants} in room
                       </span>
                     </div>
-
-                    <div style={{
-                      fontSize: '0.88rem',
-                      fontWeight: 700,
-                      color: 'var(--text-primary)',
-                      lineHeight: 1.4,
-                      marginBottom: '4px'
-                    }}>
-                      {room.title}
+                    <div style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.3, marginBottom: '4px' }}>
+                      {room.title.slice(0, 50)}...
                     </div>
-
-                    <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
-                      Started by <strong style={{ color: 'var(--text-secondary)' }}>{room.creator}</strong> • {room.college}
+                    <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+                      Started by {room.creator} · {room.language}
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <button
-                      onClick={() => {
-                        setActiveRoomId?.(room.id);
-                        setActiveTab('doubts');
-                        if (startWebRtcCall) {
-                          startWebRtcCall(null, room.id, room.title, room.subject);
-                        }
-                        toast.success(`Joining Live Doubt Room: ${room.subject}`);
-                      }}
-                      style={{
-                        padding: '8px 16px',
-                        borderRadius: '999px',
-                        border: 'none',
-                        background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                        color: '#ffffff',
-                        fontSize: '0.8rem',
-                        fontWeight: 800,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        boxShadow: '0 2px 8px rgba(239, 68, 68, 0.3)',
-                        transition: 'all 0.15s ease'
-                      }}
-                      onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-1px)'}
-                      onMouseLeave={e => e.currentTarget.style.transform = 'none'}
-                    >
-                      <Video size={14} /> Join Meeting 🚀
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => {
+                      setActiveRoomId?.(room.id);
+                      setActiveTab('doubts');
+                      startWebRtcCall?.(null, room.id, room.title, room.subject);
+                    }}
+                    style={{
+                      padding: '6px 12px', borderRadius: '6px', border: 'none',
+                      backgroundColor: '#ef4444', color: '#fff', fontSize: '0.74rem',
+                      fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px'
+                    }}
+                  >
+                    <Video size={12} /> Join Room
+                  </button>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* ── SECTION 2: 📅 MY SCHEDULED CLASSES & PEER SKILL SWAPS ── */}
-          <div style={{
-            backgroundColor: 'var(--card-bg)',
-            border: '1px solid var(--border-color)',
-            borderRadius: '16px',
-            padding: '20px',
-            boxShadow: 'var(--shadow-sm)'
-          }}>
-            <div style={{
+          {/* 3. LinkedIn & X Filter Navigation Tabs */}
+          <div
+            style={{
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: '14px',
-              flexWrap: 'wrap',
-              gap: '10px'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '8px',
-                  backgroundColor: 'rgba(0, 102, 255, 0.1)',
-                  color: 'var(--accent-primary)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <Calendar size={18} />
-                </div>
-                <div>
-                  <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-                    My Scheduled Classes & Skill Swaps
-                  </h3>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                    Upcoming 1:1 sessions, barter swaps, and demo calls
-                  </div>
-                </div>
-              </div>
-
+              gap: '6px',
+              overflowX: 'auto',
+              padding: '6px 0',
+              borderBottom: '1px solid var(--border-color)'
+            }}
+          >
+            {[
+              { id: 'for_you', label: '🌟 For You' },
+              { id: 'campus', label: `🏛️ My Campus (${profile?.college?.split(' ')[0] || 'IIT'})` },
+              { id: 'following', label: '👥 Following' },
+              { id: 'doubt', label: '❓ Code Doubts' },
+              { id: 'placement', label: '💼 Placements & OA' },
+              { id: 'exam', label: '📚 Exam Notes' },
+              { id: 'project', label: '🚀 Projects' }
+            ].map(tab => (
               <button
-                onClick={() => setActiveTab('sessions')}
+                key={tab.id}
+                onClick={() => setActiveFilter(tab.id)}
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  padding: '6px 12px',
-                  borderRadius: '8px',
-                  border: '1px solid var(--border-color)',
-                  background: 'var(--bg-secondary)',
-                  color: 'var(--text-primary)',
+                  padding: '6px 14px',
+                  borderRadius: '999px',
+                  border: activeFilter === tab.id ? '1.5px solid var(--accent-primary)' : '1px solid var(--border-color)',
+                  backgroundColor: activeFilter === tab.id ? 'var(--accent-primary)' : 'var(--bg-secondary)',
+                  color: activeFilter === tab.id ? '#ffffff' : 'var(--text-secondary)',
                   fontSize: '0.78rem',
                   fontWeight: 700,
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  transition: 'all 0.15s ease'
                 }}
               >
-                Manage Classes <ArrowRight size={13} />
+                {tab.label}
               </button>
-            </div>
+            ))}
+          </div>
 
-            {bookedSessions && bookedSessions.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {bookedSessions.map((session, idx) => (
-                  <div
-                    key={session.id || idx}
-                    style={{
-                      backgroundColor: 'var(--bg-secondary)',
-                      border: '1px solid var(--border-color)',
-                      borderRadius: '12px',
-                      padding: '14px 16px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: '14px',
-                      flexWrap: 'wrap'
-                    }}
-                  >
-                    <div style={{ flex: 1, minWidth: '240px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
-                        <span style={{
-                          padding: '2px 8px',
-                          borderRadius: '6px',
-                          backgroundColor: session.sessionType === 'swap' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(0, 102, 255, 0.15)',
-                          color: session.sessionType === 'swap' ? '#10b981' : 'var(--accent-primary)',
-                          fontSize: '0.72rem',
-                          fontWeight: 800
-                        }}>
-                          {session.sessionType === 'swap' ? '🔄 Peer Skill Swap (Free)' : `💳 Paid 1:1 (₹${session.price || '50'})`}
-                        </span>
-                        <span style={{
-                          fontSize: '0.74rem',
-                          color: 'var(--text-muted)',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px'
-                        }}>
-                          <Clock size={12} /> {session.date || 'Today'} • {session.time || '6:00 PM'}
-                        </span>
-                      </div>
-
-                      <div style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                        {session.subject || 'Java & Data Structures'} with {session.mentorName || 'Campus Peer Mentor'}
-                      </div>
-
-                      {session.sessionType === 'swap' && (
-                        <div style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 600, marginTop: '2px' }}>
-                          🔄 Barter: You teach {session.swapTeachSubject || 'React'} ⮀ Peer teaches {session.subject}
-                        </div>
-                      )}
-
-                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                        🗣️ Languages: <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>{session.languages || 'Telugu, English'}</span>
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={() => {
-                        if (onLaunchClassroom) {
-                          onLaunchClassroom(session);
-                        } else {
-                          setActiveRoomId?.(session.id || 'session-room-1');
-                          setActiveTab('sessions');
-                        }
-                        toast.success(`Entering Classroom for ${session.subject || 'Class'}`);
-                      }}
-                      style={{
-                        padding: '8px 16px',
-                        borderRadius: '8px',
-                        border: 'none',
-                        background: 'var(--accent-primary)',
-                        color: '#ffffff',
-                        fontSize: '0.8rem',
-                        fontWeight: 800,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px'
-                      }}
-                    >
-                      <Video size={14} /> Enter Classroom 🚀
-                    </button>
-                  </div>
-                ))}
-              </div>
+          {/* 4. The Scrollable Feed Stream */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {filteredPosts.length > 0 ? (
+              filteredPosts.map(post => (
+                <SocialFeedCard
+                  key={post.id}
+                  post={post}
+                  onLike={handleLike}
+                  onBookmark={handleBookmark}
+                  onVotePoll={handleVotePoll}
+                  onComment={handleAddComment}
+                  onOpenProfile={(p) => {
+                    const fn = openPublicProfile || onOpenPublicProfile;
+                    if (fn) fn(p);
+                  }}
+                  onJoinRoom={(p) => {
+                    setActiveRoomId?.(p.id);
+                    setActiveTab('doubts');
+                    startWebRtcCall?.(null, p.id, p.title || 'Live Doubt', p.category);
+                  }}
+                  toast={toast}
+                />
+              ))
             ) : (
               <div style={{
                 textAlign: 'center',
-                padding: '24px 16px',
+                padding: '40px 20px',
                 backgroundColor: 'var(--bg-secondary)',
-                borderRadius: '12px',
+                borderRadius: '16px',
                 border: '1px dashed var(--border-color)'
               }}>
-                <div style={{ fontSize: '1.8rem', marginBottom: '8px' }}>🎓</div>
-                <div style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px' }}>
-                  No Upcoming Classes Right Now
+                <div style={{ fontSize: '2rem', marginBottom: '8px' }}>📝</div>
+                <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px' }}>
+                  No posts in this category yet
                 </div>
-                <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', maxWidth: '420px', margin: '0 auto 16px auto', lineHeight: 1.45 }}>
-                  Book a 1:1 paid class with a 10-minute demo, or propose a 100% free Peer Skill Swap to learn together!
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+                  Be the first one from {profile?.college || 'campus'} to post!
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                  <button
-                    onClick={() => setActiveTab('discover')}
-                    style={{
-                      padding: '8px 16px',
-                      borderRadius: '8px',
-                      border: 'none',
-                      background: 'var(--accent-primary)',
-                      color: '#fff',
-                      fontSize: '0.8rem',
-                      fontWeight: 700,
-                      cursor: 'pointer'
-                    }}
-                  >
-                    🔍 Find Mentors
-                  </button>
-                  <button
-                    onClick={() => setShowSkillSwapModal(true)}
-                    style={{
-                      padding: '8px 16px',
-                      borderRadius: '8px',
-                      border: '1px solid var(--border-color)',
-                      background: 'var(--card-bg)',
-                      color: 'var(--text-primary)',
-                      fontSize: '0.8rem',
-                      fontWeight: 700,
-                      cursor: 'pointer'
-                    }}
-                  >
-                    🔄 Propose Skill Swap
-                  </button>
-                </div>
+                <button
+                  onClick={() => setShowPostModal(true)}
+                  style={{
+                    padding: '8px 18px', borderRadius: '8px', border: 'none',
+                    backgroundColor: 'var(--accent-primary)', color: '#fff',
+                    fontSize: '0.82rem', fontWeight: 800, cursor: 'pointer'
+                  }}
+                >
+                  Create First Post 🚀
+                </button>
               </div>
             )}
           </div>
 
-          {/* ── SECTION 3: 🌟 TOP CAMPUS PEER MENTORS (WITH LANGUAGE PILLS) ── */}
-          <div style={{
-            backgroundColor: 'var(--card-bg)',
-            border: '1px solid var(--border-color)',
-            borderRadius: '16px',
-            padding: '20px',
-            boxShadow: 'var(--shadow-sm)'
-          }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: '14px',
-              flexWrap: 'wrap',
-              gap: '10px'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '8px',
-                  backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                  color: '#10b981',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <Award size={18} />
-                </div>
-                <div>
-                  <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-                    Featured Campus Peer Mentors
-                  </h3>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                    Top rated scholars available in Telugu, English & regional languages
-                  </div>
-                </div>
-              </div>
+        </div>
 
-              <button
-                onClick={() => setActiveTab('discover')}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  padding: '6px 12px',
-                  borderRadius: '8px',
-                  border: '1px solid var(--border-color)',
-                  background: 'var(--bg-secondary)',
-                  color: 'var(--text-primary)',
-                  fontSize: '0.78rem',
-                  fontWeight: 700,
-                  cursor: 'pointer'
-                }}
-              >
-                All Mentors <ArrowRight size={13} />
-              </button>
+        {/* ── RIGHT COLUMN: CAMPUS SPOTLIGHT & TRENDING WIDGETS ── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+
+          {/* Trending Topics Widget (Like X / Twitter) */}
+          <div
+            style={{
+              backgroundColor: 'var(--bg-secondary)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '16px',
+              padding: '18px',
+              boxShadow: 'var(--shadow-sm)'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <div style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Flame size={16} style={{ color: '#ef4444' }} /> Trending on Campus
+              </div>
+              <span style={{ fontSize: '0.68rem', color: 'var(--accent-primary)', fontWeight: 700, cursor: 'pointer' }}>
+                Refresh
+              </span>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '14px' }}>
-              {[
-                {
-                  id: 'm1',
-                  fullName: 'Bhavna Patel',
-                  college: 'IIT Madras',
-                  subject: 'DSA & Dynamic Programming',
-                  rating: 4.98,
-                  sessions: 42,
-                  languages: ['తెలుగు (Telugu)', 'English'],
-                  rate: '₹50/session',
-                  comfort: ['🎥 Video', '🎙️ Audio'],
-                  avatar: FEMALE_AVATAR_SVG
-                },
-                {
-                  id: 'm2',
-                  fullName: 'Rohan Deshmukh',
-                  college: 'IIT Bombay',
-                  subject: 'Java, Spring Boot & CP',
-                  rating: 4.92,
-                  sessions: 38,
-                  languages: ['English', 'हिंदी (Hindi)'],
-                  rate: '₹40/session (or Swap)',
-                  comfort: ['🎥 Video', '💬 Chat'],
-                  avatar: MALE_AVATAR_SVG
-                },
-                {
-                  id: 'm3',
-                  fullName: 'Chaitanya Reddy',
-                  college: 'BITS Pilani',
-                  subject: 'React, Node.js & DBMS',
-                  rating: 4.95,
-                  sessions: 31,
-                  languages: ['తెలుగు (Telugu)', 'English'],
-                  rate: '₹50/session',
-                  comfort: ['🎥 Video', '🎙️ Audio'],
-                  avatar: MALE_AVATAR_SVG
-                }
-              ].map(mentor => (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {trendingTopics.map((topic, idx) => (
                 <div
-                  key={mentor.id}
+                  key={idx}
+                  onClick={() => {
+                    toast.success(`Filtering feed by ${topic.tag}! 🔍`);
+                  }}
                   style={{
-                    backgroundColor: 'var(--bg-secondary)',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: '12px',
-                    padding: '16px',
                     display: 'flex',
-                    flexDirection: 'column',
                     justifyContent: 'space-between',
-                    gap: '12px',
-                    transition: 'all 0.15s ease'
+                    alignItems: 'center',
+                    cursor: 'pointer',
+                    padding: '4px 0',
+                    transition: 'transform 0.1s ease'
                   }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.borderColor = 'var(--accent-primary)';
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.borderColor = 'var(--border-color)';
-                    e.currentTarget.style.transform = 'none';
-                  }}
+                  onMouseEnter={e => e.currentTarget.style.transform = 'translateX(3px)'}
+                  onMouseLeave={e => e.currentTarget.style.transform = 'translateX(0)'}
                 >
                   <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                      <img
-                        src={mentor.avatar}
-                        alt={mentor.fullName}
-                        style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover' }}
-                      />
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                            {mentor.fullName}
-                          </span>
-                          <CheckCircle2 size={13} style={{ color: 'var(--accent-primary)' }} />
-                        </div>
-                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                          {mentor.college}
-                        </div>
-                      </div>
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '3px',
-                        backgroundColor: 'rgba(245, 158, 11, 0.12)',
-                        color: '#d97706',
-                        padding: '2px 6px',
-                        borderRadius: '6px',
-                        fontSize: '0.72rem',
-                        fontWeight: 800
-                      }}>
-                        <Star size={11} fill="#d97706" /> {mentor.rating}
-                      </div>
+                    <div style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                      {topic.tag}
                     </div>
-
-                    <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}>
-                      {mentor.subject}
-                    </div>
-
-                    {/* Language badges */}
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '8px' }}>
-                      {mentor.languages.map((l, i) => (
-                        <span
-                          key={i}
-                          style={{
-                            fontSize: '0.68rem',
-                            fontWeight: 700,
-                            padding: '2px 7px',
-                            borderRadius: '999px',
-                            backgroundColor: l.includes('Telugu') ? 'rgba(16, 185, 129, 0.15)' : 'var(--bg-tertiary)',
-                            color: l.includes('Telugu') ? '#10b981' : 'var(--text-secondary)'
-                          }}
-                        >
-                          🗣️ {l}
-                        </span>
-                      ))}
-                    </div>
-
-                    {/* Comfort mode badges */}
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                      {mentor.comfort.map((c, i) => (
-                        <span
-                          key={i}
-                          style={{
-                            fontSize: '0.66rem',
-                            fontWeight: 600,
-                            padding: '1px 6px',
-                            borderRadius: '4px',
-                            backgroundColor: 'var(--card-bg)',
-                            color: 'var(--text-muted)',
-                            border: '1px solid var(--border-color)'
-                          }}
-                        >
-                          {c}
-                        </span>
-                      ))}
+                    <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+                      {topic.count}
                     </div>
                   </div>
-
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: '8px',
-                    paddingTop: '10px',
-                    borderTop: '1px solid var(--border-color)'
-                  }}>
-                    <span style={{ fontSize: '0.76rem', fontWeight: 800, color: 'var(--accent-primary)' }}>
-                      {mentor.rate}
+                  {topic.hot && (
+                    <span style={{ fontSize: '0.64rem', fontWeight: 800, backgroundColor: 'rgba(239,68,68,0.1)', color: '#ef4444', padding: '2px 6px', borderRadius: '4px' }}>
+                      🔥 HOT
                     </span>
-                    <button
-                      onClick={() => {
-                        if (onOpenBookingModal) {
-                          onOpenBookingModal(mentor);
-                        } else {
-                          setActiveTab('discover');
-                        }
-                      }}
-                      style={{
-                        padding: '6px 12px',
-                        borderRadius: '6px',
-                        border: 'none',
-                        background: 'var(--accent-primary)',
-                        color: '#ffffff',
-                        fontSize: '0.74rem',
-                        fontWeight: 700,
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Book / Swap
-                    </button>
-                  </div>
+                  )}
                 </div>
               ))}
             </div>
           </div>
 
-        </div>
-
-        {/* ── RIGHT COLUMN: STUDYLOOP CAMPUS SPOTLIGHT PANEL ── */}
-        <div className="studyloop-right-column" ref={rightSidebarRef}>
-
-          {/* StudyLoop Campus Challenges & Events */}
-          <div className="studyloop-featured-panel">
-            <div style={{
-              fontSize: '0.92rem',
-              fontWeight: 800,
-              color: 'var(--text-primary)',
-              marginBottom: '14px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between'
-            }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          {/* Campus Spotlight & Contests */}
+          <div
+            style={{
+              backgroundColor: 'var(--bg-secondary)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '16px',
+              padding: '18px',
+              boxShadow: 'var(--shadow-sm)'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <div style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Trophy size={16} style={{ color: '#f59e0b' }} /> Campus Spotlight
-              </span>
-              <span 
-                style={{ fontSize: '0.7rem', color: 'var(--accent-primary)', cursor: 'pointer', fontWeight: 700 }}
+              </div>
+              <span
+                style={{ fontSize: '0.68rem', color: 'var(--accent-primary)', fontWeight: 700, cursor: 'pointer' }}
                 onClick={() => setActiveTab('leaderboard')}
               >
                 View Ranks
@@ -1423,103 +1788,37 @@ export function HomeHubScreen({
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {[
-                { 
-                  title: 'Inter-IIT AlgoFest 2026', 
-                  action: 'Join Contest', 
-                  subtitle: '₹25K Pool · DSA & CP', 
-                  icon: '⚡',
-                  onClick: () => {
-                    setActiveTab('leaderboard');
-                    toast.success('Joining Inter-IIT AlgoFest 2026 Contest Arena! ⚡');
-                  }
-                },
-                { 
-                  title: 'Google & Microsoft OA Simulation', 
-                  action: 'Register', 
-                  subtitle: 'This Saturday, 8:00 PM', 
-                  icon: '🎯',
-                  onClick: () => {
-                    setActiveFeedFilter('placement');
-                    toast.success('Viewing Google & Microsoft OA placement simulations & sheets 🎯');
-                  }
-                },
-                { 
-                  title: 'OS & Distributed Systems Sprint', 
-                  action: 'Campus Room', 
-                  subtitle: 'Peer Workshop · 4 Days', 
-                  icon: '💻',
-                  onClick: () => {
-                    setActiveRoomId?.('room-os-sprint');
-                    setActiveTab('doubts');
-                    toast.success('Entering OS & Distributed Systems live Campus Room 💻');
-                  }
-                },
-                { 
-                  title: 'Semester Exam Question Bank', 
-                  action: 'Access PDF', 
-                  subtitle: 'Verified Branch Rankers', 
-                  icon: '📚',
-                  onClick: () => {
-                    setActiveFeedFilter('exam');
-                    toast.success('Accessing verified Semester Exam Question Bank PDFs 📚');
-                  }
-                },
-                { 
-                  title: 'Campus Open Source Hack', 
-                  action: 'Find Team', 
-                  subtitle: 'Build with Seniors', 
-                  icon: '🚀',
-                  onClick: () => {
-                    setActiveTab('connections');
-                    toast.success('Exploring campus open source project teams & seniors 🚀');
-                  }
-                }
+                { title: 'Inter-IIT AlgoFest 2026', action: 'Join Contest', subtitle: '₹25K Pool · DSA & CP', icon: '⚡' },
+                { title: 'Google & Microsoft OA Sim', action: 'Register', subtitle: 'This Saturday, 8:00 PM', icon: '🎯' },
+                { title: 'OS & Distributed Systems', action: 'Campus Room', subtitle: 'Peer Workshop · 4 Days', icon: '💻' },
+                { title: 'Semester Exam Question Bank', action: 'Access PDF', subtitle: 'Verified Branch Rankers', icon: '📚' }
               ].map((item, idx) => (
-                <div key={idx} style={{
-                  display: 'flex',
-                  gap: '12px',
-                  alignItems: 'flex-start',
-                  cursor: 'pointer',
-                  padding: '6px 0',
-                  borderBottom: idx < 4 ? '1px solid var(--border-color)' : 'none',
-                  transition: 'transform 0.12s'
-                }}
-                onClick={item.onClick}
-                onMouseEnter={e => e.currentTarget.style.transform = 'translateX(2px)'}
-                onMouseLeave={e => e.currentTarget.style.transform = 'translateX(0)'}
-                >
-                  {/* Event Icon Box */}
-                  <div style={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '8px',
-                    backgroundColor: 'var(--bg-tertiary)',
-                    border: '1px solid var(--border-color)',
+                <div
+                  key={idx}
+                  onClick={() => {
+                    toast.success(`Accessing ${item.title}! 🚀`);
+                  }}
+                  style={{
                     display: 'flex',
+                    gap: '10px',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '1rem',
-                    flexShrink: 0,
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
+                    cursor: 'pointer',
+                    padding: '4px 0',
+                    borderBottom: idx < 3 ? '1px solid var(--border-color)' : 'none'
+                  }}
+                >
+                  <div style={{
+                    width: '32px', height: '32px', borderRadius: '8px',
+                    backgroundColor: 'var(--bg-tertiary)', display: 'flex',
+                    alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem', flexShrink: 0
                   }}>
                     {item.icon}
                   </div>
-
-                  {/* Event Details */}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{
-                      fontWeight: 800,
-                      fontSize: '0.8rem',
-                      color: 'var(--text-primary)',
-                      lineHeight: 1.3,
-                      marginBottom: '2px'
-                    }}>
+                    <div style={{ fontWeight: 800, fontSize: '0.78rem', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {item.title}
                     </div>
-                    <div style={{
-                      fontSize: '0.68rem',
-                      color: 'var(--text-muted)'
-                    }}>
+                    <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
                       <span style={{ color: 'var(--accent-primary)', fontWeight: 700 }}>{item.action}</span> · {item.subtitle}
                     </div>
                   </div>
@@ -1528,109 +1827,108 @@ export function HomeHubScreen({
             </div>
           </div>
 
-          {/* Top Campus Mentors Card */}
-          <div className="studyloop-featured-panel">
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '12px'
-            }}>
-              <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Users size={15} style={{ color: 'var(--accent-primary)' }} /> Top Campus Mentors
+          {/* Top Campus Mentors (with 1-click booking) */}
+          <div
+            style={{
+              backgroundColor: 'var(--bg-secondary)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '16px',
+              padding: '18px',
+              boxShadow: 'var(--shadow-sm)'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <div style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Users size={16} style={{ color: 'var(--accent-primary)' }} /> Top Campus Mentors
               </div>
-              <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#059669', backgroundColor: 'rgba(16,185,129,0.1)', padding: '2px 7px', borderRadius: '999px' }}>
-                Free Trial
+              <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#059669', backgroundColor: 'rgba(16,185,129,0.1)', padding: '2px 6px', borderRadius: '999px' }}>
+                Free Demo
               </span>
             </div>
 
-            {topMentors.map(m => (
-              <div 
-                key={m.id} 
-                style={{ paddingBottom: '10px', marginBottom: '10px', borderBottom: '1px solid var(--border-color)', cursor: 'pointer' }}
-                onClick={() => {
-                  const handleProfile = openPublicProfile || onOpenPublicProfile;
-                  if (handleProfile) handleProfile(m);
-                }}
-              >
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '6px' }}>
-                  <div style={{ position: 'relative', flexShrink: 0 }}>
-                    <img src={m.avatar} alt="" style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }} />
-                    <span style={{ position: 'absolute', bottom: 0, right: 0, width: '9px', height: '9px', borderRadius: '50%', backgroundColor: m.available ? '#10b981' : '#94a3b8', border: '1.5px solid var(--bg-secondary)' }} />
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span style={{ fontWeight: 800, fontSize: '0.82rem', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.fullName}</span>
-                      <span title="Scholar Verified" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#0066FF', flexShrink: 0 }}>
-                        <CheckCircle2 size={8} color="#fff" fill="#fff" />
-                      </span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {topMentors.map(m => (
+                <div key={m.id} style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '6px' }}>
+                    <div style={{ position: 'relative' }}>
+                      <img src={m.avatar} alt="" style={{ width: '34px', height: '34px', borderRadius: '50%', objectFit: 'cover' }} />
+                      <span style={{ position: 'absolute', bottom: 0, right: 0, width: '8px', height: '8px', borderRadius: '50%', backgroundColor: m.available ? '#10b981' : '#94a3b8', border: '1px solid #fff' }} />
                     </div>
-                    <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>{m.college} · ⭐ {m.rating}</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 800, fontSize: '0.8rem', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {m.fullName}
+                      </div>
+                      <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+                        {m.college} · ⭐ {m.rating}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>
+                    <strong>{m.subject}</strong> — {m.specialty}
+                  </div>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <button
+                      onClick={() => {
+                        if (onOpenBookingModal) {
+                          onOpenBookingModal(m);
+                        } else {
+                          setActiveTab('sessions');
+                        }
+                        toast.success(`Opening 1:1 demo booking with ${m.fullName}!`);
+                      }}
+                      style={{
+                        flex: 1, padding: '5px 8px', borderRadius: '6px', border: 'none',
+                        backgroundColor: 'var(--accent-primary)', color: '#fff', fontSize: '0.72rem',
+                        fontWeight: 700, cursor: 'pointer'
+                      }}
+                    >
+                      Book Demo
+                    </button>
+                    <button
+                      onClick={() => {
+                        setActiveTab('connections');
+                        toast.success(`Connecting with ${m.fullName}!`);
+                      }}
+                      style={{
+                        padding: '5px 10px', borderRadius: '6px', border: '1px solid var(--border-color)',
+                        backgroundColor: 'transparent', color: 'var(--text-secondary)', fontSize: '0.72rem',
+                        fontWeight: 700, cursor: 'pointer'
+                      }}
+                    >
+                      Connect
+                    </button>
                   </div>
                 </div>
-                <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>
-                  <strong>{m.subject}</strong> — {m.specialty}
-                </div>
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (onOpenBookingModal) {
-                        onOpenBookingModal(m);
-                      } else {
-                        setActiveTab('sessions');
-                      }
-                      toast.success(`Opening 1:1 demo session booking with ${m.fullName}!`);
-                    }}
-                    style={{ flex: 1, padding: '5px 8px', borderRadius: '6px', border: 'none', backgroundColor: 'var(--accent-primary)', color: '#fff', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.12s' }}
-                    onMouseEnter={e => e.currentTarget.style.backgroundColor='var(--accent-dark)'}
-                    onMouseLeave={e => e.currentTarget.style.backgroundColor='var(--accent-primary)'}
-                  >
-                    Book Demo
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setActiveTab('connections');
-                      toast.success(`Connecting with ${m.fullName}!`);
-                    }}
-                    style={{ padding: '5px 10px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'transparent', color: 'var(--text-secondary)', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.12s' }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent-primary)'; e.currentTarget.style.color = 'var(--accent-primary)'; }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border-color)'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
-                  >
-                    Connect
-                  </button>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
 
         </div>
-        {/* end right column */}
 
       </div>
-      {/* end hub grid */}
 
-      {/* ── MODAL 1: QUICK DOUBT & INSTANT LIVE ROOM ── */}
+      {/* ── MODALS ── */}
+      {/* 1. Post Composer Modal */}
+      {showPostModal && (
+        <PostComposerModal
+          profile={profile}
+          onClose={() => setShowPostModal(false)}
+          onPost={handleCreatePost}
+          initialCategory={composerCategory}
+          initialCodeMode={composerCodeMode}
+        />
+      )}
+
+      {/* 2. Quick Doubt Modal */}
       {showQuickDoubtModal && (
         <div style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 1000,
-          backgroundColor: 'rgba(0, 0, 0, 0.65)',
-          backdropFilter: 'blur(5px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '16px'
+          position: 'fixed', inset: 0, zIndex: 3000,
+          backgroundColor: 'rgba(15, 23, 42, 0.75)', backdropFilter: 'blur(6px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px'
         }}>
           <div style={{
-            backgroundColor: 'var(--card-bg)',
-            border: '1px solid var(--border-color)',
-            borderRadius: '16px',
-            width: '100%',
-            maxWidth: '520px',
-            padding: '24px',
+            backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)',
+            borderRadius: '16px', width: '100%', maxWidth: '500px', padding: '24px',
             boxShadow: 'var(--shadow-lg)'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
@@ -1641,14 +1939,11 @@ export function HomeHubScreen({
                     Ask Academic Doubt & Launch Room
                   </h3>
                   <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                    Instantly creates a dedicated space with code runner & WebRTC
+                    Creates a live WebRTC audio/video space with shared compiler
                   </div>
                 </div>
               </div>
-              <button
-                onClick={() => setShowQuickDoubtModal(false)}
-                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}
-              >
+              <button onClick={() => setShowQuickDoubtModal(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
                 <X size={18} />
               </button>
             </div>
@@ -1665,15 +1960,9 @@ export function HomeHubScreen({
                   onChange={e => setQuickDoubtQuestion(e.target.value)}
                   placeholder="e.g. In Java 0/1 knapsack, my memoization table gives index out of bounds error during recursion..."
                   style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border-color)',
-                    backgroundColor: 'var(--bg-secondary)',
-                    color: 'var(--text-primary)',
-                    fontSize: '0.82rem',
-                    boxSizing: 'border-box',
-                    fontFamily: 'inherit'
+                    width: '100%', padding: '10px 12px', borderRadius: '8px',
+                    border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)',
+                    color: 'var(--text-primary)', fontSize: '0.82rem', boxSizing: 'border-box', fontFamily: 'inherit'
                   }}
                 />
               </div>
@@ -1681,19 +1970,15 @@ export function HomeHubScreen({
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '6px' }}>
-                    Subject / Domain
+                    Subject
                   </label>
                   <select
                     value={quickDoubtSubject}
                     onChange={e => setQuickDoubtSubject(e.target.value)}
                     style={{
-                      width: '100%',
-                      padding: '8px 10px',
-                      borderRadius: '8px',
-                      border: '1px solid var(--border-color)',
-                      backgroundColor: 'var(--bg-secondary)',
-                      color: 'var(--text-primary)',
-                      fontSize: '0.8rem'
+                      width: '100%', padding: '8px 10px', borderRadius: '8px',
+                      border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)',
+                      color: 'var(--text-primary)', fontSize: '0.8rem'
                     }}
                   >
                     <option value="Java">Java</option>
@@ -1701,82 +1986,44 @@ export function HomeHubScreen({
                     <option value="DSA & Algorithms">DSA & Algorithms</option>
                     <option value="DBMS">DBMS & SQL</option>
                     <option value="Operating Systems">Operating Systems</option>
-                    <option value="Web Development">Web Development (React)</option>
-                    <option value="Aptitude & Core">Aptitude & Core</option>
+                    <option value="Web Development">React & Web</option>
                   </select>
                 </div>
 
                 <div>
                   <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '6px' }}>
-                    Preferred Language
+                    Language
                   </label>
                   <select
                     value={quickDoubtLanguage}
                     onChange={e => setQuickDoubtLanguage(e.target.value)}
                     style={{
-                      width: '100%',
-                      padding: '8px 10px',
-                      borderRadius: '8px',
-                      border: '1px solid var(--border-color)',
-                      backgroundColor: 'var(--bg-secondary)',
-                      color: 'var(--text-primary)',
-                      fontSize: '0.8rem'
+                      width: '100%', padding: '8px 10px', borderRadius: '8px',
+                      border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)',
+                      color: 'var(--text-primary)', fontSize: '0.8rem'
                     }}
                   >
                     <option value="Telugu">🗣️ Telugu (తెలుగు)</option>
                     <option value="English">🗣️ English</option>
                     <option value="Telugu / English">🗣️ Telugu / English</option>
                     <option value="Hindi">🗣️ Hindi (हिंदी)</option>
-                    <option value="Tamil">🗣️ Tamil (தமிழ்)</option>
                   </select>
                 </div>
-              </div>
-
-              <div style={{
-                backgroundColor: 'rgba(0, 102, 255, 0.08)',
-                border: '1px solid rgba(0, 102, 255, 0.2)',
-                borderRadius: '8px',
-                padding: '10px 12px',
-                marginBottom: '16px',
-                fontSize: '0.74rem',
-                color: 'var(--text-secondary)',
-                lineHeight: 1.45
-              }}>
-                🔴 <strong>Dedicated Space:</strong> Submitting will instantly open a live WebRTC audio/video call room with a shared live compiler so you and peers can fix bugs together.
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
                 <button
                   type="button"
                   onClick={() => setShowQuickDoubtModal(false)}
-                  style={{
-                    padding: '8px 16px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border-color)',
-                    background: 'var(--bg-secondary)',
-                    color: 'var(--text-primary)',
-                    fontSize: '0.8rem',
-                    fontWeight: 700,
-                    cursor: 'pointer'
-                  }}
+                  style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-primary)', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  style={{
-                    padding: '8px 18px',
-                    borderRadius: '8px',
-                    border: 'none',
-                    background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                    color: '#ffffff',
-                    fontSize: '0.8rem',
-                    fontWeight: 800,
-                    cursor: 'pointer',
-                    boxShadow: '0 2px 8px rgba(239, 68, 68, 0.3)'
-                  }}
+                  style={{ padding: '8px 18px', borderRadius: '8px', border: 'none', background: '#ef4444', color: '#fff', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer' }}
                 >
-                  🚀 Launch Live Doubt Room
+                  🚀 Launch Live Room
                 </button>
               </div>
             </form>
@@ -1784,26 +2031,16 @@ export function HomeHubScreen({
         </div>
       )}
 
-      {/* ── MODAL 2: PEER SKILL SWAP (100% FREE BARTER) ── */}
+      {/* 3. Skill Swap Modal */}
       {showSkillSwapModal && (
         <div style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 1000,
-          backgroundColor: 'rgba(0, 0, 0, 0.65)',
-          backdropFilter: 'blur(5px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '16px'
+          position: 'fixed', inset: 0, zIndex: 3000,
+          backgroundColor: 'rgba(15, 23, 42, 0.75)', backdropFilter: 'blur(6px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px'
         }}>
           <div style={{
-            backgroundColor: 'var(--card-bg)',
-            border: '1px solid var(--border-color)',
-            borderRadius: '16px',
-            width: '100%',
-            maxWidth: '500px',
-            padding: '24px',
+            backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)',
+            borderRadius: '16px', width: '100%', maxWidth: '480px', padding: '24px',
             boxShadow: 'var(--shadow-lg)'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
@@ -1811,35 +2048,19 @@ export function HomeHubScreen({
                 <span style={{ fontSize: '1.4rem' }}>🔄</span>
                 <div>
                   <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                    Peer Skill Swap (100% Free Barter)
+                    Peer Skill Swap (100% Free)
                   </h3>
                   <div style={{ fontSize: '0.72rem', color: '#10b981', fontWeight: 700 }}>
-                    ₹0 Cost — Exchange skills peer-to-peer!
+                    ₹0 Cost — Learn & teach barter exchange
                   </div>
                 </div>
               </div>
-              <button
-                onClick={() => setShowSkillSwapModal(false)}
-                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}
-              >
+              <button onClick={() => setShowSkillSwapModal(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
                 <X size={18} />
               </button>
             </div>
 
             <form onSubmit={handleProposeSkillSwap}>
-              <div style={{
-                backgroundColor: 'rgba(16, 185, 129, 0.08)',
-                border: '1px solid rgba(16, 185, 129, 0.2)',
-                borderRadius: '10px',
-                padding: '12px',
-                marginBottom: '16px',
-                fontSize: '0.78rem',
-                color: 'var(--text-secondary)',
-                lineHeight: 1.45
-              }}>
-                <strong>How Skill Swap Works:</strong> "You teach me Java, I teach you React". Once a peer accepts, a 1:1 video session is placed on both your schedules with zero fees!
-              </div>
-
               <div style={{ marginBottom: '12px' }}>
                 <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '6px' }}>
                   What do you want to learn? *
@@ -1851,19 +2072,14 @@ export function HomeHubScreen({
                   onChange={e => setSwapLearn(e.target.value)}
                   placeholder="e.g. Java, Spring Boot, DSA"
                   style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border-color)',
-                    backgroundColor: 'var(--bg-secondary)',
-                    color: 'var(--text-primary)',
-                    fontSize: '0.82rem',
-                    boxSizing: 'border-box'
+                    width: '100%', padding: '8px 12px', borderRadius: '8px',
+                    border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)',
+                    color: 'var(--text-primary)', fontSize: '0.82rem', boxSizing: 'border-box'
                   }}
                 />
               </div>
 
-              <div style={{ marginBottom: '14px' }}>
+              <div style={{ marginBottom: '16px' }}>
                 <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '6px' }}>
                   What can you teach in return? *
                 </label>
@@ -1872,52 +2088,28 @@ export function HomeHubScreen({
                   required
                   value={swapTeach}
                   onChange={e => setSwapTeach(e.target.value)}
-                  placeholder="e.g. React & Next.js, SQL, Machine Learning"
+                  placeholder="e.g. React & Next.js, SQL, Physics"
                   style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border-color)',
-                    backgroundColor: 'var(--bg-secondary)',
-                    color: 'var(--text-primary)',
-                    fontSize: '0.82rem',
-                    boxSizing: 'border-box'
+                    width: '100%', padding: '8px 12px', borderRadius: '8px',
+                    border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)',
+                    color: 'var(--text-primary)', fontSize: '0.82rem', boxSizing: 'border-box'
                   }}
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '18px' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
                 <button
                   type="button"
                   onClick={() => setShowSkillSwapModal(false)}
-                  style={{
-                    padding: '8px 16px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border-color)',
-                    background: 'var(--bg-secondary)',
-                    color: 'var(--text-primary)',
-                    fontSize: '0.8rem',
-                    fontWeight: 700,
-                    cursor: 'pointer'
-                  }}
+                  style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-primary)', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  style={{
-                    padding: '8px 18px',
-                    borderRadius: '8px',
-                    border: 'none',
-                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                    color: '#ffffff',
-                    fontSize: '0.8rem',
-                    fontWeight: 800,
-                    cursor: 'pointer',
-                    boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)'
-                  }}
+                  style={{ padding: '8px 18px', borderRadius: '8px', border: 'none', background: '#10b981', color: '#fff', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer' }}
                 >
-                  🔄 Propose Skill Swap
+                  🤝 Post Skill Swap
                 </button>
               </div>
             </form>
